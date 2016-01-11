@@ -1,0 +1,524 @@
+\documentclass[11pt,a4paper,twoside]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[english]{babel}
+\usepackage{graphicx}
+\usepackage{latexsym,amsmath,amssymb,amsthm}
+\usepackage{makeidx}
+\usepackage[usenames,dvipsnames]{color}
+\usepackage[unicode=true,colorlinks=true,linkcolor=RoyalBlue,citecolor=RoyalBlue]{hyperref}
+\usepackage{natbib}
+\usepackage{lipsum}
+
+\title{The MCIntegrator C++ Library}
+\author{Francesco Calcavecchia}
+
+\makeindex
+
+\newcommand{\MRTWO}{$ \text{M}(\text{RT})^2 \;$}
+
+
+\begin{document}
+\maketitle
+
+MCIntegrator++ is a C++ library that contains simple tools for computing numerical integrals in \verb+NDIM+ dimensions with the Monte Carlo technique, exploiting the \MRTWO algorithm for sampling from the provided sampling function.
+It also include some tools to estimate the mean and standard deviation of sets of uncorrelated and correlated data, using the blocking technique.
+
+More specifically the integration is performed by sampling coordinates \verb+X+ from a given probability density function \verb+g(X)+ by means of the \MRTWO algorithm, and summing up an \emph{observable} \verb+f(X)+:
+\begin{equation}
+   \int_{\Omega} d\verb+X g(X) f(X)+ = \sum_{\verb+X+_i \text{ sampled from } \verb+g(X)+} \verb+f(X+_i\verb+)+
+\end{equation}
+Here $\Omega$ represents the integration domain.
+If a probability density function is not provided, the integral is simply computed by sampling randomly the $X$ within the domain:
+\begin{equation}
+   \int_{\Omega} d\verb+X f(X)+ = \frac{1}{M} \sum_{i=1}^{M} \verb+f(X+_i\verb+)+
+\end{equation}
+
+Reminder: a probability density function \verb+g(X)+ must fullfil the two following properties:
+\begin{enumerate}
+   \item $\verb+g(X)+ \geq 0$ for all $\verb+X+ \in \Omega$;
+   \item $\int_{\Omega} d\verb+X g(X)+ = 1$.
+\end{enumerate}
+
+The code has been developed using the standard C++11.
+
+
+\section{Include the library}
+First of all one has to include the MCIntegrator library, using the instruction:
+\begin{verbatim}
+   #include "MCIntegrator.hpp"
+\end{verbatim}
+
+
+
+\section{Integrator's declaration and inizialization}
+\label{sec:initialisation}
+
+\begin{verbatim}
+>  MCI(const int & ndim)
+>  int getNDim()
+\end{verbatim}
+
+In the following we will use the variable name \verb+mci+ for labeling a \verb+MCIntegrator+ object.
+An integrator can be declared as
+\begin{verbatim}
+   MCI mci(ndim);
+\end{verbatim}
+where \verb+ndim+ in an \verb+int+ that specifies the dimensionality of the integral.
+
+One can know \verb+ndim+ at any time by invoking
+\begin{verbatim}
+   mci.getNDim()
+\end{verbatim}
+
+In the following we will always refer to \verb+mci+ as the default \verb+MCI+ object.
+
+
+\section{Settings}
+It is not strictly necessary to set all the following settings because there are already default values, however the user should be aware of their existence.
+
+
+\subsection{Integral domain} % (fold)
+\label{sub:integral_domain}
+
+\begin{verbatim}
+>  void setIRange(const double * const * irange)
+>  double getIRange(const int &i, const int &j)
+\end{verbatim}
+
+One can set the integral domain with the method
+\begin{verbatim}
+   mci.setIRange(irange);
+\end{verbatim}
+where \verb+irange+ is a \verb+double **+ of dimension $\verb+ndim+ \times 2$.
+For example, in the one-dimensional case, to integrate between \verb+La+ and \verb+Lb+, one has to set \verb+irange[0][0]=La+ and \verb+irange[0][1]=Lb+.
+It is always assumed that the boundaries are given in increasing order, e.g. $\verb+La+ < \verb+Lb+$.
+If the integral range is not set, it is assumed by default to be $\mathbb{R}^{\verb+ndim+}$.
+
+Once the integral domain is set, the initial coordinates and the \MRTWO step are set accordingly.
+Specifically, the coordinates are set to be in the middle of the integration volume, whereas the step is set to be half of the integration sides for each direction.
+
+One can get at any moment the domain's boundary \verb+irange[i][j]+ by invoking
+\begin{verbatim}
+   mci.getIRange(i,j)
+\end{verbatim}
+% subsection integral_domain (end)
+
+
+\subsection{Initial coordinates} % (fold)
+\label{sub:starting_coordinates}
+
+\begin{verbatim}
+>  void setX(const double * x);
+>  double getX(const int &i);
+\end{verbatim}
+
+The Markov chain is built starting from an initial point.
+By default this is assumed to be in the middle of the integration space, however it might be convenient to set it manually in certain specific situations.
+This can be done with the command
+\begin{verbatim}
+   mci.setX(x);
+\end{verbatim}
+where \verb+x+ is \verb+double *+ with size \verb+ndim+.
+
+One can get the value of \verb+x+ at any moment by invoking
+\begin{verbatim}
+   mci.getX()
+\end{verbatim}
+% subsection starting_coordinates (end)
+
+
+\subsection{\MRTWO step} % (fold)
+\label{sub:mrt2_step}
+
+\begin{verbatim}
+>  void setMRT2Step(const double * mrt2step);
+>  double getMRT2Step(const int &i);
+\end{verbatim}
+
+The initial \MRTWO step is set equal to $0.1$ by default for every direction.
+
+It is not essential to provide this parameter, because before proceeding with the integration, \verb+MCIntegrator+ adjust the step in order to obtain an acceptance close to the target one (by default $50\%$, see subsection \ref{sub:acceptance_rate}).
+In any case, setting by hand a reasonable value can result in a tuning speed-up.
+Use
+\begin{verbatim}
+   mci.setMRT2Step(mrt2step);
+\end{verbatim}
+where \verb+mrt2step+ is a \verb+double *+ of size \verb+ndim+.
+
+One can get the value of \verb+mrt2step+ (most notably after a tuning process, e.g. after an integration) by invoking
+\begin{verbatim}
+   mci.getMRT2Step(i)
+\end{verbatim}
+where \verb+i+ is a \verb+int+ between $0$ and $\verb+ndim+-1$.
+
+% subsection mrt2_step (end)
+
+
+\subsection{Acceptance rate} % (fold)
+\label{sub:acceptance_rate}
+
+\begin{verbatim}
+>  void setTargetAcceptanceRate(const double * targetaccrate);   
+>  double getTargetAcceptanceRate();
+>  double getAcceptanceRate();
+\end{verbatim}
+
+In the context of the \MRTWO algorithm, the acceptance rate is one of the most important parameters to control.
+Before proceeding with the integration, \verb+MCIntegrator+ automatically adjust the \MRTWO step in order to obtain an acceptance rate close to the provided target one (by default $50\%$).
+A target acceptance rate of $50\%$ provides very good performance in almost all cases.
+We remark that if the user does not specify a sampling function, the acceptance rate will always be $100\%$, independently of the \MRTWO step, since the \MRTWO algorithm will not be employed.
+
+For setting the target acceptance rate use
+\begin{verbatim}
+   imc.setTargetAcceptanceRate(targetaccrate)
+\end{verbatim}
+where \verb+targetaccrate+ is a \verb+double *+ of dimension \verb+1+ and must point tot a number between $0$ and $1$.
+This value can be checked at any time by invoking
+\begin{verbatim}
+   imc.getTargetAcceptanceRate()
+\end{verbatim}
+
+After performing an integration one can check the actual acceptance rate by invoking
+\begin{verbatim}
+   imc.getAcceptanceRate()
+\end{verbatim}
+% subsection acceptance_rate (end)
+
+
+\section{Observable function} % (fold)
+\label{sec:observable_function}
+
+\begin{verbatim}
+>  void addObservable(MCIObservableFunctionInterface * obs);
+>  int getNObs();
+>  int getNObsDim();
+>  MCIObservableFunctionInterface * getObservable(const int &i)  
+>  void clearObservables();
+\end{verbatim}
+
+In order to perform an integral it is essential to specify at least an observable function.
+Actually, one can even add more than one and form an \emph{observables' stack}.
+The integral of all of these functions will be done simultaneously.
+In subsection \ref{sub:mciobservablefunctioninterface} we will discuss how it is possible to create an object that implements an observable function, scalar or multidimensional.
+
+In order to add an observable object to the stack, just use
+\begin{verbatim}
+   mci.addObservable(obs);
+\end{verbatim}
+where \verb+obs+ is a \verb+MCIObservableFunctionInterface *+.
+Subsection \ref{sub:mciobservablefunctioninterface} provides more detail about this virtual class and how an actual observable class can be implemented.
+
+The number of observables in the stack can be obtained with
+\begin{verbatim}
+   mci.getNObs()
+\end{verbatim}
+
+The total number of observable functions (i.e. the sum of the \verb+nobs+ values of all observable objects added in the stack - see subsection \ref{sub:mciobservablefunctioninterface}) in the stack can be obtained by invoking
+\begin{verbatim}
+   mci.getNObsDim()
+\end{verbatim}
+
+One can obtain the pointer to an observable object by means of
+\begin{verbatim}
+   mci.getObservable(i)
+\end{verbatim}
+where \verb+i+ is an \verb+int+ between $0$ and $\verb+mci.clearObservables()+ -1$ and refers to its position in the observables' stack.
+
+Finally, one can clean the stack of observable objects by using
+\begin{verbatim}
+   mci.clearObservables();
+\end{verbatim}
+
+
+\subsection{MCI observable function interface} % (fold)
+\label{sub:mciobservablefunctioninterface}
+
+\begin{verbatim}
+<  MCIObservableFunctionInterface(const int &ndim, const int &nobs);
+<  virtual void observableFunction(const double * in, double *out) = 0;
+>  int getNDim();
+>  int getNObs();
+>  void computeObservables(const double *in);
+>  double getObservable(const int &i);
+\end{verbatim}
+
+An observable class must be declared as a child class of \verb+MCIObservableFunctionInterface+, and must implement its \emph{virtual protected method} \verb+observableFunction+.
+This function will take an input \verb+in+, an array of size \verb+ndim+, and has to set the values to an output array \verb+out+, of size \verb+nobs+.
+
+As an example, here is the code for having an observable for a quadratic function $x^2$:
+\begin{verbatim}
+class QuadraticObservable: public MCISamplingFunctionInterface
+{
+   public:
+      Polynom(const int &ndim): MCIObservableFunctionInterface(ndim, 1) {}
+      // nobs will always be equal to 1, 
+      // since quadraticObservable is a scalar function
+      
+   protected:
+      void observableFunction(const double * in, double * out)
+      {
+         out[0]=0.;
+         for (int i=0; i<this->getNDim(); ++i)
+         {
+            out[0] += in[i]*in[i];
+         }
+         
+      }
+};
+\end{verbatim}
+
+Once the class has been defined, one can allocate an observable object (here we use the example of the quadratic observable)
+\begin{verbatim}
+   MCIObservableFunctionInterface * obs = new QuadraticObservable(ndim);
+\end{verbatim}
+Notice that we are here making use of \emph{polymorphism}.
+
+Then one can access the values of \verb+ndim+ and \verb+nobs+ by invoking
+\begin{verbatim}
+   obs->getNDim()
+\end{verbatim}
+and
+\begin{verbatim}
+   obs->getNObs()
+\end{verbatim}
+
+For debugging purposes, one might want to compute some values with the observable function.
+This can be achieved by using
+\begin{verbatim}
+   obs->computeObservables(in);
+\end{verbatim}
+where \verb+in+ will be the input array of size \verb+obs->getNDim()+, followed by the getter
+\begin{verbatim}
+   obs->getObservable(i)
+\end{verbatim}
+where \verb+i+ is an \verb+int+ between $0$ and $\verb+obs->getNObs()+ - 1$ and refers to the index of \verb+out+ that on is interested into.
+
+% subsection mciobservablefunctioninterface (end)
+
+% section observable_function (end)
+
+
+\section{Sampling function} % (fold)
+\label{sec:sampling_function}
+
+\begin{verbatim}
+>  void addSamplingFunction(MCISamplingFunctionInterface * sf);
+>  int getNSampF()
+>  MCISamplingFunctionInterface * getSamplingFunction(const int &i)
+>  void clearSamplingFunctions();  
+\end{verbatim}
+
+Whenever it is possible, it is convenient to incorporate as much as possible of the integrand inside the sampling function, following the \emph{importance sampling} principle.
+the user is responsible for providing a correct sampling function, i.e. positive definite and normalised to $1$.
+In subsection \ref{sub:mci_sampling_function_interface} we will describe how is it possible to create a class that implements a sampling function.
+
+One can add a sampling function to the Monte Carlo integration object with the command
+\begin{verbatim}
+   mci.addSamplingFunction(sf);
+\end{verbatim}
+where \verb+sf+ is a \verb+MCISamplingFunctionInterface *+, a virtual class whose usage will be clarified in subsection \ref{sub:mci_sampling_function_interface}.
+It is possible to add multiple sampling functions, the final sampling function will be the product of all of them.
+
+The number of sampling functions in the stack can be obtained with
+\begin{verbatim}
+   mci.getNSampF()
+\end{verbatim}
+
+It is possible to get the pointer to a provided sampling function at any moment by invoking
+\begin{verbatim}
+   mci.getSamplingFunction(i)
+\end{verbatim}
+where \verb+i+ is an \verb+int+ between $0$ and 
+
+Finally, It is possible to clean the sampling functions' stack by means of
+\begin{verbatim}
+   mci.clearSamplingFunctions();
+\end{verbatim}
+
+
+\subsection{MCI sampling function interface} % (fold)
+\label{sub:mci_sampling_function_interface}
+
+\begin{verbatim}
+<  MCISamplingFunctionInterface(const int &ndim, const int &nproto);
+<  virtual void samplingFunction(const double *in, double * protovalue) = 0;
+<  virtual double getAcceptance() = 0;
+>  int getNDim();
+>  int getNProto();
+>  double getProtoNew(const int &i);
+>  double getProtoOld(const int &i);
+>  void computeNewSamplingFunction(const double * in);
+>  void newToOld();
+\end{verbatim}
+
+A sampling function class must be declared as a child class of \verb+MCISamplingFunctionInterface+, and must implement its \emph{virtual public methods} \verb+samplingFunction+ and \verb+getAcceptance+.
+
+The sampling function class is supposed to get an input \verb+in+, of size \verb+ndim+, and compute \verb+nproto+ temporary values, called \emph{proto-values}, that will be used to compute the final acceptance function.
+These proto-values can be accessed by means of the public methods \verb+getProtoOld+ and \verb+getProtoNew+
+
+As an example, here is the code for having a gaussian sampling function $e^{-x^2}$:
+\begin{verbatim}
+#include <math.h>
+   
+class GaussianSF: public MCISamplingFunctionInterface
+{
+   public:
+      Gauss(const int &ndim): MCISamplingFunctionInterface(ndim,1) {}
+      // For a gaussian sampling function, one proto-value is sufficient
+      // therefore we set it equal to 1 by default
+      
+      void samplingFunction(const double * in, double * protovalue)
+      {
+         protovalue[0]=0.;
+         for (int i=0; i<this->getNDim(); ++i)
+         {
+            protovalue[0] += (in[i])*(in[i]);
+         }
+      }
+   
+      double getAcceptance()
+      {
+         return exp(-( this->getProtoNew(0) - this->getProtoOld(0) ));
+      }
+};
+\end{verbatim}
+
+Once the class has been defined, one can allocate an observable object (here we use the example of the gaussian sampling function)
+\begin{verbatim}
+   MCISamplingFunctionInterface * sf = new GaussianSF(ndim);
+\end{verbatim}
+Notice that we are here making use of \emph{polymorphism}.
+
+Then one can access the values of \verb+ndim+ and \verb+nproto+ by invoking
+\begin{verbatim}
+   sf->getNDim()
+\end{verbatim}
+and
+\begin{verbatim}
+   sf->getNProto()
+\end{verbatim}
+
+For debugging purposes, one might want to compute some values with the sampling function.
+This can be achieved by using
+\begin{verbatim}
+   sf->computeNewSamplingFunction(in);
+\end{verbatim}
+where \verb+in+ is a \verb+double *+ of size \verb+sf->getNDim()+.
+As a result of this command, the proto-values \emph{new} will have an updated value corresponding to \verb+in+.
+Then, one might invoke
+\begin{verbatim}
+   sf->newToOld()
+\end{verbatim}
+so that the proto-values \emph{old} will have the value of the new ones.
+Then one might call again
+\begin{verbatim}
+   sf->computeNewSamplingFunction(in2);
+\end{verbatim}
+where \verb+in2+ is a \verb+double *+ of size \verb+sf->getNDim()+, say, different from \verb+in+.
+At this point the old and new proto-values will be different from each other, as might be checked by using
+\begin{verbatim}
+   sf->getProtoNew(i);
+\end{verbatim}
+and
+\begin{verbatim}
+   sf->getProtoOld(i);
+\end{verbatim}
+where \verb+i+ is an \verb+int+ between $0$ and $\verb+sf->getNProto()+ - 1$.
+Finally, the acceptance rate from \verb+in+ and \verb+in2+ might be evaluated by means of
+\begin{verbatim}
+   sf->getAcceptance()
+\end{verbatim}
+
+% subsection mci_sampling_function_interface (end)
+
+% section sampling_function (end)
+
+
+
+\section{Integration} % (fold)
+\label{sec:integration}
+
+\begin{verbatim}
+>  void integrate(const long &Nmc, double * average, double * error);
+\end{verbatim}
+
+Once that all the settings are done, one can obtain the result of the integral by invoking
+\begin{verbatim}
+   mci.integrate(Nmc, average, error)
+\end{verbatim}
+where \verb+Nmc+ is a \verb+long int+ and must be provided as input, whereas \verb+average+ and \verb+error+ are of type \verb+double *+ with size \verb+mci.getNObsDim()+ (reference to this last method in \ref{sec:observable_function}).
+\verb+Nmc+ is the number of sampled points: The larger this value, the more accurate will be the result, according to the well known $1/\sqrt{\verb+NMC+}$ rule.
+\verb+average+ will contain the resulting numeric estimation of the integral with an estimated standard deviation stored in \verb+error+.
+
+The Monte Carlo integral is composed by several substep, completely hidden to the user.
+We report them for general knowledge.
+\begin{enumerate}
+   \item if a sampling function is provided, determine a \MRTWO step corresponding (approximately) to the target acceptance rate (by default $0.5$);
+   \item if a sampling function is provided, perform some warming up steps. This is done with sequential blocks of $100$ steps, computing the observables each time. When the new computed averages and error bar are equal to the old one (within the error bars), the warming up procedure is stopped;
+   \item sample \verb+Nmc+ steps and internally store the corresponding observables. This is done by means of the \MRTWO algorithm if a sampling function has been provided, and by sampling random numbers otherwise. In the first case there will be autocorrelations between successive values of the observables, in the latter case data will be completely uncorrelated;
+   \item compute the final averages and standard deviations of the integral. If a sampling function was provided, this is done using the blocking techniques to account for autocorrelations.
+\end{enumerate}
+
+% section integration (end)
+
+
+
+
+\section{Estimation of the average and its standard deviation} % (fold)
+\label{sec:mean_estimation_and_standard_deviation}
+
+\begin{verbatim}
+>  void UncorrelatedEstimator(const long &n, const double * x, 
+                              double * average, double * error);
+>  void BlockEstimator(const long &n, const double * x, 
+                       const int &nblocks,
+                       double * average, double * error);
+>  void CorrelatedEstimator(const long &n, const double * x, 
+                            double * average, double * error);
+\end{verbatim}
+
+Given an array \verb+double *+, one can use this library to extract its average value and standard deviation.
+To do so, one has to first declare the module
+\begin{verbatim}
+   #include "Estimators.hpp"
+\end{verbatim}
+and then use one of the three available functions (notice that the \emph{namespace} \verb+mci+ is required):
+\begin{itemize}
+   \item \verb+mci::UncorrelatedEstimator(...)+ \\ where \verb+n+ is an \verb+int+, and \verb+x+ a \verb+double *+ of size \verb+n+. \verb+average+ will point to the average value, and \verb+error+ to the standard deviation. This function should be used only with uncorrelated data;
+   \item \verb+mci::BlockEstimator(...)+ \\ where \verb+nblocks+ is a \verb+int+ that refers to the number of blocks. This function computes average and standard deviation dividing the data into \verb+nblocks+ blocks, computing their averages, and then use this new set of data to compute their average and standard deviation as if they were uncorrelated.
+   \item \verb+mci::CorrelatedEstimator(...)+ \\ here data are considered to be correlated, and the blocking technique is used to correctly estimate the standard deviation;
+\end{itemize}
+% section mean_estimation_and_standard_deviation (end)
+
+
+\subsection{Multidimensional estimations} % (fold)
+\label{sub:multidimensional_estimations}
+
+\begin{verbatim}
+>  void MultiDimUncorrelatedEstimator(
+                     const long &n, const int &ndim, 
+                     const double * const * x, 
+                     double * average, double *error);
+>  void MultiDimBlockEstimator(
+                     const long &n, const int &ndim, 
+                     const double * const * x, 
+                     const int &nblocks, 
+                     double * average, double * error);
+>  void MultiDimCorrelatedEstimator(
+                     const long &n, const int &ndim, 
+                     const double * const * x, 
+                     double * average, double * error);
+\end{verbatim}                             
+                                    
+There is a version of the functions discussed in section \ref{sec:mean_estimation_and_standard_deviation} specifically done for multidimensional data.
+In this case the new parameter \verb+ndim+ enters into play (it is an \verb+int+).
+Data (\verb+x+) are supposed to be organised as a $\verb+n+ \times \verb+ndim+$ matrix.
+% subsection multidimensional_estimations (end)
+
+
+
+\printindex
+
+\end{document}
