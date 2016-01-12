@@ -53,14 +53,14 @@ case ${OS_NAME} in
       "Linux")
          echo "$CC $FLAGS $DEBUGFLAGS -Wall -I$(pwd)/../src/ -c *.cpp"
          $CC $FLAGS $DEBUGFLAGS -Wall -I$(pwd)/../src/ -c *.cpp
-         echo "$CC $FLAGS $DEBUGFLAGS -I$(pwd)/../src/ -L$(pwd)/../ -Wl,-rpath=$(pwd)/../ -o exe *.o -lmci"
-         $CC $FLAGS $DEBUGFLAGS -I$(pwd)/../src/ -L$(pwd)/../ -Wl,-rpath=$(pwd)/../ -o exe *.o -lmci
+         echo "$CC $FLAGS $DEBUGFLAGS -I$(pwd)/../src/ -L$(pwd)/../ -Wl,-rpath=$(pwd)/../ -o exe *.o -l${LIBNAME}"
+         $CC $FLAGS $DEBUGFLAGS -I$(pwd)/../src/ -L$(pwd)/../ -Wl,-rpath=$(pwd)/../ -o exe *.o -l${LIBNAME}
          ;;
       "Darwin")
          echo "$CC $FLAGS $DEBUGFLAGS -I$(pwd)/../src/ -c *.cpp"
          $CC $FLAGS $DEBUGFLAGS -I$(pwd)/../src/ -c *.cpp
-         echo "$CC $FLAGS $DEBUGFLAGS -I$(pwd)/../src/ -L$(pwd)/../ -o exe *.o -lmci"
-         $CC $FLAGS $DEBUGFLAGS -I$(pwd)/../src/ -L$(pwd)/../ -o exe *.o -lmci
+         echo "$CC $FLAGS $DEBUGFLAGS -I$(pwd)/../src/ -L$(pwd)/../ -o exe *.o -l${LIBNAME}"
+         $CC $FLAGS $DEBUGFLAGS -I$(pwd)/../src/ -L$(pwd)/../ -o exe *.o -l${LIBNAME}
          ;;
       *)
          echo "The detected operating system is not between the known ones (Linux and Darwin)"
