@@ -50,7 +50,7 @@ case ${OS_NAME} in
       ;;
    "Darwin")
       echo "1)   $CC $FLAGS -I$(pwd)/src/ -c example.cpp"
-      echo "     $CC $FLAGS -I$(pwd)/src/ -L$(pwd) example.o -lmci"
-      echo "2)   $CC $FLAGS -I$(pwd)/src/ -L$(pwd) example.cpp -lmci"
+      echo "     $CC $FLAGS -I$(pwd)/src/ -L$(pwd) example.o -l${LIBNAME}"
+      echo "2)   $CC $FLAGS -I$(pwd)/src/ -L$(pwd) example.cpp -l${LIBNAME}"
       ;;
 esac
