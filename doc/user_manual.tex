@@ -168,13 +168,13 @@ where \verb+i+ is a \verb+int+ between $0$ and $\verb+ndim+-1$.
 In the context of the \MRTWO algorithm, the acceptance rate is one of the most important parameters to control.
 Before proceeding with the integration, \verb+MCIntegrator+ automatically adjust the \MRTWO step in order to obtain an acceptance rate close to the provided target one (by default $50\%$).
 A target acceptance rate of $50\%$ provides very good performance in almost all cases.
-We remark that if the user does not specify a sampling function, the acceptance rate will always be $100\%$, independently of the \MRTWO step, since the \MRTWO algorithm will not be employed.
+We remark that if the user does not specify a sampling function, the acceptance rate will always be $100\%$, independently of the \MRTWO step, since the \MRTWO algorithm will not be used.
 
 For setting the target acceptance rate use
 \begin{verbatim}
    imc.setTargetAcceptanceRate(targetaccrate)
 \end{verbatim}
-where \verb+targetaccrate+ is a \verb+double *+ of dimension \verb+1+ and must point tot a number between $0$ and $1$.
+where \verb+targetaccrate+ is a \verb+double *+ of dimension \verb+1+ and must point to a number between $0$ and $1$.
 This value can be checked at any time by invoking
 \begin{verbatim}
    imc.getTargetAcceptanceRate()
@@ -249,7 +249,7 @@ This function will take an input \verb+in+, an array of size \verb+ndim+, and ha
 
 As an example, here is the code for having an observable for a quadratic function $x^2$:
 \begin{verbatim}
-class QuadraticObservable: public MCISamplingFunctionInterface
+class QuadraticObservable: public MCIObservableFunctionInterface
 {
    public:
       Polynom(const int &ndim): MCIObservableFunctionInterface(ndim, 1) {}
