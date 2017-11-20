@@ -4,7 +4,7 @@
 LIBNAME="mci"
 
 # C++ compiler
-CC="g++-mp-5"
+CC="g++-mp-6"
 
 # C++ flags (std=c++11 is necessary)
 FLAGS="-std=c++11 -Wall -Werror"
