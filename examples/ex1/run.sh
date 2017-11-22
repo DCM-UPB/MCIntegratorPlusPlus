@@ -2,14 +2,12 @@
 source ../../config.sh
 OS_NAME=$(uname)
 
+# Delete old compiled files
 \rm -f exe
 \rm -f *.o
 
 #runtime dynamic library path
 RPATH="$(pwd)/../.."
-
-# Delete old exe
-rm exe
 
 # Build the main executable
 echo "$CC $FLAGS $OPTFLAGS -I$(pwd)/../../src/ -c *.cpp"
