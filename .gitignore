@@ -65,6 +65,7 @@ src/*.o
 
 debug/*.o
 debug/exe*
+debug/*.txt
 
 examples/*/a.out
 examples/*/*.o
