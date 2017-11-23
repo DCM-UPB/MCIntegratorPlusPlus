@@ -23,7 +23,7 @@ public:
 protected:
     void observableFunction(const double * in, double * out){
         out[0] = (4. - in[0]) * 5.;
-        if (signbit(in[0])) out[0] = -out[0];
+        if (std::signbit(in[0])) out[0] = -out[0];
     }
 };
 

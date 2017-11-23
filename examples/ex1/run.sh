@@ -19,8 +19,8 @@ case ${OS_NAME} in
       $CC $FLAGS $OPTFLAGS -L$(pwd)/../.. -o exe *.o -l${LIBNAME}
       ;;
    "Linux")
-      echo "$CC $FLAGS $OPTFLAGS -I$(pwd)/../../src -L$(pwd)/.. -Wl,-rpath=${RPATH} -o exe *.o -l${LIBNAME}"
-      $CC $FLAGS $OPTFLAGS -I$(pwd)/../../src/ -L$(pwd)/../ -Wl,-rpath=${RPATH} -o exe *.o -l${LIBNAME}
+      echo "$CC $FLAGS $OPTFLAGS -L$(pwd)/../.. -Wl,-rpath=${RPATH} -o exe *.o -l${LIBNAME}"
+      $CC $FLAGS $OPTFLAGS -L$(pwd)/../.. -Wl,-rpath=${RPATH} -o exe *.o -l${LIBNAME}
       ;;
 esac
 

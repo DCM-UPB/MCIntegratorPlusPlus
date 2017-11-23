@@ -10,6 +10,9 @@ echo
 source ../config.sh
 DEBUGFLAGS="-g -O0"
 
+#runtime dynamic library path
+RPATH="$(pwd)/.."
+
 \rm -f exe
 \rm -f *.o
 
@@ -26,18 +29,17 @@ echo "Rebuilt the library with the debugging flags"
 echo ""
 echo "Build the executable . . ."
 
+echo "$CC $FLAGS $DEBUGFLAGS -Wall -I$(pwd)/../src/ -c *.cpp"
+$CC $FLAGS $DEBUGFLAGS -Wall -I$(pwd)/../src/ -c *.cpp
+
 case ${OS_NAME} in
       "Darwin")
-         echo "$CC $FLAGS $DEBUGFLAGS -I$(pwd)/../src/ -c *.cpp"
-         $CC $FLAGS $DEBUGFLAGS -I$(pwd)/../src/ -c *.cpp
          echo "$CC $FLAGS $DEBUGFLAGS -I$(pwd)/../src/ -L$(pwd)/../ -o exe *.o -l${LIBNAME}"
          $CC $FLAGS $DEBUGFLAGS -I$(pwd)/../src/ -L$(pwd)/../ -o exe *.o -l${LIBNAME}
          ;;
       "Linux")
-         echo "$CC $FLAGS $DEBUGFLAGS -Wall -I$(pwd)/../src/ -c *.cpp"
-         $CC $FLAGS $DEBUGFLAGS -Wall -I$(pwd)/../src/ -c *.cpp
-         echo "$CC $FLAGS $DEBUGFLAGS -L$(pwd)/../ -o exe *.o -l${LIBNAME}"
-         $CC $FLAGS $DEBUGFLAGS -L$(pwd)/../ -o exe *.o -l${LIBNAME}
+         echo "$CC $FLAGS $DEBUGFLAGS -L$(pwd)/../ -Wl,-rpath=${RPATH} -o exe *.o -l${LIBNAME}"
+         $CC $FLAGS $DEBUGFLAGS -L$(pwd)/../ -Wl,-rpath=${RPATH} -o exe *.o -l${LIBNAME}
          ;;
       *)
          echo "The detected operating system is not between the known ones (Linux and Darwin)"
