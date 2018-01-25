@@ -10,17 +10,17 @@ OS_NAME=$(uname)
 RPATH="$(pwd)/../.."
 
 # Build the main executable
-echo "$CC $FLAGS $OPTFLAGS -I$(pwd)/../../src/ -c *.cpp"
-$CC $FLAGS $OPTFLAGS -Wall -I$(pwd)/../../src/ -c *.cpp
+echo "$CC $FLAGS $DEBUGFLAGS -I$(pwd)/../../src/ -c *.cpp"
+$CC $FLAGS $DEBUGFLAGS -Wall -I$(pwd)/../../src/ -c *.cpp
 
 case ${OS_NAME} in
    "Darwin")
-      echo "$CC $FLAGS $OPTFLAGS -L$(pwd)/../.. -o exe *.o -l${LIBNAME}"
-      $CC $FLAGS $OPTFLAGS -L$(pwd)/../.. -o exe *.o -l${LIBNAME}
+      echo "$CC $FLAGS $DEBUGFLAGS -L$(pwd)/../.. -o exe *.o -l${LIBNAME}"
+      $CC $FLAGS $DEBUGFLAGS -L$(pwd)/../.. -o exe *.o -l${LIBNAME}
       ;;
    "Linux")
-      echo "$CC $FLAGS $OPTFLAGS -L$(pwd)/../.. -Wl,-rpath=${RPATH} -o exe *.o -l${LIBNAME}"
-      $CC $FLAGS $OPTFLAGS -L$(pwd)/../.. -Wl,-rpath=${RPATH} -o exe *.o -l${LIBNAME}
+      echo "$CC $FLAGS $DEBUGFLAGS -L$(pwd)/../.. -Wl,-rpath=${RPATH} -o exe *.o -l${LIBNAME}"
+      $CC $FLAGS $DEBUGFLAGS -L$(pwd)/../.. -Wl,-rpath=${RPATH} -o exe *.o -l${LIBNAME}
       ;;
 esac
 
@@ -35,4 +35,4 @@ echo "--------------------------------------------------------------------------
 echo ""
 echo ""
 echo ""
-./exe
+valgrind --leak-check=full --track-origins=yes ./exe

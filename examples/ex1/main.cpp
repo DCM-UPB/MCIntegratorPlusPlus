@@ -153,6 +153,7 @@ int main() {
    
    
     // observable
+    delete obs;
     obs = new NormalizedParabola(ndim);
     mci->clearObservables();  // we first remove the old observable
     mci->addObservable(obs);
