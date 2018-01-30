@@ -34,8 +34,8 @@ $CC $FLAGS $DEBUGFLAGS -Wall -I$(pwd)/../src/ -c *.cpp
 
 case ${OS_NAME} in
       "Darwin")
-         echo "$CC $FLAGS $DEBUGFLAGS -I$(pwd)/../src/ -L$(pwd)/../ -o exe *.o -l${LIBNAME}"
-         $CC $FLAGS $DEBUGFLAGS -I$(pwd)/../src/ -L$(pwd)/../ -o exe *.o -l${LIBNAME}
+         echo "$CC $FLAGS $DEBUGFLAGS -L$(pwd)/../ -o exe *.o -l${LIBNAME}"
+         $CC $FLAGS $DEBUGFLAGS -L$(pwd)/../ -o exe *.o -l${LIBNAME}
          ;;
       "Linux")
          echo "$CC $FLAGS $DEBUGFLAGS -L$(pwd)/../ -Wl,-rpath=${RPATH} -o exe *.o -l${LIBNAME}"
@@ -51,4 +51,3 @@ echo ""
 
 # Run the debugging executable
 valgrind --track-origins=yes ./exe
-
