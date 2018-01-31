@@ -61,11 +61,11 @@ DerivedData
 # -- project specific ignores --
 lib*
 config.sh
+*exe*
 
 src/*.o
 
 debug/*.o
-debug/exe*
 debug/*.txt
 
 examples/*/a.out
