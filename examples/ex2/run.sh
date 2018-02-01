@@ -7,7 +7,7 @@ OS_NAME=$(uname)
 \rm -f *.o
 
 #runtime dynamic library path
-RPATH="$(pwd)/../.."
+RPATH="$(pwd)/../../:${FFNN_FOLDER}"
 
 FLAGS_TO_USE=$OPTFLAGS
 

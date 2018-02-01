@@ -70,8 +70,6 @@ debug/*.txt
 
 examples/*/a.out
 examples/*/*.o
-examples/*/exe
-examples/*/exe.dSYM
 
 doc/*.aux
 doc/*.dvi
