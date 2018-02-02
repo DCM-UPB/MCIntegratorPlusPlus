@@ -10,12 +10,15 @@ Build an example for MCI++:
 compute the integral
 
          \int_{-10}^{+10} dx x^2 nn(x)^2
-(nn(x) is a normalized neural network) with MC and a non-MC method
 
-do the same with
+(nn(x) is a normalized neural network) with MC and a non-MC method.
 
-         \int_{-10}^{+10} dx \nabla^2 nn(x)^2
-(nabla^2 is the laplacian operator)
+Do the same with
+
+         \int_{-10}^{+10} dx (- \nabla^2 log(nn(x))) nn(x)^2
+
+(nabla^2 is the laplacian operator). This is a kinetic energy.
+In the following code by nabla2 we will mean: (- \nabla^2 log(nn(x)))
 
 */
 
@@ -113,7 +116,7 @@ public:
         _ffnn->FFPropagate();
         const double v = _ffnn->getOutput(1);
         const double d2 = _ffnn->getSecondDerivative(1, 0);
-        out[0] = v*v*d2;
+        out[0] = -v*d2;
     }
 
 };
@@ -131,8 +134,9 @@ public:
     virtual void observableFunction(const double * in, double *out){
         _ffnn->setInput(1, in);
         _ffnn->FFPropagate();
+        const double v = _ffnn->getOutput(1);
         const double d2 = _ffnn->getSecondDerivative(1, 0);
-        out[0] = d2;
+        out[0] = -d2/v;
     }
 
 };
@@ -216,19 +220,19 @@ int main(){
         x += DX;
     }
     cout << "3. Direct integral: ";
-    cout << "nn2x2_direct = " << integral / *nn2_av << endl << endl;
+    cout << integral / *nn2_av << endl << endl;
 
 
 
 
 
-    // ---   \int_{-10}^{+10} dx \nabla^2 nn(x)^2
+    // ---   \int_{-10}^{+10} dx (- \nabla^2 log(nn(x))) nn(x)^2
 
     cout << endl << endl << "We now compute the integral" << endl;
-    cout << "    int_{-10}^{+10} dx nabla^2 nn(x)^2" << endl << endl;
+    cout << "    int_{-10}^{+10} dx (- nabla^2 log(nn(x))) nn(x)^2" << endl << endl;
 
 
-    // compute   \int_{-10}^{+10} dx \nabla^2 nn(x)^2    MC without sampling
+    // compute   \int_{-10}^{+10} dx (- \nabla^2 log(nn(x))) nn(x)^2   MC without sampling
     NN2Nabla2 * nn2nabla2 = new NN2Nabla2(ffnn);
     mci->addObservable(nn2nabla2);
     double * nn2nabla2_av = new double;
@@ -238,7 +242,7 @@ int main(){
     cout << "1. MC without sampling: ";
     cout << *nn2nabla2_av / *nn2_av << " +- " << *nn2nabla2_er / *nn2_av << endl << endl;
 
-    // compute   \int_{-10}^{+10} dx \nabla^2 nn(x)^2    MC with sampling
+    // compute   \int_{-10}^{+10} dx (- \nabla^2 log(nn(x))) nn(x)^2    MC with sampling
     Nabla2 * nabla2 = new Nabla2(ffnn);
     mci->addObservable(nabla2);
     mci->addSamplingFunction(nn2_samp);
@@ -250,7 +254,7 @@ int main(){
     cout << "2. MC with sampling: ";
     cout << *nn2nabla2_samp_av << " +- " << *nn2nabla2_samp_er << endl << endl;
 
-    // compute   \int_{-10}^{+10} dx \nabla^2 nn(x)^2    direct integral
+    // compute   \int_{-10}^{+10} dx (- \nabla^2 log(nn(x))) nn(x)^2    direct integral
     x = irange[0][0];
     y = 0.;
     integral = 0.;
