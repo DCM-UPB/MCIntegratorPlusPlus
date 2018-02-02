@@ -1,7 +1,7 @@
 #ifndef MCI_SAMPLING_FUNCTION_INTERFACE
 #define MCI_SAMPLING_FUNCTION_INTERFACE
 
- 
+
 class MCISamplingFunctionInterface
 {
    protected:
@@ -37,14 +37,14 @@ class MCISamplingFunctionInterface
 
       void computeNewSamplingFunction(const double * in)
       {
-         samplingFunction(in,_protonew);
+         samplingFunction(in, _protonew);
       }
 
       // --- METHODS THAT MUST BE IMPLEMENTED
       // Function that MCI uses for the proto-sampling function. Computes _protonew
       virtual void samplingFunction(const double *in, double * protovalues) = 0;
       //                                      ^walker position  ^resulting proto-values
-      
+
       // Acceptance function, that uses the new and old values of the proto sampling function
       virtual double getAcceptance() = 0;
 };
