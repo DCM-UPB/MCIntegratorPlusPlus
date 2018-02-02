@@ -14,7 +14,9 @@ compute the integral
 
 do the same with
 
-         \int_{-10}^{+10} dx \laplacian^2 nn(x)^2
+         \int_{-10}^{+10} dx \nabla^2 nn(x)^2
+(nabla^2 is the laplacian operator)
+
 */
 
 
@@ -97,12 +99,12 @@ public:
 };
 
 
-class NN2Lapl2: public MCIObservableFunctionInterface{
+class NN2Nabla2: public MCIObservableFunctionInterface{
 private:
     FeedForwardNeuralNetwork * _ffnn;
 
 public:
-    NN2Lapl2(FeedForwardNeuralNetwork * ffnn): MCIObservableFunctionInterface(1, 1){
+    NN2Nabla2(FeedForwardNeuralNetwork * ffnn): MCIObservableFunctionInterface(1, 1){
         _ffnn = ffnn;
     }
 
@@ -117,12 +119,12 @@ public:
 };
 
 
-class Lapl2: public MCIObservableFunctionInterface{
+class Nabla2: public MCIObservableFunctionInterface{
 private:
     FeedForwardNeuralNetwork * _ffnn;
 
 public:
-    Lapl2(FeedForwardNeuralNetwork * ffnn): MCIObservableFunctionInterface(1, 1){
+    Nabla2(FeedForwardNeuralNetwork * ffnn): MCIObservableFunctionInterface(1, 1){
         _ffnn = ffnn;
     }
 
@@ -171,9 +173,12 @@ int main(){
 
 
 
+
     // ---   \int_{-10}^{+10} dx x^2 nn(x)^2
+
     cout << endl << endl << "We now compute the integral" << endl;
     cout << "    int_{-10}^{+10} dx x^2 nn(x)^2" << endl << endl;
+
 
     // compute   \int_{-10}^{+10} dx x^2 nn(x)^2    MC without sampling
     NN2X2 * nn2x2 = new NN2X2(ffnn);
@@ -215,38 +220,42 @@ int main(){
 
 
 
-    // ---   \int_{-10}^{+10} dx \laplacian^2 nn(x)^2
-    cout << endl << endl << "We now compute the integral" << endl;
-    cout << "    int_{-10}^{+10} dx laplacian^2 nn(x)^2" << endl << endl;
 
-    // compute   \int_{-10}^{+10} dx x^2 nn(x)^2    MC without sampling
-    NN2Lapl2 * nn2lapl2 = new NN2Lapl2(ffnn);
-    mci->addObservable(nn2lapl2);
-    double * nn2lapl2_av = new double;
-    double * nn2lapl2_er = new double;
-    mci->integrate(NMC, nn2lapl2_av, nn2lapl2_er);
+
+    // ---   \int_{-10}^{+10} dx \nabla^2 nn(x)^2
+
+    cout << endl << endl << "We now compute the integral" << endl;
+    cout << "    int_{-10}^{+10} dx nabla^2 nn(x)^2" << endl << endl;
+
+
+    // compute   \int_{-10}^{+10} dx \nabla^2 nn(x)^2    MC without sampling
+    NN2Nabla2 * nn2nabla2 = new NN2Nabla2(ffnn);
+    mci->addObservable(nn2nabla2);
+    double * nn2nabla2_av = new double;
+    double * nn2nabla2_er = new double;
+    mci->integrate(NMC, nn2nabla2_av, nn2nabla2_er);
     mci->clearObservables();
     cout << "1. MC without sampling: ";
-    cout << *nn2lapl2_av / *nn2_av << " +- " << *nn2lapl2_er / *nn2_av << endl << endl;
+    cout << *nn2nabla2_av / *nn2_av << " +- " << *nn2nabla2_er / *nn2_av << endl << endl;
 
-    // compute   \int_{-10}^{+10} dx x^2 nn(x)^2    MC with sampling
-    Lapl2 * lapl2 = new Lapl2(ffnn);
-    mci->addObservable(lapl2);
+    // compute   \int_{-10}^{+10} dx \nabla^2 nn(x)^2    MC with sampling
+    Nabla2 * nabla2 = new Nabla2(ffnn);
+    mci->addObservable(nabla2);
     mci->addSamplingFunction(nn2_samp);
-    double * nn2lapl2_samp_av = new double;
-    double * nn2lapl2_samp_er = new double;
-    mci->integrate(NMC, nn2lapl2_samp_av, nn2lapl2_samp_er);
+    double * nn2nabla2_samp_av = new double;
+    double * nn2nabla2_samp_er = new double;
+    mci->integrate(NMC, nn2nabla2_samp_av, nn2nabla2_samp_er);
     mci->clearObservables();
     mci->clearSamplingFunctions();
     cout << "2. MC with sampling: ";
-    cout << *nn2lapl2_samp_av << " +- " << *nn2lapl2_samp_er << endl << endl;
+    cout << *nn2nabla2_samp_av << " +- " << *nn2nabla2_samp_er << endl << endl;
 
-    // compute   \int_{-10}^{+10} dx x^2 nn(x)^2    direct integral
+    // compute   \int_{-10}^{+10} dx \nabla^2 nn(x)^2    direct integral
     x = irange[0][0];
     y = 0.;
     integral = 0.;
     while (x < irange[0][1]){
-        nn2lapl2->observableFunction(&x, &y);
+        nn2nabla2->observableFunction(&x, &y);
         integral += y*DX;
         x += DX;
     }
@@ -256,6 +265,14 @@ int main(){
 
 
 
+
+
+    delete nn2nabla2_samp_er;
+    delete nn2nabla2_samp_av;
+    delete nabla2;
+    delete nn2nabla2_er;
+    delete nn2nabla2_av;
+    delete nn2nabla2;
 
     delete nn2x2_er;
     delete nn2x2_av;
