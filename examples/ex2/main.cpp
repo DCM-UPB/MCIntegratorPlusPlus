@@ -36,9 +36,9 @@ public:
     }
 
     virtual void observableFunction(const double * in, double *out){
-        _ffnn->setInput(1, in);
+        _ffnn->setInput(in);
         _ffnn->FFPropagate();
-        const double v = _ffnn->getOutput(1);
+        const double v = _ffnn->getOutput(0);
         out[0] = v*v;
     }
 
@@ -56,9 +56,9 @@ public:
     }
 
     virtual void observableFunction(const double * in, double *out){
-        _ffnn->setInput(1, in);
+        _ffnn->setInput(in);
         _ffnn->FFPropagate();
-        const double v = _ffnn->getOutput(1);
+        const double v = _ffnn->getOutput(0);
         out[0] = v*v*in[0]*in[0];
     }
 
@@ -90,9 +90,9 @@ public:
     }
 
     void samplingFunction(const double *in, double * protovalues){
-        _ffnn->setInput(1, in);
+        _ffnn->setInput(in);
         _ffnn->FFPropagate();
-        const double v = _ffnn->getOutput(1);
+        const double v = _ffnn->getOutput(0);
         protovalues[0] = v*v;
     }
 
@@ -112,10 +112,10 @@ public:
     }
 
     virtual void observableFunction(const double * in, double *out){
-        _ffnn->setInput(1, in);
+        _ffnn->setInput(in);
         _ffnn->FFPropagate();
-        const double v = _ffnn->getOutput(1);
-        const double d2 = _ffnn->getSecondDerivative(1, 0);
+        const double v = _ffnn->getOutput(0);
+        const double d2 = _ffnn->getSecondDerivative(0, 0);
         out[0] = -v*d2;
     }
 
@@ -132,10 +132,10 @@ public:
     }
 
     virtual void observableFunction(const double * in, double *out){
-        _ffnn->setInput(1, in);
+        _ffnn->setInput(in);
         _ffnn->FFPropagate();
-        const double v = _ffnn->getOutput(1);
-        const double d2 = _ffnn->getSecondDerivative(1, 0);
+        const double v = _ffnn->getOutput(0);
+        const double d2 = _ffnn->getSecondDerivative(0, 0);
         out[0] = -d2/v;
     }
 
