@@ -14,17 +14,17 @@ $CC $FLAGS $DEBUGFLAGS -fpic -c *.cpp
 
 case ${OS_NAME} in
     "Linux")
-    echo "$CC $FLAGS $DEBUGFLAGS -shared -o lib${LIBNAME}.so *.o"
-    $CC $FLAGS $DEBUGFLAGS -shared -o lib${LIBNAME}.so *.o
-    ;;
+        echo "$CC $FLAGS $DEBUGFLAGS -shared -o lib${LIBNAME}.so *.o"
+        $CC $FLAGS $DEBUGFLAGS -shared -o lib${LIBNAME}.so *.o
+        ;;
     "Darwin")
-    ROOT_FOLDER=$(dirname $(pwd))
-    echo "$CC $FLAGS $DEBUGFLAGS -shared -install_name ${ROOT_FOLDER}/lib${LIBNAME}.so  -o lib${LIBNAME}.so *.o"
-    $CC $FLAGS $DEBUGFLAGS -shared -install_name ${ROOT_FOLDER}/lib${LIBNAME}.so -o lib${LIBNAME}.so *.o
-    ;;
+        ROOT_FOLDER=$(dirname $(pwd))
+        echo "$CC $FLAGS $DEBUGFLAGS -shared -install_name ${ROOT_FOLDER}/lib${LIBNAME}.so  -o lib${LIBNAME}.so *.o"
+        $CC $FLAGS $DEBUGFLAGS -shared -install_name ${ROOT_FOLDER}/lib${LIBNAME}.so -o lib${LIBNAME}.so *.o
+        ;;
     *)
-    echo "The detected operating system is not between the known ones (Linux and Darwin)"
-    ;;
+        echo "The detected operating system is not between the known ones (Linux and Darwin)"
+        ;;
 esac
 
 mv lib${LIBNAME}.so ../
@@ -37,13 +37,13 @@ echo
 echo "Help, how can I use it?"
 case ${OS_NAME} in
     "Linux")
-    echo "1)   $CC $FLAGS -I$(pwd)/src/ -c example.cpp"
-    echo "     $CC $FLAGS -L$(pwd) example.o -l${LIBNAME}"
-    echo "2)   $CC $FLAGS -I$(pwd)/src/ -L$(pwd) example.cpp -l${LIBNAME}"
-    ;;
+        echo "1)   $CC $FLAGS -I$(pwd)/src/ -c example.cpp"
+        echo "     $CC $FLAGS -L$(pwd) example.o -l${LIBNAME}"
+        echo "2)   $CC $FLAGS -I$(pwd)/src/ -L$(pwd) example.cpp -l${LIBNAME}"
+        ;;
     "Darwin")
-    echo "1)   $CC $FLAGS -I$(pwd)/src/ -c example.cpp"
-    echo "     $CC $FLAGS -I$(pwd)/src/ -L$(pwd) example.o -l${LIBNAME}"
-    echo "2)   $CC $FLAGS -I$(pwd)/src/ -L$(pwd) example.cpp -l${LIBNAME}"
-    ;;
+        echo "1)   $CC $FLAGS -I$(pwd)/src/ -c example.cpp"
+        echo "     $CC $FLAGS -I$(pwd)/src/ -L$(pwd) example.o -l${LIBNAME}"
+        echo "2)   $CC $FLAGS -I$(pwd)/src/ -L$(pwd) example.cpp -l${LIBNAME}"
+        ;;
 esac

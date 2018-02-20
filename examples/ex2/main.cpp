@@ -5,20 +5,20 @@
 #include <iostream>
 
 /*
-Build an example for MCI++:
+  Build an example for MCI++:
 
-compute the integral
+  compute the integral
 
-         \int_{-10}^{+10} dx x^2 nn(x)^2
+  \int_{-10}^{+10} dx x^2 nn(x)^2
 
-(nn(x) is a normalized neural network) with MC and a non-MC method.
+  (nn(x) is a normalized neural network) with MC and a non-MC method.
 
-Do the same with
+  Do the same with
 
-         \int_{-10}^{+10} dx (- \nabla^2 log(nn(x))) nn(x)^2
+  \int_{-10}^{+10} dx (- \nabla^2 log(nn(x))) nn(x)^2
 
-(nabla^2 is the laplacian operator). This is a kinetic energy.
-In the following code by nabla2 we will mean: (- \nabla^2 log(nn(x)))
+  (nabla^2 is the laplacian operator). This is a kinetic energy.
+  In the following code by nabla2 we will mean: (- \nabla^2 log(nn(x)))
 
 */
 

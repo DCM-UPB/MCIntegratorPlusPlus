@@ -19,8 +19,8 @@ RPATH="$(pwd)/.."
 # Build the library using the debugging flags
 echo "Build the library using the debugging flags . . ."
 cd ..
-   LIBFOLDER=$(pwd)
-   ./build_debug_library.sh
+LIBFOLDER=$(pwd)
+./build_debug_library.sh
 cd debug
 echo "Rebuilt the library with the debugging flags"
 
@@ -33,17 +33,17 @@ echo "$CC $FLAGS $DEBUGFLAGS -Wall -I$(pwd)/../src/ -c *.cpp"
 $CC $FLAGS $DEBUGFLAGS -Wall -I$(pwd)/../src/ -c *.cpp
 
 case ${OS_NAME} in
-      "Darwin")
-         echo "$CC $FLAGS $DEBUGFLAGS -L$(pwd)/../ -o exe *.o -l${LIBNAME}"
-         $CC $FLAGS $DEBUGFLAGS -L$(pwd)/../ -o exe *.o -l${LIBNAME}
-         ;;
-      "Linux")
-         echo "$CC $FLAGS $DEBUGFLAGS -L$(pwd)/../ -Wl,-rpath=${RPATH} -o exe *.o -l${LIBNAME}"
-         $CC $FLAGS $DEBUGFLAGS -L$(pwd)/../ -Wl,-rpath=${RPATH} -o exe *.o -l${LIBNAME}
-         ;;
-      *)
-         echo "The detected operating system is not between the known ones (Linux and Darwin)"
-         ;;
+    "Darwin")
+        echo "$CC $FLAGS $DEBUGFLAGS -L$(pwd)/../ -o exe *.o -l${LIBNAME}"
+        $CC $FLAGS $DEBUGFLAGS -L$(pwd)/../ -o exe *.o -l${LIBNAME}
+        ;;
+    "Linux")
+        echo "$CC $FLAGS $DEBUGFLAGS -L$(pwd)/../ -Wl,-rpath=${RPATH} -o exe *.o -l${LIBNAME}"
+        $CC $FLAGS $DEBUGFLAGS -L$(pwd)/../ -Wl,-rpath=${RPATH} -o exe *.o -l${LIBNAME}
+        ;;
+    *)
+        echo "The detected operating system is not between the known ones (Linux and Darwin)"
+        ;;
 esac
 echo "Rebuilt the debugging executable"
 echo ""

@@ -27,18 +27,18 @@ It also include some tools to estimate the mean and standard deviation of sets o
 
 More specifically the integration is performed by sampling coordinates \verb+X+ from a given probability density function \verb+g(X)+ by means of the \MRTWO algorithm, and summing up an \emph{observable} \verb+f(X)+:
 \begin{equation}
-   \int_{\Omega} d\verb+X g(X) f(X)+ = \sum_{\verb+X+_i \text{ sampled from } \verb+g(X)+} \verb+f(X+_i\verb+)+
+  \int_{\Omega} d\verb+X g(X) f(X)+ = \sum_{\verb+X+_i \text{ sampled from } \verb+g(X)+} \verb+f(X+_i\verb+)+
 \end{equation}
 Here $\Omega$ represents the integration domain.
 If a probability density function is not provided, the integral is simply computed by sampling randomly the $X$ within the domain:
 \begin{equation}
-   \int_{\Omega} d\verb+X f(X)+ = \frac{1}{M} \sum_{i=1}^{M} \verb+f(X+_i\verb+)+
+  \int_{\Omega} d\verb+X f(X)+ = \frac{1}{M} \sum_{i=1}^{M} \verb+f(X+_i\verb+)+
 \end{equation}
 
 Reminder: a probability density function \verb+g(X)+ must fullfil the two following properties:
 \begin{enumerate}
-   \item $\verb+g(X)+ \geq 0$ for all $\verb+X+ \in \Omega$;
-   \item $\int_{\Omega} d\verb+X g(X)+ = 1$.
+\item $\verb+g(X)+ \geq 0$ for all $\verb+X+ \in \Omega$;
+\item $\int_{\Omega} d\verb+X g(X)+ = 1$.
 \end{enumerate}
 
 The code has been developed using the standard C++11.
@@ -160,7 +160,7 @@ where \verb+i+ is a \verb+int+ between $0$ and $\verb+ndim+-1$.
 \label{sub:acceptance_rate}
 
 \begin{verbatim}
->  void setTargetAcceptanceRate(const double * targetaccrate);   
+>  void setTargetAcceptanceRate(const double * targetaccrate);
 >  double getTargetAcceptanceRate();
 >  double getAcceptanceRate();
 \end{verbatim}
@@ -194,7 +194,7 @@ After performing an integration one can check the actual acceptance rate by invo
 >  void addObservable(MCIObservableFunctionInterface * obs);
 >  int getNObs();
 >  int getNObsDim();
->  MCIObservableFunctionInterface * getObservable(const int &i)  
+>  MCIObservableFunctionInterface * getObservable(const int &i)
 >  void clearObservables();
 \end{verbatim}
 
@@ -253,9 +253,9 @@ class QuadraticObservable: public MCIObservableFunctionInterface
 {
    public:
       Polynom(const int &ndim): MCIObservableFunctionInterface(ndim, 1) {}
-      // nobs will always be equal to 1, 
+      // nobs will always be equal to 1,
       // since quadraticObservable is a scalar function
-      
+
    protected:
       void observableFunction(const double * in, double * out)
       {
@@ -264,7 +264,7 @@ class QuadraticObservable: public MCIObservableFunctionInterface
          {
             out[0] += in[i]*in[i];
          }
-         
+
       }
 };
 \end{verbatim}
@@ -307,7 +307,7 @@ where \verb+i+ is an \verb+int+ between $0$ and $\verb+obs->getNObs()+ - 1$ and 
 >  void addSamplingFunction(MCISamplingFunctionInterface * sf);
 >  int getNSampF()
 >  MCISamplingFunctionInterface * getSamplingFunction(const int &i)
->  void clearSamplingFunctions();  
+>  void clearSamplingFunctions();
 \end{verbatim}
 
 Whenever it is possible, it is convenient to incorporate as much as possible of the integrand inside the sampling function, following the \emph{importance sampling} principle.
@@ -330,7 +330,7 @@ It is possible to get the pointer to a provided sampling function at any moment 
 \begin{verbatim}
    mci.getSamplingFunction(i)
 \end{verbatim}
-where \verb+i+ is an \verb+int+ between $0$ and 
+where \verb+i+ is an \verb+int+ between $0$ and
 
 Finally, It is possible to clean the sampling functions' stack by means of
 \begin{verbatim}
@@ -361,14 +361,14 @@ These proto-values can be accessed by means of the public methods \verb+getProto
 As an example, here is the code for having a gaussian sampling function $e^{-x^2}$:
 \begin{verbatim}
 #include <math.h>
-   
+
 class GaussianSF: public MCISamplingFunctionInterface
 {
    public:
       Gauss(const int &ndim): MCISamplingFunctionInterface(ndim,1) {}
       // For a gaussian sampling function, one proto-value is sufficient
       // therefore we set it equal to 1 by default
-      
+
       void samplingFunction(const double * in, double * protovalue)
       {
          protovalue[0]=0.;
@@ -377,7 +377,7 @@ class GaussianSF: public MCISamplingFunctionInterface
             protovalue[0] += (in[i])*(in[i]);
          }
       }
-   
+
       double getAcceptance()
       {
          return exp(-( this->getProtoNew(0) - this->getProtoOld(0) ));
@@ -455,10 +455,10 @@ where \verb+Nmc+ is a \verb+long int+ and must be provided as input, whereas \ve
 The Monte Carlo integral is composed by several substep, completely hidden to the user.
 We report them for general knowledge.
 \begin{enumerate}
-   \item if a sampling function is provided, determine a \MRTWO step corresponding (approximately) to the target acceptance rate (by default $0.5$);
-   \item if a sampling function is provided, perform some warming up steps. This is done with sequential blocks of $100$ steps, computing the observables each time. When the new computed averages and error bar are equal to the old one (within the error bars), the warming up procedure is stopped;
-   \item sample \verb+Nmc+ steps and internally store the corresponding observables. This is done by means of the \MRTWO algorithm if a sampling function has been provided, and by sampling random numbers otherwise. In the first case there will be autocorrelations between successive values of the observables, in the latter case data will be completely uncorrelated;
-   \item compute the final averages and standard deviations of the integral. If a sampling function was provided, this is done using the blocking techniques to account for autocorrelations.
+\item if a sampling function is provided, determine a \MRTWO step corresponding (approximately) to the target acceptance rate (by default $0.5$);
+\item if a sampling function is provided, perform some warming up steps. This is done with sequential blocks of $100$ steps, computing the observables each time. When the new computed averages and error bar are equal to the old one (within the error bars), the warming up procedure is stopped;
+\item sample \verb+Nmc+ steps and internally store the corresponding observables. This is done by means of the \MRTWO algorithm if a sampling function has been provided, and by sampling random numbers otherwise. In the first case there will be autocorrelations between successive values of the observables, in the latter case data will be completely uncorrelated;
+\item compute the final averages and standard deviations of the integral. If a sampling function was provided, this is done using the blocking techniques to account for autocorrelations.
 \end{enumerate}
 
 % section integration (end)
@@ -470,12 +470,12 @@ We report them for general knowledge.
 \label{sec:mean_estimation_and_standard_deviation}
 
 \begin{verbatim}
->  void UncorrelatedEstimator(const long &n, const double * x, 
+>  void UncorrelatedEstimator(const long &n, const double * x,
                               double * average, double * error);
->  void BlockEstimator(const long &n, const double * x, 
+>  void BlockEstimator(const long &n, const double * x,
                        const int &nblocks,
                        double * average, double * error);
->  void CorrelatedEstimator(const long &n, const double * x, 
+>  void CorrelatedEstimator(const long &n, const double * x,
                             double * average, double * error);
 \end{verbatim}
 
@@ -486,9 +486,9 @@ To do so, one has to first declare the module
 \end{verbatim}
 and then use one of the three available functions (notice that the \emph{namespace} \verb+mci+ is required):
 \begin{itemize}
-   \item \verb+mci::UncorrelatedEstimator(...)+ \\ where \verb+n+ is an \verb+int+, and \verb+x+ a \verb+double *+ of size \verb+n+. \verb+average+ will point to the average value, and \verb+error+ to the standard deviation. This function should be used only with uncorrelated data;
-   \item \verb+mci::BlockEstimator(...)+ \\ where \verb+nblocks+ is a \verb+int+ that refers to the number of blocks. This function computes average and standard deviation dividing the data into \verb+nblocks+ blocks, computing their averages, and then use this new set of data to compute their average and standard deviation as if they were uncorrelated.
-   \item \verb+mci::CorrelatedEstimator(...)+ \\ here data are considered to be correlated, and the blocking technique is used to correctly estimate the standard deviation;
+\item \verb+mci::UncorrelatedEstimator(...)+ \\ where \verb+n+ is an \verb+int+, and \verb+x+ a \verb+double *+ of size \verb+n+. \verb+average+ will point to the average value, and \verb+error+ to the standard deviation. This function should be used only with uncorrelated data;
+\item \verb+mci::BlockEstimator(...)+ \\ where \verb+nblocks+ is a \verb+int+ that refers to the number of blocks. This function computes average and standard deviation dividing the data into \verb+nblocks+ blocks, computing their averages, and then use this new set of data to compute their average and standard deviation as if they were uncorrelated.
+\item \verb+mci::CorrelatedEstimator(...)+ \\ here data are considered to be correlated, and the blocking technique is used to correctly estimate the standard deviation;
 \end{itemize}
 % section mean_estimation_and_standard_deviation (end)
 
@@ -498,20 +498,20 @@ and then use one of the three available functions (notice that the \emph{namespa
 
 \begin{verbatim}
 >  void MultiDimUncorrelatedEstimator(
-                     const long &n, const int &ndim, 
-                     const double * const * x, 
+                     const long &n, const int &ndim,
+                     const double * const * x,
                      double * average, double *error);
 >  void MultiDimBlockEstimator(
-                     const long &n, const int &ndim, 
-                     const double * const * x, 
-                     const int &nblocks, 
+                     const long &n, const int &ndim,
+                     const double * const * x,
+                     const int &nblocks,
                      double * average, double * error);
 >  void MultiDimCorrelatedEstimator(
-                     const long &n, const int &ndim, 
-                     const double * const * x, 
+                     const long &n, const int &ndim,
+                     const double * const * x,
                      double * average, double * error);
-\end{verbatim}                             
-                                    
+\end{verbatim}
+
 There is a version of the functions discussed in section \ref{sec:mean_estimation_and_standard_deviation} specifically done for multidimensional data.
 In this case the new parameter \verb+ndim+ enters into play (it is an \verb+int+).
 Data (\verb+x+) are supposed to be organised as a $\verb+n+ \times \verb+ndim+$ matrix.
