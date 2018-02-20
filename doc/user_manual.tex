@@ -160,7 +160,7 @@ where \verb+i+ is a \verb+int+ between $0$ and $\verb+ndim+-1$.
 \label{sub:acceptance_rate}
 
 \begin{verbatim}
->  void setTargetAcceptanceRate(const double * targetaccrate);   
+>  void setTargetAcceptanceRate(const double * targetaccrate);
 >  double getTargetAcceptanceRate();
 >  double getAcceptanceRate();
 \end{verbatim}
@@ -194,7 +194,7 @@ After performing an integration one can check the actual acceptance rate by invo
 >  void addObservable(MCIObservableFunctionInterface * obs);
 >  int getNObs();
 >  int getNObsDim();
->  MCIObservableFunctionInterface * getObservable(const int &i)  
+>  MCIObservableFunctionInterface * getObservable(const int &i)
 >  void clearObservables();
 \end{verbatim}
 
@@ -253,9 +253,9 @@ class QuadraticObservable: public MCIObservableFunctionInterface
 {
    public:
       Polynom(const int &ndim): MCIObservableFunctionInterface(ndim, 1) {}
-      // nobs will always be equal to 1, 
+      // nobs will always be equal to 1,
       // since quadraticObservable is a scalar function
-      
+
    protected:
       void observableFunction(const double * in, double * out)
       {
@@ -264,7 +264,7 @@ class QuadraticObservable: public MCIObservableFunctionInterface
          {
             out[0] += in[i]*in[i];
          }
-         
+
       }
 };
 \end{verbatim}
@@ -307,7 +307,7 @@ where \verb+i+ is an \verb+int+ between $0$ and $\verb+obs->getNObs()+ - 1$ and 
 >  void addSamplingFunction(MCISamplingFunctionInterface * sf);
 >  int getNSampF()
 >  MCISamplingFunctionInterface * getSamplingFunction(const int &i)
->  void clearSamplingFunctions();  
+>  void clearSamplingFunctions();
 \end{verbatim}
 
 Whenever it is possible, it is convenient to incorporate as much as possible of the integrand inside the sampling function, following the \emph{importance sampling} principle.
@@ -330,7 +330,7 @@ It is possible to get the pointer to a provided sampling function at any moment 
 \begin{verbatim}
    mci.getSamplingFunction(i)
 \end{verbatim}
-where \verb+i+ is an \verb+int+ between $0$ and 
+where \verb+i+ is an \verb+int+ between $0$ and
 
 Finally, It is possible to clean the sampling functions' stack by means of
 \begin{verbatim}
@@ -361,14 +361,14 @@ These proto-values can be accessed by means of the public methods \verb+getProto
 As an example, here is the code for having a gaussian sampling function $e^{-x^2}$:
 \begin{verbatim}
 #include <math.h>
-   
+
 class GaussianSF: public MCISamplingFunctionInterface
 {
    public:
       Gauss(const int &ndim): MCISamplingFunctionInterface(ndim,1) {}
       // For a gaussian sampling function, one proto-value is sufficient
       // therefore we set it equal to 1 by default
-      
+
       void samplingFunction(const double * in, double * protovalue)
       {
          protovalue[0]=0.;
@@ -377,7 +377,7 @@ class GaussianSF: public MCISamplingFunctionInterface
             protovalue[0] += (in[i])*(in[i]);
          }
       }
-   
+
       double getAcceptance()
       {
          return exp(-( this->getProtoNew(0) - this->getProtoOld(0) ));
@@ -470,12 +470,12 @@ We report them for general knowledge.
 \label{sec:mean_estimation_and_standard_deviation}
 
 \begin{verbatim}
->  void UncorrelatedEstimator(const long &n, const double * x, 
+>  void UncorrelatedEstimator(const long &n, const double * x,
                               double * average, double * error);
->  void BlockEstimator(const long &n, const double * x, 
+>  void BlockEstimator(const long &n, const double * x,
                        const int &nblocks,
                        double * average, double * error);
->  void CorrelatedEstimator(const long &n, const double * x, 
+>  void CorrelatedEstimator(const long &n, const double * x,
                             double * average, double * error);
 \end{verbatim}
 
@@ -498,19 +498,19 @@ and then use one of the three available functions (notice that the \emph{namespa
 
 \begin{verbatim}
 >  void MultiDimUncorrelatedEstimator(
-                     const long &n, const int &ndim, 
-                     const double * const * x, 
+                     const long &n, const int &ndim,
+                     const double * const * x,
                      double * average, double *error);
 >  void MultiDimBlockEstimator(
-                     const long &n, const int &ndim, 
-                     const double * const * x, 
-                     const int &nblocks, 
+                     const long &n, const int &ndim,
+                     const double * const * x,
+                     const int &nblocks,
                      double * average, double * error);
 >  void MultiDimCorrelatedEstimator(
-                     const long &n, const int &ndim, 
-                     const double * const * x, 
+                     const long &n, const int &ndim,
+                     const double * const * x,
                      double * average, double * error);
-\end{verbatim}                             
+\end{verbatim}
 
 There is a version of the functions discussed in section \ref{sec:mean_estimation_and_standard_deviation} specifically done for multidimensional data.
 In this case the new parameter \verb+ndim+ enters into play (it is an \verb+int+).

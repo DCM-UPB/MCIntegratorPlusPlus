@@ -11,9 +11,9 @@
 //   --- Integrate
 
 void MCI::integrate(const long &Nmc, double * average, double * error)
-{   
+{
     long i;
-      
+
     if ( _flagpdf )
         {
             //find the optimal mrt2 step
@@ -21,11 +21,11 @@ void MCI::integrate(const long &Nmc, double * average, double * error)
             // take care to do the initial decorrelation of the walker
             this->initialDecorrelation();
         }
-   
+
     //allocation of the array where the data will be stored
     _datax = new double*[Nmc];
     for (i=0; i<Nmc; ++i){ *(_datax+i) = new double[_nobsdim]; }
-   
+
     //sample the observables
     if (_flagobsfile) _obsfile.open(_pathobsfile);
     if (_flagwlkfile) _wlkfile.open(_pathwlkfile);
@@ -34,7 +34,7 @@ void MCI::integrate(const long &Nmc, double * average, double * error)
     _flagMC = false;
     if (_flagobsfile) _obsfile.close();
     if (_flagwlkfile) _wlkfile.close();
-      
+
     //estimate average and standard deviation
     if ( _flagpdf )
         {
@@ -44,14 +44,14 @@ void MCI::integrate(const long &Nmc, double * average, double * error)
         {
             mci::MultiDimUncorrelatedEstimator(Nmc, _nobsdim, _datax, average, error);
             for (i=0; i<_nobsdim; ++i)
-                { 
+                {
                     *(average+i) *=_vol; *(error+i) *=_vol;
                 }
         }
 
     //deallocation of the data array
     for (int i=0; i<Nmc; ++i){ delete [] *(_datax+i); }
-    delete [] _datax;   
+    delete [] _datax;
 }
 
 
@@ -129,7 +129,7 @@ void MCI::initialDecorrelation()
 
 
 void MCI::sample(const long &npoints, const bool &flagobs)
-{   
+{
     int i;
     //initialize the running index
     _ridx=0;
@@ -347,7 +347,7 @@ void MCI::computeNewX()
     for (int i=0; i<_ndim; ++i)
         {
             *(_xnew+i) = *(_xold+i) + (*(_mrt2step+i)) * (_rd(_rgen)-0.5);
-        }   
+        }
     applyPBC(_xnew);
 }
 
@@ -392,7 +392,7 @@ void MCI::computeNewSamplingFunction()
 
 
 void MCI::computeObservables()
-{   
+{
     for (std::vector<MCIObservableFunctionInterface>::size_type i=0; i<_obs.size(); ++i)
         {
             _obs[i]->computeObservables(_xold);

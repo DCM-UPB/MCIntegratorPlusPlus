@@ -109,11 +109,11 @@ namespace mci
                                 delta = ( -0.5*(*(err+i2-1)) + 0.5*(*(err+i2+1)) );
                                 break;
                             case 2:
-                                delta = ( (1./12.)*(*(err+i2-2)) -(2./3.)*(*(err+i2-1)) 
+                                delta = ( (1./12.)*(*(err+i2-2)) -(2./3.)*(*(err+i2-1))
                                           +(2./3.)*(*(err+i2+1)) -(1./12.)*(*(err+i2+2)) );
                                 break;
                             case 3:
-                                delta = ( -(1./60.)*(*(err+i2-3)) +(3./20.)*(*(err+i2-2)) -0.75*(*(err+i2-1)) 
+                                delta = ( -(1./60.)*(*(err+i2-3)) +(3./20.)*(*(err+i2-2)) -0.75*(*(err+i2-1))
                                           +0.75*(*(err+i2+1)) -(3./20.)*(*(err+i2+2)) +(1./60.)*(*(err+i2+3))  );
                                 break;
                             case 4:
@@ -183,7 +183,7 @@ namespace mci
                 if ( ((*(error+j))-(*(average+j))*(*(average+j))) < SMALLEST_ERROR )
                     {
                         *(error+j)=0.;
-                    } else 
+                    } else
                     {
                         *(error+j)=sqrt( ((*(error+j))-(*(average+j))*(*(average+j)))/(norm2) );
                     }
@@ -206,8 +206,8 @@ namespace mci
 
         double ** av = new double*[nblocks];
         for (int j=0; j<nblocks; ++j)
-            { 
-                *(av+j) = new double[ndim]; 
+            {
+                *(av+j) = new double[ndim];
             }
 
         for (int i1=0; i1<(nblocks); ++i1)
@@ -288,11 +288,11 @@ namespace mci
                                         *(delta+j) = ( -0.5*(*(*(err+i2-1)+j)) + 0.5*(*(*(err+i2+1)+j)) );
                                         break;
                                     case 2:
-                                        *(delta+j) = ( (1./12.)*(*(*(err+i2-2)+j)) -(2./3.)*(*(*(err+i2-1)+j)) 
+                                        *(delta+j) = ( (1./12.)*(*(*(err+i2-2)+j)) -(2./3.)*(*(*(err+i2-1)+j))
                                                        +(2./3.)*(*(*(err+i2+1)+j)) -(1./12.)*(*(*(err+i2+2)+j)) );
                                         break;
                                     case 3:
-                                        *(delta+j) = ( -(1./60.)*(*(*(err+i2-3)+j)) +(3./20.)*(*(*(err+i2-2)+j)) -0.75*(*(*(err+i2-1)+j)) 
+                                        *(delta+j) = ( -(1./60.)*(*(*(err+i2-3)+j)) +(3./20.)*(*(*(err+i2-2)+j)) -0.75*(*(*(err+i2-1)+j))
                                                        +0.75*(*(*(err+i2+1)+j)) -(3./20.)*(*(*(err+i2+2)+j)) +(1./60.)*(*(*(err+i2+3)+j))  );
                                         break;
                                     case 4:

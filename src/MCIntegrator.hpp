@@ -44,7 +44,7 @@ protected:
     std::string _pathobsfile;
     int _freqobsfile;
     bool _flagobsfile;  // should write an output file with sampled obs values?
-      
+
     std::ofstream _wlkfile;  //ofstream for storing obs values while sampling
     std::string _pathwlkfile;
     int _freqwlkfile;
@@ -53,7 +53,7 @@ protected:
 
     // --- Internal methods
     void computeObservables(); //compute observables with old coordinates
-    void saveObservables(); //save the observables into _datax 
+    void saveObservables(); //save the observables into _datax
 
     void computeNewSamplingFunction(); //compute the new sampling function with new coordinates
     void computeOldSamplingFunction(); //compute the new sampling function with the old coordinates
@@ -110,7 +110,7 @@ public:
     MCIObservableFunctionInterface * getObservable(const int &i){return _obs[i];}
     int getNObs(){return _obs.size();}
     int getNObsDim(){return _nobsdim;}
-      
+
     MCISamplingFunctionInterface * getSamplingFunction(const int &i){return _pdf[i];}
     int getNSampF(){return _pdf.size();}
 
