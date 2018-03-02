@@ -290,6 +290,10 @@ void MCI::doStepMRT2(bool * flagacc)
             this->updateX();
             //update the sampling function values pdfx
             this->updateSamplingFunction();
+            //if there are some call back functions, invoke them
+            for (MCICallBackOnAcceptanceInterface * cback : _cback){
+                cback->callBackFunction(_xold);
+            }
         } else
         {
             //rejected
@@ -436,6 +440,16 @@ void MCI::storeWalkerPositionsOnFile(const char * filepath, const int &freq)
 }
 
 
+void MCI::clearCallBackOnAcceptance(){
+    _cback.clear();
+}
+
+
+void MCI::addCallBackOnAcceptance(MCICallBackOnAcceptanceInterface * cback){
+    _cback.push_back(cback);
+}
+
+
 void MCI::clearObservables()
 {
     _obs.clear();
@@ -568,4 +582,3 @@ MCI::~MCI()
     _pdf.clear();
     _obs.clear();
 }
-
