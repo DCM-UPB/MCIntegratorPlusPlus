@@ -120,6 +120,9 @@ public:
     MCISamplingFunctionInterface * getSamplingFunction(const int &i){return _pdf[i];}
     int getNSampF(){return _pdf.size();}
 
+    MCICallBackOnAcceptanceInterface * getCallBackOnAcceptance(const int &i){return _cback[i];}
+    int getNCallBacks(){return _cback.size();}
+
     double getTargetAcceptanceRate(){return _targetaccrate;}
     double getAcceptanceRate(){return (double(_acc)/(double(_acc+_rej)));}
 
