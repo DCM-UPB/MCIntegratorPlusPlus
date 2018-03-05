@@ -142,6 +142,12 @@ void MCI::sample(const long &npoints, const bool &flagobs)
         }
     //reset acceptance and rejection
     this->resetAccRejCounters();
+    //first call of the call-back functions
+    if (flagobs){
+        for (MCICallBackOnAcceptanceInterface * cback : _cback){
+            cback->callBackFunction(_xold, true);
+        }
+    }
     //start the main loop for sampling
     if ( _flagpdf )
         {
@@ -292,7 +298,7 @@ void MCI::doStepMRT2(bool * flagacc)
             this->updateSamplingFunction();
             //if there are some call back functions, invoke them
             for (MCICallBackOnAcceptanceInterface * cback : _cback){
-                cback->callBackFunction(_xold);
+                cback->callBackFunction(_xold, _flagMC);
             }
         } else
         {

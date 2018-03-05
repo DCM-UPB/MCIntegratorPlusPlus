@@ -14,13 +14,13 @@ public:
     virtual ~MCICallBackOnAcceptanceInterface(){}
 
     // Getters
-    int getNDim(){ return _ndim;}
+    int getNDim(){return _ndim;}
 
 
     // --- METHODS THAT MUST BE IMPLEMENTED
 
     // Call-back function, called if a move is accepted by the MCI Integrator
-    virtual void callBackFunction(const double *in) = 0;
+    virtual void callBackFunction(const double *in, const bool flag_observation) = 0;
     //                                   ^walker position
 
 };

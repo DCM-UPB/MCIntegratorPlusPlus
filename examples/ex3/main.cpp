@@ -57,9 +57,11 @@ public:
         return getProtoNew(0)/getProtoOld(0);
     }
 
-    void callBackFunction(const double * in){
-        _deriv_ffnn->setInput(in);
-        _deriv_ffnn->FFPropagate();
+    void callBackFunction(const double * in, const bool flag_observation){
+        if (flag_observation){
+            _deriv_ffnn->setInput(in);
+            _deriv_ffnn->FFPropagate();
+        }
     }
 
     void observableFunction(const double * in, double *out){
