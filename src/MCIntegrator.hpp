@@ -3,6 +3,7 @@
 
 #include "MCISamplingFunctionInterface.hpp"
 #include "MCIObservableFunctionInterface.hpp"
+#include "MCICallBackOnAcceptanceInterface.hpp"
 #include <vector>
 #include <random>
 #include <fstream>
@@ -35,6 +36,8 @@ protected:
 
     std::vector<MCIObservableFunctionInterface *> _obs;  // Vector of observable functions
     int _nobsdim;
+
+    std::vector<MCICallBackOnAcceptanceInterface *> _cback;  // Vector of observable functions
 
     int _ridx;  // running index, which keeps track of the index of datax
     double ** _datax;  // array that will contain all the measured observable
@@ -98,6 +101,9 @@ public:
     void addSamplingFunction(MCISamplingFunctionInterface * mcisf);
     void clearSamplingFunctions();
 
+    void addCallBackOnAcceptance(MCICallBackOnAcceptanceInterface * cback);
+    void clearCallBackOnAcceptance();
+
     void storeObservablesOnFile(const char * filepath, const int &freq);
     void storeWalkerPositionsOnFile(const char * filepath, const int &freq);
 
@@ -113,6 +119,9 @@ public:
 
     MCISamplingFunctionInterface * getSamplingFunction(const int &i){return _pdf[i];}
     int getNSampF(){return _pdf.size();}
+
+    MCICallBackOnAcceptanceInterface * getCallBackOnAcceptance(const int &i){return _cback[i];}
+    int getNCallBacks(){return _cback.size();}
 
     double getTargetAcceptanceRate(){return _targetaccrate;}
     double getAcceptanceRate(){return (double(_acc)/(double(_acc+_rej)));}

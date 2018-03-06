@@ -29,15 +29,15 @@ public:
 
     void computeObservables(const double *in)
     {
-        this->observableFunction(in,_obs);
+        observableFunction(in,_obs);
     }
 
 
 
     // --- METHOD THAT MUST BE IMPLEMENTED
-    // Compute the observable and store it
-    // To do so, inside
-    virtual void observableFunction(const double * in, double *out) = 0;
+
+    // Compute the observable and store it inside out
+    virtual void observableFunction(const double * in, double * out) = 0;
     //                               ^input = walker positions  ^resulting observables
 
 };

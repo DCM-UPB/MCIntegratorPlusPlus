@@ -437,6 +437,39 @@ Finally, the acceptance rate from \verb+in+ and \verb+in2+ might be evaluated by
 
 
 
+\section{Call Back Functions}
+\label{sec:call_back_functions}
+\begin{verbatim}
+>  void addCallBackOnAcceptance(MCICallBackOnAcceptanceInterface * cback);
+>  int getNCallBacks();
+>  MCICallBackOnAcceptanceInterface * getCallBackOnAcceptance(const int &i);
+>  void clearCallBackOnAcceptance();
+\end{verbatim}
+
+Sometimes it is useful, or even necessary, to perform certain tasks after that a MRT2 step is performed.
+In these cases it is possible to add a Call Back Function by means of the \verb+MCICallBackAcceptanceInterface+, similarly to how this is done for the observables and sampling functions.
+The call back function will receive the walker actual position as input.
+
+
+\subsection{MCI call back on acceptance interface}
+\label{sub:mci_call_back_on_acceptance_interface}
+
+\begin{verbatim}
+<  MCICallBackOnAcceptanceInterface(const int &ndim);
+<  virtual void callBackFunction(const double *in) = 0;
+>  int getNDim();
+\end{verbatim}
+
+A call back function must be implemented as child class of the virtual class \verb+MCICallBackOnAcceptanceInterface+, and must implement the \verb+callBackFunction+ method.
+
+
+%subsection mci_call_back_on_acceptance_interface
+
+%section call_back_functions (end)
+
+
+
+
 \section{Integration} % (fold)
 \label{sec:integration}
 
