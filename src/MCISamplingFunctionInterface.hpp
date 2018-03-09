@@ -13,15 +13,26 @@ protected:
 public:
     MCISamplingFunctionInterface(const int &ndim, const int &nproto)
     {
-        _ndim=ndim; _nproto=nproto;
-        _protonew = new double[nproto]; _protoold = new double[nproto];
-        for (int i=0; i<nproto; ++i){ _protonew[i]=0.; }
-        for (int i=0; i<nproto; ++i){ _protoold[i]=0.; }
+        _ndim=ndim;
+        _protonew = 0; _protoold = 0;
+        setProtoValuesMemory(nproto);
     }
     virtual ~MCISamplingFunctionInterface()
     {
         delete[] _protonew; delete[] _protoold;
     }
+
+
+    // Setters
+    void setProtoValuesMemory(const int &nproto){
+        _nproto=nproto;
+        if (_protonew != 0) delete[] _protonew;
+        if (_protoold != 0) delete[] _protoold;
+        _protonew = new double[_nproto]; _protoold = new double[_nproto];
+        for (int i=0; i<_nproto; ++i){ _protonew[i]=0.; }
+        for (int i=0; i<_nproto; ++i){ _protoold[i]=0.; }
+    }
+
 
     // Getters
     int getNDim(){ return _ndim;}
