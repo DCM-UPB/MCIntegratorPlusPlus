@@ -15,7 +15,7 @@ public:
     {
         _ndim=ndim;
         _protonew = 0; _protoold = 0;
-        setProtoValuesMemory(nproto);
+        setNProto(nproto);
     }
     virtual ~MCISamplingFunctionInterface()
     {
@@ -24,7 +24,7 @@ public:
 
 
     // Setters
-    void setProtoValuesMemory(const int &nproto){
+    void setNProto(const int &nproto){
         _nproto=nproto;
         if (_protonew != 0) delete[] _protonew;
         if (_protoold != 0) delete[] _protoold;
