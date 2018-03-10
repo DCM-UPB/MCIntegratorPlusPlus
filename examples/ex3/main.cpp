@@ -52,7 +52,7 @@ public:
         protovalues[0] = v*v;
     }
 
-    double getAcceptance(double * protoold, double * protonew){
+    double getAcceptance(const double * protoold, const double * protonew){
         if (protoold[0] == 0.) return 1.;
         return protonew[0]/protoold[0];
     }

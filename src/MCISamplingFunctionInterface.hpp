@@ -60,7 +60,7 @@ public:
     //                                      ^walker position  ^resulting proto-values
 
     // Acceptance function, that uses the new and old values of the proto sampling function
-    virtual double getAcceptance(double * protoold, double * protonew) = 0;
+    virtual double getAcceptance(const double * protoold, const double * protonew) = 0;
 };
 
 

@@ -96,7 +96,7 @@ public:
         protovalues[0] = v*v;
     }
 
-    double getAcceptance(double * protoold, double * protonew){
+    double getAcceptance(const double * protoold, const double * protonew){
         return protonew[0]/protoold[0];
     }
 };

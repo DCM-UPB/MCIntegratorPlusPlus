@@ -59,7 +59,7 @@ public:
             }
     }
 
-    double getAcceptance(double * protoold, double * protonew)
+    double getAcceptance(const double * protoold, const double * protonew)
     {
         return exp(-(protonew[0]-protoold[0]));
     }
