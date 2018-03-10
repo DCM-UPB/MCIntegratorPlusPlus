@@ -59,9 +59,9 @@ public:
             }
     }
 
-    double getAcceptance()
+    double getAcceptance(double * protoold, double * protonew)
     {
-        return exp(-(getProtoNew(0)-getProtoOld(0)));
+        return exp(-(protonew[0]-protoold[0]));
     }
 };
 

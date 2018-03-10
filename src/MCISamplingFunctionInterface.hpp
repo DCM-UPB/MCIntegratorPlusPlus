@@ -37,8 +37,6 @@ public:
     // Getters
     int getNDim(){ return _ndim;}
     int getNProto(){ return _nproto;}
-    double getProtoNew(const int &i){ return _protonew[i]; }
-    double getProtoOld(const int &i){ return _protoold[i]; }
 
     // Utilities
     void newToOld()
@@ -51,13 +49,18 @@ public:
         samplingFunction(in, _protonew);
     }
 
+    double getAcceptance(){
+        return getAcceptance(_protoold, _protonew);
+    }
+
+
     // --- METHODS THAT MUST BE IMPLEMENTED
     // Function that MCI uses for the proto-sampling function. Computes _protonew
     virtual void samplingFunction(const double *in, double * protovalues) = 0;
     //                                      ^walker position  ^resulting proto-values
 
     // Acceptance function, that uses the new and old values of the proto sampling function
-    virtual double getAcceptance() = 0;
+    virtual double getAcceptance(double * protoold, double * protonew) = 0;
 };
 
 
