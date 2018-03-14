@@ -10,17 +10,17 @@
 
 //   --- Integrate
 
-void MCI::integrate(const long &Nmc, double * average, double * error)
+void MCI::integrate(const long &Nmc, double * average, double * error, bool findMRT2step, bool initialdecorrelation)
 {
     long i;
 
     if ( _flagpdf )
-        {
-            //find the optimal mrt2 step
-            this->findMRT2Step();
-            // take care to do the initial decorrelation of the walker
-            this->initialDecorrelation();
-        }
+    {
+        //find the optimal mrt2 step
+        if (findMRT2step) this->findMRT2Step();
+        // take care to do the initial decorrelation of the walker
+        if (initialdecorrelation) this->initialDecorrelation();
+    }
 
     //allocation of the array where the data will be stored
     _datax = new double*[Nmc];
