@@ -68,6 +68,9 @@ src/*.o
 debug/*.o
 debug/*.txt
 
+debug/unittests/ut*/*.o
+debug/unittests/ut*/*.sh
+
 examples/*/a.out
 examples/*/*.o
 

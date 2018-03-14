@@ -88,6 +88,8 @@ public:
     ~MCI();  //Destructor
 
     // --- Setters
+    void setSeed(const long seed);
+
     void setIRange(const double * const * irange);
 
     void setX(const double * x);

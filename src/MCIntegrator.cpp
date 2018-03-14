@@ -526,6 +526,12 @@ void MCI::setIRange(const double * const * irange)
 }
 
 
+void MCI::setSeed(const long seed)
+{
+    _rgen.seed(seed);
+}
+
+
 //   --- Constructor and Destructor
 
 MCI::MCI(const int & ndim)
