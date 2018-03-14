@@ -79,6 +79,22 @@ In the following we will always refer to \verb+mci+ as the default \verb+MCI+ ob
 It is not strictly necessary to set all the following settings because there are already default values, however the user should be aware of their existence.
 
 
+
+\subsection{Random generator's seed} % (fold)
+\label{sub:random_generator_seed}
+
+\begin{verbatim}
+>  void setSeed(const long seed)
+\end{verbatim}
+
+One can set the random generator's seed \verb+seed+ simply by invoking:
+\begin{verbatim}
+   mci.setSeed(seed);
+\end{verbatim}
+% subsection random_generator_seed (end)
+
+
+
 \subsection{Integral domain} % (fold)
 \label{sub:integral_domain}
 
@@ -474,7 +490,7 @@ A call back function must be implemented as child class of the virtual class \ve
 \label{sec:integration}
 
 \begin{verbatim}
->  void integrate(const long &Nmc, double * average, double * error);
+>  void integrate(const long &Nmc, double * average, double * error, bool findMRT2step=true, bool initialdecorrelation=true);
 \end{verbatim}
 
 Once that all the settings are done, one can obtain the result of the integral by invoking
@@ -484,6 +500,8 @@ Once that all the settings are done, one can obtain the result of the integral b
 where \verb+Nmc+ is a \verb+long int+ and must be provided as input, whereas \verb+average+ and \verb+error+ are of type \verb+double *+ with size \verb+mci.getNObsDim()+ (reference to this last method in \ref{sec:observable_function}).
 \verb+Nmc+ is the number of sampled points: The larger this value, the more accurate will be the result, according to the well known $1/\sqrt{\verb+NMC+}$ rule.
 \verb+average+ will contain the resulting numeric estimation of the integral with an estimated standard deviation stored in \verb+error+.
+
+The two optional parameters \verb+findMRT2step+ and \verb+initialdecorrelation+ can be set to false in case one wants to skip the automatic setting of the MRT2 step and the initial ranomd MC steps used to "warm up" the walker (i.e. perform initial decorrelation from the starting walker position).
 
 The Monte Carlo integral is composed by several substep, completely hidden to the user.
 We report them for general knowledge.
