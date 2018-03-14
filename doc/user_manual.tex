@@ -344,7 +344,7 @@ Finally, It is possible to clean the sampling functions' stack by means of
 \begin{verbatim}
 <  MCISamplingFunctionInterface(const int &ndim, const int &nproto);
 <  virtual void samplingFunction(const double *in, double * protovalue) = 0;
-<  virtual double getAcceptance() = 0;
+<  virtual double getAcceptance(const double * protoold, const double * protonew) = 0;
 >  int getNDim();
 >  int getNProto();
 >  double getProtoNew(const int &i);
@@ -378,9 +378,9 @@ class GaussianSF: public MCISamplingFunctionInterface
          }
       }
 
-      double getAcceptance()
+      double getAcceptance(const double * protoold, const double * protonew)
       {
-         return exp(-( this->getProtoNew(0) - this->getProtoOld(0) ));
+         return exp(-( protonew[0] - protoold[0] ));
       }
 };
 \end{verbatim}
