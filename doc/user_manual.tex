@@ -501,7 +501,7 @@ where \verb+Nmc+ is a \verb+long int+ and must be provided as input, whereas \ve
 \verb+Nmc+ is the number of sampled points: The larger this value, the more accurate will be the result, according to the well known $1/\sqrt{\verb+NMC+}$ rule.
 \verb+average+ will contain the resulting numeric estimation of the integral with an estimated standard deviation stored in \verb+error+.
 
-The two optional parameters \verb+findMRT2step+ and \verb+initialdecorrelation+ can be set to false in case one wants to skip the automatic setting of the MRT2 step and the initial ranomd MC steps used to "warm up" the walker (i.e. perform initial decorrelation from the starting walker position).
+The two optional parameters \verb+findMRT2step+ and \verb+initialdecorrelation+ can be set to false in case one wants to skip the automatic setting of the MRT2 step and the initial random MC steps used to "warm up" the walker (i.e. perform initial decorrelation from the starting walker position).
 
 The Monte Carlo integral is composed by several substep, completely hidden to the user.
 We report them for general knowledge.
