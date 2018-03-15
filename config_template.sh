@@ -12,6 +12,9 @@ FLAGS="-std=c++11 -Wall -Werror"
 # Optimization flags
 OPTFLAGS="-O3"
 
+# Debuggin flags
+DEBUGFLAGS="-g -O0"
+
 #FFNN Library (used in ex3)
 FFNN_FOLDER="/...../FeedForwardNeuralNetwork"
 IFFNN="-I${FFNN_FOLDER}/src/"

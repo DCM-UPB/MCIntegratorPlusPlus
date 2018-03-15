@@ -88,6 +88,8 @@ public:
     ~MCI();  //Destructor
 
     // --- Setters
+    void setSeed(const long seed);
+
     void setIRange(const double * const * irange);
 
     void setX(const double * x);
@@ -127,7 +129,7 @@ public:
     double getAcceptanceRate(){return (double(_acc)/(double(_acc+_rej)));}
 
     // --- Integrate
-    void integrate(const long &Nmc, double * average, double * error);
+    void integrate(const long &Nmc, double * average, double * error, bool findMRT2step=true, bool initialdecorrelation=true);
 
 
 };
