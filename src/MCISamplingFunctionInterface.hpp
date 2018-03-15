@@ -13,21 +13,30 @@ protected:
 public:
     MCISamplingFunctionInterface(const int &ndim, const int &nproto)
     {
-        _ndim=ndim; _nproto=nproto;
-        _protonew = new double[nproto]; _protoold = new double[nproto];
-        for (int i=0; i<nproto; ++i){ _protonew[i]=0.; }
-        for (int i=0; i<nproto; ++i){ _protoold[i]=0.; }
+        _ndim=ndim;
+        _protonew = 0; _protoold = 0;
+        setNProto(nproto);
     }
     virtual ~MCISamplingFunctionInterface()
     {
         delete[] _protonew; delete[] _protoold;
     }
 
+
+    // Setters
+    void setNProto(const int &nproto){
+        _nproto=nproto;
+        if (_protonew != 0) delete[] _protonew;
+        if (_protoold != 0) delete[] _protoold;
+        _protonew = new double[_nproto]; _protoold = new double[_nproto];
+        for (int i=0; i<_nproto; ++i){ _protonew[i]=0.; }
+        for (int i=0; i<_nproto; ++i){ _protoold[i]=0.; }
+    }
+
+
     // Getters
     int getNDim(){ return _ndim;}
     int getNProto(){ return _nproto;}
-    double getProtoNew(const int &i){ return _protonew[i]; }
-    double getProtoOld(const int &i){ return _protoold[i]; }
 
     // Utilities
     void newToOld()
@@ -40,13 +49,18 @@ public:
         samplingFunction(in, _protonew);
     }
 
+    double getAcceptance(){
+        return getAcceptance(_protoold, _protonew);
+    }
+
+
     // --- METHODS THAT MUST BE IMPLEMENTED
     // Function that MCI uses for the proto-sampling function. Computes _protonew
     virtual void samplingFunction(const double *in, double * protovalues) = 0;
     //                                      ^walker position  ^resulting proto-values
 
     // Acceptance function, that uses the new and old values of the proto sampling function
-    virtual double getAcceptance() = 0;
+    virtual double getAcceptance(const double * protoold, const double * protonew) = 0;
 };
 
 

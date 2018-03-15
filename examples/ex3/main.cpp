@@ -52,9 +52,9 @@ public:
         protovalues[0] = v*v;
     }
 
-    double getAcceptance(){
-        if (getProtoOld(0) == 0.) return 1.;
-        return getProtoNew(0)/getProtoOld(0);
+    double getAcceptance(const double * protoold, const double * protonew){
+        if (protoold[0] == 0.) return 1.;
+        return protonew[0]/protoold[0];
     }
 
     void callBackFunction(const double * in, const bool flag_observation){

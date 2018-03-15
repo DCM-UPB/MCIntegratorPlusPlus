@@ -39,8 +39,8 @@ public:
         protovalue[0] = 0.2 * abs(in[0]);
     }
 
-    double getAcceptance(){
-        return this->getProtoNew(0) / this->getProtoOld(0);
+    double getAcceptance(const double * protoold, const double * protonew){
+        return protonew[0] / protoold[0];
     }
 };
 
