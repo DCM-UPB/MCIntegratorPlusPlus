@@ -86,3 +86,5 @@ doc/*.fls
 doc/*.ilg
 doc/*.ind
 doc/auto
+
+doc/doxygen/*/*
