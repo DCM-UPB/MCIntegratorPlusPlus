@@ -39,7 +39,7 @@ private:
 public:
     MyInterfaces(FeedForwardNeuralNetwork * bare_ffnn, FeedForwardNeuralNetwork * deriv_ffnn)
         : MCISamplingFunctionInterface(1, 1),
-            MCIObservableFunctionInterface(1, 3+deriv_ffnn->getNBeta()),
+            MCIObservableFunctionInterface(1, 3+deriv_ffnn->getNVariationalParameters()),
             MCICallBackOnAcceptanceInterface(1){
         _bare_ffnn = bare_ffnn;
         _deriv_ffnn = deriv_ffnn;
@@ -87,6 +87,7 @@ int main(){
 
     FeedForwardNeuralNetwork * deriv_ffnn = new FeedForwardNeuralNetwork(2, 10, 2);
     deriv_ffnn->connectFFNN();
+    deriv_ffnn->assignVariationalParameters();
     FeedForwardNeuralNetwork * bare_ffnn = new FeedForwardNeuralNetwork(deriv_ffnn);
     deriv_ffnn->addFirstDerivativeSubstrate();
     deriv_ffnn->addSecondDerivativeSubstrate();
