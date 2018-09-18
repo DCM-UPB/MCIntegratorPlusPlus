@@ -9,4 +9,4 @@
 
 ## Example 2
 
-`ex2/`: like ex2, but using the MPI wrapper for parallel integration.
+`ex2/`: like ex2, but using the MPI wrapper for parallel integration. Pass the wanted number of threads to run.sh.

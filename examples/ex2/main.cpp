@@ -5,7 +5,7 @@
 #include <fstream>
 
 #include "MCIntegrator.hpp"
-#include "MCIWrapperMPI.hpp"
+#include "MPIMCI.hpp"
 
 
 // Observable functions
