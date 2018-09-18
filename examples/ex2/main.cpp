@@ -50,20 +50,18 @@ public:
 int main() {
     using namespace std;
 
-    // intro
-    cout << "We want to compute the integral" << endl;
-    cout << "    Integral[-1:3] dx (4x - x^2)" << endl << endl;
-    cout << "Notice that we can re-write the integral as" << endl;
-    cout << "    Integral[-1:3] dx (5*sign(x)*(4-x) * |x|/5)" << endl;
-    cout << "where g(x)=|x|/5 is a candidate sampling function since it's positive on the domain [-1:3] and its integral on the domain is equal to 1." << endl << endl;
+    int myrank = MPIMCI::init(); // first run custom MPI init
 
-    cout << "We start by initializing MPI and setting the MCI:" << endl;
+    if (myrank == 0) {
+        // intro
+        cout << "We want to compute the integral" << endl;
+        cout << "    Integral[-1:3] dx (4x - x^2)" << endl << endl;
+        cout << "Notice that we can re-write the integral as" << endl;
+        cout << "    Integral[-1:3] dx (5*sign(x)*(4-x) * |x|/5)" << endl;
+        cout << "where g(x)=|x|/5 is a candidate sampling function since it's positive on the domain [-1:3] and its integral on the domain is equal to 1." << endl << endl;
 
-    MPIMCI::init();
-    
-    // --- From now on we run in parallel ---
-    
-    int myrank = MPI::COMM_WORLD.Get_rank();
+        cout << "We start by initializing MPI and setting the MCI:" << endl;
+    }
 
     const int ndim = 1;    
     MCI * mci = new MCI(ndim);
@@ -174,22 +172,20 @@ int main() {
 
     MPIMCI::finalize(mci); // also deletes all mci
 
+    // from now on just root thread
+    if (myrank == 0) {
+        cout << "The integral gives as result = " << average[0] << "   +-   " << error[0] << endl;
+        cout << "--------------------------------------------------------" << endl << endl;
 
 
-    // --- From now on we are single threaded again ---
-    
-    cout << "The integral gives as result = " << average[0] << "   +-   " << error[0] << endl;
-    cout << "--------------------------------------------------------" << endl << endl;
+        // final comments
+        cout << "Using a sampling function in this case gives worse performance. In fact, the error bar is larger." << endl;
+        cout << "This implies that the variance of the re-factored f(x) written for introducing a sampling function, is larger than the original f(x)." << endl;
 
-
-    // final comments
-    cout << "Using a sampling function in this case gives worse performance. In fact, the error bar is larger." << endl;
-    cout << "This implies that the variance of the re-factored f(x) written for introducing a sampling function, is larger than the original f(x)." << endl;
-
-
-    // deallocate
-    delete[] average;
-    delete[] error;
+        // deallocate
+        delete[] average;
+        delete[] error;
+    }
 
     // end
     return 0;

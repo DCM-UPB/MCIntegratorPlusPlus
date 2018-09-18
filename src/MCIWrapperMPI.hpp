@@ -1,14 +1,14 @@
 #include <mpi.h>
-#include <iostream>
 #include "MCIntegrator.hpp"
 
 namespace MPIMCI
 {
-    void init()
+    int init() // return mpi rank of process
     {
         if (MPI::Is_initialized()) throw std::runtime_error("MPI already initialized!");
         MPI::Init();
         MPI::COMM_WORLD.Set_errhandler(MPI::ERRORS_THROW_EXCEPTIONS);
+        return MPI::COMM_WORLD.Get_rank();
     }
 
     void integrate(MCI * const mci, const long &Nmc, double * average, double * error)
