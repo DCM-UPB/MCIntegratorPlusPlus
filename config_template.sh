@@ -6,6 +6,9 @@ LIBNAME="mci"
 # C++ compiler
 CC="g++"
 
+# MPI compiler wrapper
+MPICC="mpic++"
+
 # C++ flags (std=c++11 is necessary)
 FLAGS="-std=c++11 -Wall -Werror"
 
