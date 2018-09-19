@@ -63,7 +63,7 @@ int main() {
         cout << "We start by initializing MPI and setting the MCI:" << endl;
     }
 
-    const int ndim = 1;    
+    const int ndim = 1;
     MCI * mci = new MCI(ndim);
 
     if (myrank == 0) cout << "ndim = " << mci->getNDim() << endl;
@@ -119,12 +119,9 @@ int main() {
 
     // integrate
     const long Nmc = 1000000;
-    double * average;
-    double * error;
-    if (myrank == 0) { // allocate only for root
-        average = new double[mci->getNObsDim()];
-        error = new double[mci->getNObsDim()];
-    }
+    double * average = new double[mci->getNObsDim()];
+    double * error = new double[mci->getNObsDim()];
+
     MPIMCI::integrate(mci, Nmc, average, error);
 
     if (myrank == 0) {
@@ -156,6 +153,16 @@ int main() {
     // integrate
     MPIMCI::integrate(mci, Nmc, average, error);
 
+    if (myrank == 0) {
+        cout << "The integral gives as result = " << average[0] << "   +-   " << error[0] << endl;
+        cout << "--------------------------------------------------------" << endl << endl;
+
+
+        // final comments
+        cout << "Using a sampling function in this case gives worse performance. In fact, the error bar is larger." << endl;
+        cout << "This implies that the variance of the re-factored f(x) written for introducing a sampling function, is larger than the original f(x)." << endl;
+    }
+
     // deallocate per-thread allocations
     delete sf;
 
@@ -170,22 +177,13 @@ int main() {
     delete[] irange[0];
     delete[] irange;
 
-    MPIMCI::finalize(mci); // also deletes all mci
+    delete[] average;
+    delete[] error;
 
-    // from now on just root thread
-    if (myrank == 0) {
-        cout << "The integral gives as result = " << average[0] << "   +-   " << error[0] << endl;
-        cout << "--------------------------------------------------------" << endl << endl;
+    delete mci;
 
-
-        // final comments
-        cout << "Using a sampling function in this case gives worse performance. In fact, the error bar is larger." << endl;
-        cout << "This implies that the variance of the re-factored f(x) written for introducing a sampling function, is larger than the original f(x)." << endl;
-
-        // deallocate
-        delete[] average;
-        delete[] error;
-    }
+    // finalize MPI
+    MPIMCI::finalize();
 
     // end
     return 0;
