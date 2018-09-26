@@ -36,7 +36,7 @@ namespace MPIMCI
     }
 
     // set different random seeds per thread from a file
-    void setSeed(MCI * const mci, const std::string filename)
+    void setSeed(MCI * const mci, const std::string &filename, const int &offset = 0) // with offset you can control how many seeds to skip initially
     {
         int myrank = rank();
         int nranks = size();
@@ -47,7 +47,13 @@ namespace MPIMCI
             std::ifstream seedfile;
             seedfile.open(filename);
 
+            for (int i=0; i<offset; ++i) {
+                if (seedfile.eof()) {throw std::runtime_error("Chosen seed offset is already larger than the number of seeds in seed file.");}
+                uint_fast64_t skip;
+                seedfile >> skip;
+            }
             for (int i=0; i<nranks; ++i) {
+                if (seedfile.eof()) {throw std::runtime_error("Seed file doesn't provide enough seeds for the chosen number of ranks and offset.");}
                 seedfile >> seeds[i];
             }
             seedfile.close();
@@ -65,9 +71,9 @@ namespace MPIMCI
             // make sure the user has MPI in the correct state
             int isinit, isfinal;
             MPI_Initialized(&isinit);
-            if (isinit==0) throw std::runtime_error("MPI not initialized!");
+            if (isinit==0) {throw std::runtime_error("MPI not initialized!");}
             MPI_Finalized(&isfinal);
-            if (isfinal==1) throw std::runtime_error("MPI already finalized!");
+            if (isfinal==1) {throw std::runtime_error("MPI already finalized!");}
 
             int nranks = size();
 
@@ -98,9 +104,9 @@ namespace MPIMCI
         // make sure the user has MPI in the correct state
         int isinit, isfinal;
         MPI_Initialized(&isinit);
-        if (isinit==0) throw std::runtime_error("MPI not initialized!");
+        if (isinit==0) {throw std::runtime_error("MPI not initialized!");}
         MPI_Finalized(&isfinal);
-        if (isfinal==1) throw std::runtime_error("MPI already finalized!");
+        if (isfinal==1) {throw std::runtime_error("MPI already finalized!");}
 
         MPI_Finalize();
     }

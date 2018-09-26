@@ -66,8 +66,8 @@ int main() {
     const int ndim = 1;
     MCI * mci = new MCI(ndim);
 
-    // if you want to seed the different MPI threads from a file, for reproducible results
-    MPIMCI::setSeed(mci, "rseed.txt");
+    // seed the different MPI threads from a file
+    MPIMCI::setSeed(mci, "rseed.txt", 0); // offset x -> start from the x-th seed in file
 
     if (myrank == 0) cout << "ndim = " << mci->getNDim() << endl;
 
