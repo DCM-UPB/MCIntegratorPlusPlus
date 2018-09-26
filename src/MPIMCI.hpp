@@ -2,22 +2,63 @@
 #define MPIMCI
 
 #include <stdexcept>
+#include <string>
+#include <fstream>
 #include <mpi.h>
 #include "MCIntegrator.hpp"
 
 namespace MPIMCI
 {
-    int init() // return mpi rank of process
+    // return my rank
+    int rank()
     {
-        int isinit;
-        MPI_Initialized(&isinit);
-        if (isinit==1) throw std::runtime_error("MPI already initialized!");
-        MPI_Init(NULL, NULL);
         int myrank;
         MPI_Comm_rank(MPI_COMM_WORLD, &myrank);
         return myrank;
     }
 
+    // return size
+    int size()
+    {
+        int size;
+        MPI_Comm_size(MPI_COMM_WORLD, &size);
+        return size;
+    }
+
+    // init MPI and return rank of process
+    int init()
+    {
+        int isinit;
+        MPI_Initialized(&isinit);
+        if (isinit==1) throw std::runtime_error("MPI already initialized!");
+        MPI_Init(NULL, NULL);
+        return rank();
+    }
+
+    // set different random seeds per thread from a file
+    void setSeed(MCI * const mci, const std::string filename)
+    {
+        int myrank = rank();
+        int nranks = size();
+
+        uint_fast64_t seeds[nranks];
+        uint_fast64_t myseed;
+        if (myrank == 0) {
+            std::ifstream seedfile;
+            seedfile.open(filename);
+
+            for (int i=0; i<nranks; ++i) {
+                seedfile >> seeds[i];
+            }
+            seedfile.close();
+        }
+
+        MPI_Scatter(seeds, 1, MPI_UNSIGNED_LONG, &myseed, 1, MPI_UNSIGNED_LONG, 0, MPI_COMM_WORLD);
+        mci->setSeed(myseed);
+    }
+
+
+    // integrate in parallel and accumulate results
     void integrate(MCI * const mci, const long &Nmc, double * average, double * error, bool findMRT2step=true, bool initialdecorrelation=true, bool use_mpi=true) // by setting use_mpi to false you can use this without requiring MPI
     {
         if (use_mpi) {
@@ -28,8 +69,7 @@ namespace MPIMCI
             MPI_Finalized(&isfinal);
             if (isfinal==1) throw std::runtime_error("MPI already finalized!");
 
-            int nranks;
-            MPI_Comm_size(MPI_COMM_WORLD, &nranks);
+            int nranks = size();
 
             // the results are stored in myAverage/Error and then reduced into the same average/error for all processes
             double myAverage[mci->getNObsDim()];
@@ -52,6 +92,7 @@ namespace MPIMCI
         }
     }
 
+    // finalize MPI
     void finalize()
     {
         // make sure the user has MPI in the correct state

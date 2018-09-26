@@ -526,7 +526,7 @@ void MCI::setIRange(const double * const * irange)
 }
 
 
-void MCI::setSeed(const long seed)
+void MCI::setSeed(const uint_fast64_t seed) // fastest unsigned integer which is at least 64 bit (as expected by rgen)
 {
     _rgen.seed(seed);
 }

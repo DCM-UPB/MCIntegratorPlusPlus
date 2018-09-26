@@ -66,6 +66,9 @@ int main() {
     const int ndim = 1;
     MCI * mci = new MCI(ndim);
 
+    // if you want to seed the different MPI threads from a file, for reproducible results
+    MPIMCI::setSeed(mci, "rseed.txt");
+
     if (myrank == 0) cout << "ndim = " << mci->getNDim() << endl;
 
     // set the integration range to [-1:3]
@@ -83,7 +86,6 @@ int main() {
     mci->setX(initpos);
 
     if (myrank == 0) cout << "initial walker position = " << mci->getX(0) << endl;
-
 
     // initial MRT2 step
     double * step = new double[ndim];
