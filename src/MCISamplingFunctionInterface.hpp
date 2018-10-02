@@ -40,8 +40,10 @@ public:
 
     // Utilities
     void newToOld()
-    {
-        for(int i=0; i<_nproto; ++i){ double * foo; foo=_protonew; _protonew=_protoold; _protoold=foo; }
+    {   // pointer swap
+        double * foo=_protonew;
+        _protonew=_protoold;
+        _protoold=foo;
     }
 
     void computeNewSamplingFunction(const double * in)
