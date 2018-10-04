@@ -65,7 +65,13 @@ namespace MPIMCI
 
 
     // integrate in parallel and accumulate results
-    void integrate(MCI * const mci, const long &Nmc, double * average, double * error, bool findMRT2step=true, bool initialdecorrelation=true, bool use_mpi=true) // by setting use_mpi to false you can use this without requiring MPI
+
+    void integrate(MCI * const mci, const long &Nmc, double * average, double * error, bool findMRT2step=true, bool initialdecorrelation=true, size_t nblocks=0, bool use_mpi=true) // auto-mode-wrapper
+    {
+        integrate(mci, Nmc, average, error, findMRT2step ? -1 : 0, initialdecorrelation ? -1 : 0, nblocks, use_mpi);
+    }
+
+    void integrate(MCI * const mci, const long &Nmc, double * average, double * error, int NfindMRT2stepIterations, int NdecorrelationSteps, size_t nblocks=0, bool use_mpi=true) // by setting use_mpi to false you can use this without requiring MPI
     {
         if (use_mpi) {
             // make sure the user has MPI in the correct state
@@ -81,7 +87,7 @@ namespace MPIMCI
             double myAverage[mci->getNObsDim()];
             double myError[mci->getNObsDim()];
 
-            mci->integrate(Nmc, myAverage, myError, findMRT2step, initialdecorrelation);
+            mci->integrate(Nmc, myAverage, myError, NfindMRT2stepIterations, NdecorrelationSteps, nblocks);
 
             for (int i=0; i<mci->getNObsDim(); ++i) {
                 MPI_Allreduce(&myAverage[i], &average[i], 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
@@ -94,7 +100,7 @@ namespace MPIMCI
             }
         }
         else {
-            mci->integrate(Nmc, average, error, findMRT2step, initialdecorrelation); // regular single thread call
+            mci->integrate(Nmc, average, error, NfindMRT2stepIterations, NdecorrelationSteps, nblocks); // regular single thread call
         }
     }
 
