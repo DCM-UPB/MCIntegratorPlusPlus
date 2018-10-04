@@ -6,51 +6,73 @@
 #include <algorithm>
 #include <vector>
 #include <random>
+#include <stdexcept>
 
 
 //   --- Integrate
 
-void MCI::integrate(const long &Nmc, double * average, double * error, bool findMRT2step, bool initialdecorrelation)
+void MCI::integrate(const long &Nmc, double * average, double * error, bool findMRT2step, bool initialdecorrelation, size_t nblocks)
 {
-    long i;
+    MCI::integrate(Nmc, average, error, findMRT2step ? -1 : 0, initialdecorrelation ? -1 : 0, nblocks);
+}
+
+void MCI::integrate(const long &Nmc, double * average, double * error, int NfindMRT2stepIterations, int NdecorrelationSteps, size_t nblocks)
+{
+    long i,j;
+    const bool fixedBlocks = (nblocks>0);
+    const long stepsPerBlock = fixedBlocks ? Nmc/nblocks : 1;
+    const long trueNmc = fixedBlocks ? stepsPerBlock*nblocks : Nmc;
+    const long ndatax = fixedBlocks ? nblocks : Nmc;
 
     if ( _flagpdf )
     {
         //find the optimal mrt2 step
-        if (findMRT2step) this->findMRT2Step();
+        this->findMRT2Step(NfindMRT2stepIterations);
         // take care to do the initial decorrelation of the walker
-        if (initialdecorrelation) this->initialDecorrelation();
+        this->initialDecorrelation(NdecorrelationSteps);
     }
 
     //allocation of the array where the data will be stored
-    _datax = new double*[Nmc];
-    for (i=0; i<Nmc; ++i){ *(_datax+i) = new double[_nobsdim]; }
+    _datax = new double*[ndatax];
+    for (i=0; i<ndatax; ++i) { *(_datax+i) = new double[_nobsdim]; }
 
     //sample the observables
     if (_flagobsfile) _obsfile.open(_pathobsfile);
     if (_flagwlkfile) _wlkfile.open(_pathwlkfile);
     _flagMC = true;
-    this->sample(Nmc, true);
+    this->sample(trueNmc, true, stepsPerBlock);
     _flagMC = false;
     if (_flagobsfile) _obsfile.close();
     if (_flagwlkfile) _wlkfile.close();
 
+    //reduce block averages
+    if (fixedBlocks) {
+        const double fac = 1./stepsPerBlock;
+        for (i=0; i<ndatax; ++i) {
+            for (j=0; j<_nobsdim; ++j) {
+                *(*(_datax+i)+j) *= fac;
+            }
+        }
+    }
+
     //estimate average and standard deviation
-    if ( _flagpdf )
+    if ( _flagpdf && !fixedBlocks)
         {
-            mci::MultiDimCorrelatedEstimator(Nmc, _nobsdim, _datax, average, error);
+            mci::MultiDimCorrelatedEstimator(ndatax, _nobsdim, _datax, average, error);
         }
     else
         {
-            mci::MultiDimUncorrelatedEstimator(Nmc, _nobsdim, _datax, average, error);
-            for (i=0; i<_nobsdim; ++i)
-                {
-                    *(average+i) *=_vol; *(error+i) *=_vol;
+            mci::MultiDimUncorrelatedEstimator(ndatax, _nobsdim, _datax, average, error);
+            if (!_flagpdf) {
+                for (i=0; i<_nobsdim; ++i) {
+                    *(average+i) *=_vol;
+                    *(error+i) *=_vol;
                 }
+            }
         }
 
     //deallocation of the data array
-    for (int i=0; i<Nmc; ++i){ delete [] *(_datax+i); }
+    for (int i=0; i<ndatax; ++i){ delete [] *(_datax+i); }
     delete [] _datax;
 }
 
@@ -64,10 +86,12 @@ void MCI::storeObservables()
     if ( _ridx%_freqobsfile == 0 )
         {
             _obsfile << _ridx;
-            for (int j=0; j<_nobsdim; ++j)
+            for (size_t i=0; i<_obs.size(); ++i) {
+                for (int j=0; j<_obs[i]->getNObs(); ++j)
                 {
-                    _obsfile << "   " << *(*(_datax+_ridx)+j) ;
+                    _obsfile << "   " << _obs[i]->getObservable(j);
                 }
+            }
             _obsfile << std::endl;
         }
 }
@@ -87,52 +111,72 @@ void MCI::storeWalkerPositions()
 }
 
 
-void MCI::initialDecorrelation()
+void MCI::initialDecorrelation(const int &NdecorrelationSteps)
 {
-    long i;
-    //constants
-    const long MIN_NMC=100;
-    //allocate the data array that will be used
-    _datax = new double*[MIN_NMC];
-    for (i=0; i<MIN_NMC; ++i) {*(_datax+i) = new double[_nobsdim];   }
-    //do a first estimate of the observables
-    this->sample(MIN_NMC, true);
-    double * oldestimate = new double[_nobsdim];
-    double * olderrestim = new double[_nobsdim];
-    mci::MultiDimCorrelatedEstimator(MIN_NMC, _nobsdim, _datax, oldestimate, olderrestim);
-    //start a loop which will stop when the observables are stabilized
-    bool flag_loop=true;
-    double * newestimate = new double[_nobsdim];
-    double * newerrestim = new double[_nobsdim];
-    double * foo;
-    while ( flag_loop )
-        {
+    if (NdecorrelationSteps < 0) {
+        long i;
+        //constants
+        const long MIN_NMC=100;
+        //allocate the data array that will be used
+        _datax = new double*[MIN_NMC];
+        for (i=0; i<MIN_NMC; ++i) { *(_datax+i) = new double[_nobsdim]; }
+        //do a first estimate of the observables
+        this->sample(MIN_NMC, true);
+        double * oldestimate = new double[_nobsdim];
+        double * olderrestim = new double[_nobsdim];
+        mci::MultiDimCorrelatedEstimator(MIN_NMC, _nobsdim, _datax, oldestimate, olderrestim);
+        //start a loop which will stop when the observables are stabilized
+        bool flag_loop=true;
+        double * newestimate = new double[_nobsdim];
+        double * newerrestim = new double[_nobsdim];
+        double * foo;
+        while ( flag_loop ) {
+            flag_loop = false;
             this->sample(MIN_NMC, true);
             mci::MultiDimCorrelatedEstimator(MIN_NMC, _nobsdim, _datax, newestimate, newerrestim);
-            for (i=0; i<_nobsdim; ++i)
-                {
-                    if ( abs( *(oldestimate+i) - *(newestimate+i) ) <= *(olderrestim+i) + *(newerrestim+i) ) flag_loop=false;
-                    if (flag_loop) *(oldestimate+i) = *(newestimate+i);
+            for (i=0; i<_nobsdim; ++i) {
+                if ( std::abs( *(oldestimate+i) - *(newestimate+i) ) > *(olderrestim+i) + *(newerrestim+i) ) {
+                    flag_loop=true;
                 }
+            }
             foo=oldestimate;
             oldestimate=newestimate;
             newestimate=foo;
         }
-    //memory deallocation
-    delete [] newestimate;
-    delete [] newerrestim;
-    delete [] oldestimate;
-    delete [] olderrestim;
-    for (i=0; i<MIN_NMC; ++i){ delete[] *(_datax+i); }
-    delete [] _datax;
+        //memory deallocation
+        delete [] newestimate;
+        delete [] newerrestim;
+        delete [] oldestimate;
+        delete [] olderrestim;
+        for (i=0; i<MIN_NMC; ++i){ delete[] *(_datax+i); }
+        delete [] _datax;
+    }
+    else {
+        this->sample(NdecorrelationSteps, false);
+    }
 }
 
 
-void MCI::sample(const long &npoints, const bool &flagobs)
+void MCI::sample(const long &npoints, const bool &flagobs, const long &stepsPerBlock)
 {
+    if (flagobs && stepsPerBlock>0 && npoints%stepsPerBlock!=0) {
+        throw std::invalid_argument("If fixed blocking is used, npoints must be a multiple of stepsPerBlock.");
+    }
+
     int i;
-    //initialize the running index
+    //initialize the running indices
     _ridx=0;
+    _bidx=0;
+
+    if (flagobs) {
+        // set the data to 0
+        for (i=0; i<npoints/stepsPerBlock; ++i) {
+            for (long j=0; j<_nobsdim; ++j) {
+                *(*(_datax+i)+j) = 0.;
+            }
+        }
+    }
+
     //initialize the pdf at x
     computeOldSamplingFunction();
     //initialize the observables values at x
@@ -170,6 +214,7 @@ void MCI::sample(const long &npoints, const bool &flagobs)
                                 if (_flagwlkfile) this->storeWalkerPositions();
                             }
                             _ridx++;
+                            _bidx = _ridx / stepsPerBlock;
                         }
                 } else
                 {
@@ -177,6 +222,7 @@ void MCI::sample(const long &npoints, const bool &flagobs)
                         {
                             this->doStepMRT2(&flagacc);
                             _ridx++;
+                            _bidx = _ridx / stepsPerBlock;
                         }
                 }
         }
@@ -194,6 +240,7 @@ void MCI::sample(const long &npoints, const bool &flagobs)
                                 if (_flagwlkfile) this->storeWalkerPositions();
                             }
                             _ridx++;
+                            _bidx = _ridx / stepsPerBlock;
                         }
                 } else
                 {
@@ -201,13 +248,14 @@ void MCI::sample(const long &npoints, const bool &flagobs)
                         {
                             this->newRandomX();
                             _ridx++;
+                            _bidx = _ridx / stepsPerBlock;
                         }
                 }
         }
 }
 
 
-void MCI::findMRT2Step()
+void MCI::findMRT2Step(const int &NfindMRT2stepIterations)
 {
     int j;
     //constants
@@ -221,7 +269,7 @@ void MCI::findMRT2Step()
     int cons_count = 0;  //number of consecutive loops without need of changing mrt2step
     int counter = 0;  //counter of loops
     double fact;
-    while ( cons_count < MIN_CONS )
+    while ( (cons_count < MIN_CONS && NfindMRT2stepIterations < 0) || counter < NfindMRT2stepIterations)
         {
             counter++;
             //do MIN_STAT M(RT)^2 steps
@@ -258,7 +306,6 @@ void MCI::findMRT2Step()
                 {
                     if ( *(_mrt2step+j) - ( *(*(_irange+j)+1) - *(*(_irange+j)) ) > 0. )
                         {
-                            cons_count = MIN_CONS; //make the main loop terminate
                             *(_mrt2step+j) = ( *(*(_irange+j)+1) - *(*(_irange+j)) );
                         }
                 }
@@ -267,7 +314,6 @@ void MCI::findMRT2Step()
                 {
                     if ( *(_mrt2step+j) < SMALLEST_ACCEPTABLE_DOUBLE )
                         {
-                            cons_count = MIN_CONS; //make the main loop terminate
                             *(_mrt2step+j) = SMALLEST_ACCEPTABLE_DOUBLE;
                         }
                 }
@@ -419,7 +465,7 @@ void MCI::saveObservables()
         {
             for (int j=0; j<_obs[i]->getNObs(); ++j)
                 {
-                    _datax[_ridx][idx]=_obs[i]->getObservable(j);
+                    _datax[_bidx][idx]+=_obs[i]->getObservable(j);
                     idx++;
                 }
         }
