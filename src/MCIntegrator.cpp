@@ -13,11 +13,17 @@
 
 void MCI::integrate(const long &Nmc, double * average, double * error, bool findMRT2step, bool initialdecorrelation, size_t nblocks)
 {
-    MCI::integrate(Nmc, average, error, findMRT2step ? -1 : 0, initialdecorrelation ? -1 : 0, nblocks);
+    int stepsMRT2 = findMRT2step ? -1 : 0;
+    int stepsDecorr = initialdecorrelation ? -1 : 0;
+    MCI::integrate(Nmc, average, error, stepsMRT2, stepsDecorr, nblocks);
 }
 
 void MCI::integrate(const long &Nmc, double * average, double * error, int NfindMRT2stepIterations, int NdecorrelationSteps, size_t nblocks)
 {
+    if (Nmc<(long)nblocks) {
+        throw std::invalid_argument("The specified number of MC steps is smaller than the requested number of blocks.");
+    }
+
     long i,j;
     const bool fixedBlocks = (nblocks>0);
     const long stepsPerBlock = fixedBlocks ? Nmc/nblocks : 1;
@@ -151,7 +157,7 @@ void MCI::initialDecorrelation(const int &NdecorrelationSteps)
         for (i=0; i<MIN_NMC; ++i){ delete[] *(_datax+i); }
         delete [] _datax;
     }
-    else {
+    else if (NdecorrelationSteps > 0) {
         this->sample(NdecorrelationSteps, false);
     }
 }

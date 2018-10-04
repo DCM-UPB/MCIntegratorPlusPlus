@@ -66,11 +66,6 @@ namespace MPIMCI
 
     // integrate in parallel and accumulate results
 
-    void integrate(MCI * const mci, const long &Nmc, double * average, double * error, bool findMRT2step=true, bool initialdecorrelation=true, size_t nblocks=0, bool use_mpi=true) // auto-mode-wrapper
-    {
-        integrate(mci, Nmc, average, error, findMRT2step ? -1 : 0, initialdecorrelation ? -1 : 0, nblocks, use_mpi);
-    }
-
     void integrate(MCI * const mci, const long &Nmc, double * average, double * error, int NfindMRT2stepIterations, int NdecorrelationSteps, size_t nblocks=0, bool use_mpi=true) // by setting use_mpi to false you can use this without requiring MPI
     {
         if (use_mpi) {
@@ -103,6 +98,14 @@ namespace MPIMCI
             mci->integrate(Nmc, average, error, NfindMRT2stepIterations, NdecorrelationSteps, nblocks); // regular single thread call
         }
     }
+
+    void integrate(MCI * const mci, const long &Nmc, double * average, double * error, bool findMRT2step=true, bool initialdecorrelation=true, size_t nblocks=0, bool use_mpi=true) // auto-mode-wrapper
+    {
+        int stepsMRT2 = findMRT2step ? -1 : 0;
+        int stepsDecorr = initialdecorrelation ? -1 : 0;
+        integrate(mci, Nmc, average, error, stepsMRT2, stepsDecorr, nblocks, use_mpi);
+    }
+
 
     // finalize MPI
     void finalize()
