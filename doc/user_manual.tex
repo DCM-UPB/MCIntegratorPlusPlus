@@ -568,6 +568,34 @@ In this case the new parameter \verb+ndim+ enters into play (it is an \verb+int+
 Data (\verb+x+) are supposed to be organised as a $\verb+n+ \times \verb+ndim+$ matrix.
 % subsection multidimensional_estimations (end)
 
+\section{MPI-MCI} % (fold)
+\label{sec:mpimci}
+
+It is possible to use Message Passing Interface (MPI) for evaluating the MC integrals
+in parallel. The library provides a namespace \verb+MPIMCI+ that contains a few
+simple methods to use for creating a parallel MC program. Although the MCI library can be
+compiled without any MPI implementation present, to use the MPIMCI methods in
+executable code you need OpenMPI or an alternative implementation.
+\\\\Then just use MPIMCI in your code as follows and compile\&run the executable with your system's MPI wrappers (e.g mpic++ and mpirun).
+
+\begin{verbatim}
+#include "MPIMCI.hpp"
+// start of main
+const int myrank = MPIMCI::init();
+// ...
+MPIMCI::integrate(mci, Nmc, average, error);
+// ...
+if (myrank==0) { /* printout etc. */ }
+// ...
+MPIMCI::finalize();
+// end of main
+\end{verbatim}
+Remember not to encapsulate any code within \verb+if (myrank==0){}+ clauses,
+that is actually relevant to all threads. Typically this means only file and
+console output belongs there.
+\\\\For further information on options and use, check out \verb+ex2+ and the \verb+MPIMCI.hpp+ header file.
+
+% section mpivmc (end)
 
 
 \printindex
