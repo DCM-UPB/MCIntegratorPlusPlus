@@ -39,8 +39,9 @@ protected:
 
     std::vector<MCICallBackOnAcceptanceInterface *> _cback;  // Vector of observable functions
 
-    int _ridx;  // running index, which keeps track of the index of datax
-    double ** _datax;  // array that will contain all the measured observable
+    int _ridx;  // running index, which keeps track of the number of MC steps
+    int _bidx; // index of the current block/datax element
+    double ** _datax;  // array that will contain all the measured observable (or block averages if used)
     bool _flagMC; //flag that is true only when MCI is accumulating data for the integral
 
     std::ofstream _obsfile;  //ofstream for storing obs values while sampling
@@ -73,11 +74,11 @@ protected:
     void updateX();
     void doStepMRT2(bool * flagacc);  //use this if there is a pdf
 
-    void findMRT2Step();
+    void findMRT2Step(const int &NfindMRT2stepIterations = -1);
 
-    void sample(const long &npoints, const bool &flagobs);
+    void sample(const long &npoints, const bool &flagobs, const long &stepsPerBlock = 1);
 
-    void initialDecorrelation();
+    void initialDecorrelation(const int &NdecorrelationSteps = -1);
 
     void storeObservables();
     void storeWalkerPositions();
@@ -88,7 +89,7 @@ public:
     ~MCI();  //Destructor
 
     // --- Setters
-    void setSeed(const long seed);
+    void setSeed(const uint_fast64_t seed);
 
     void setIRange(const double * const * irange);
 
@@ -129,7 +130,12 @@ public:
     double getAcceptanceRate(){return (double(_acc)/(double(_acc+_rej)));}
 
     // --- Integrate
-    void integrate(const long &Nmc, double * average, double * error, bool findMRT2step=true, bool initialdecorrelation=true);
+
+    // Wrapper for easiness/compatibility. Using automatic methods for findMRT2step and initial decorrelation (if enabled).
+    void integrate(const long &Nmc, double * average, double * error, bool findMRT2step=true, bool initialdecorrelation = true, size_t nblocks = 0); // nblocks == 0 means using auto-blocking (no RAM benefit)
+
+    // Actual integrate implemention. With integer controls: -1 -> auto, 0 -> disabled, >0 -> use fixed step/iteration counts, e.g. useful for parallel computation
+    void integrate(const long &Nmc, double * average, double * error, int NfindMRT2stepIterations, int NdecorrelationSteps, size_t nblocks = 0);
 
 
 };
