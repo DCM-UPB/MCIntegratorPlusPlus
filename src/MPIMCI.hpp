@@ -47,6 +47,8 @@ namespace MPIMCI
             std::ifstream seedfile;
             seedfile.open(filename);
 
+            if (!seedfile.good()) {throw std::runtime_error("Random seed file could not be found.");}
+
             for (int i=0; i<offset; ++i) {
                 if (seedfile.eof()) {throw std::runtime_error("Chosen seed offset is already larger than the number of seeds in seed file.");}
                 uint_fast64_t skip;
