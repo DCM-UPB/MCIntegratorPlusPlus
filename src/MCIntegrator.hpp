@@ -67,8 +67,6 @@ protected:
 
     void resetAccRejCounters();
 
-    void newRandomX();  //to use if there is no pdf, take a new random _xold
-
     void applyPBC(double * v);
     void computeNewX();
     void updateX();
@@ -94,6 +92,7 @@ public:
     void setIRange(const double * const * irange);
 
     void setX(const double * x);
+    void newRandomX();  // use if you want to take a new random _xold
     void setMRT2Step(const double * mrt2step);
 
     void setTargetAcceptanceRate(const double * targetaccrate);
