@@ -133,7 +133,7 @@ namespace mci
         int i_min = 0;
         for (int i2=1; i2<MAX_BLOCKS-MIN_BLOCKS+1-2*MAX_PLATEAU_AVERAGE; ++i2)
             {
-                if ( abs(*(accdelta+i2)) < abs(*(accdelta+i_min)) ) i_min=i2;
+                if ( fabs(*(accdelta+i2)) < fabs(*(accdelta+i_min)) ) i_min=i2;
             }
 
         i_min+=MAX_PLATEAU_AVERAGE;
@@ -311,7 +311,7 @@ namespace mci
             {
                 for (int j=0; j<ndim; ++j)
                     {
-                        if ( abs(*(*(accdelta+i2)+j)) < abs( *(*(accdelta+(*(i_min+j)))+j) ) ) *(i_min+j)=i2;
+                        if ( fabs(*(*(accdelta+i2)+j)) < fabs( *(*(accdelta+(*(i_min+j)))+j) ) ) *(i_min+j)=i2;
                     }
             }
         for (int j=0; j<ndim; ++j){ *(i_min+j) += MAX_PLATEAU_AVERAGE; }

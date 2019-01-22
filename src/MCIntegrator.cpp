@@ -141,7 +141,7 @@ void MCI::initialDecorrelation(const int &NdecorrelationSteps)
             this->sample(MIN_NMC, true);
             mci::MultiDimCorrelatedEstimator(MIN_NMC, _nobsdim, _datax, newestimate, newerrestim);
             for (i=0; i<_nobsdim; ++i) {
-                if ( std::abs( *(oldestimate+i) - *(newestimate+i) ) > *(olderrestim+i) + *(newerrestim+i) ) {
+                if ( fabs( *(oldestimate+i) - *(newestimate+i) ) > *(olderrestim+i) + *(newerrestim+i) ) {
                     flag_loop=true;
                 }
             }
