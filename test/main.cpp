@@ -1,5 +1,5 @@
-#include "Estimators.hpp"
-#include "MCIntegrator.hpp"
+#include "mci/Estimators.hpp"
+#include "mci/MCIntegrator.hpp"
 #include <iostream>
 #include <random>
 #include <math.h>

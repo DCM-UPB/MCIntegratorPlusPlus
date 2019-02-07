@@ -60,20 +60,12 @@ DerivedData
 
 # -- project specific ignores --
 lib*
+build
 config.sh
 *exe*
 vgcore*
 
-src/*.o
-
-debug/*.o
-debug/*.txt
-
-debug/unittests/ut*/*.o
-debug/unittests/ut*/*.sh
-
-examples/*/a.out
-examples/*/*.o
+test/*.txt
 
 doc/*.aux
 doc/*.dvi

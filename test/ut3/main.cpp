@@ -1,5 +1,5 @@
-#include "MCIntegrator.hpp"
-#include "MCISamplingFunctionInterface.hpp"
+#include "mci/MCIntegrator.hpp"
+#include "mci/MCISamplingFunctionInterface.hpp"
 
 #include <iostream>
 #include <math.h>
@@ -25,6 +25,7 @@ public:
 
 };
 
+
 class XSquared: public MCIObservableFunctionInterface{
 public:
     XSquared(): MCIObservableFunctionInterface(3, 1){}
@@ -36,69 +37,51 @@ public:
 };
 
 
-class XYZSquared: public MCIObservableFunctionInterface{
-public:
-    XYZSquared(): MCIObservableFunctionInterface(3, 3){}
-    ~XYZSquared(){}
-
-    void observableFunction(const double * in, double * out){
-        out[0] = in[0] * in[0];
-        out[1] = in[1] * in[1];
-        out[2] = in[2] * in[2];
-    }
-};
-
-
 
 int main(){
     const long NMC = 10000;
     const double CORRECT_RESULT = 0.5;
 
     ThreeDimGaussianPDF * pdf = new ThreeDimGaussianPDF();
-    XSquared * obs1d = new XSquared();
-    XYZSquared * obs3d = new XYZSquared();
+    XSquared * obs = new XSquared();
 
     MCI * mci = new MCI(3);
     mci->setSeed(5649871);
     mci->addSamplingFunction(pdf);
-    mci->addObservable(obs1d);
-    mci->addObservable(obs3d);
+    mci->addObservable(obs);
     // the integral should provide 0.5 as answer!
 
     double * x = new double[3];
     x[0] = 5.; x[1] = -5.; x[2] = 10.;
 
-    double * average = new double[4];
-    double * error = new double[4];
+    double * average = new double;
+    double * error = new double;
 
     // this integral will give a wrong answer! This is because the starting point is very bad and initialDecorrelation is skipped (as well as the MRT2step automatic setting)
     mci->setX(x);
-    mci->integrate(NMC, average, error, false, false);
-    for (int i=0; i<mci->getNObsDim(); ++i) {
-        assert( abs(average[i]-CORRECT_RESULT) > 2.*error[i] );
-    }
+    mci->integrate(NMC, average, error, 0, 0);
+    assert( abs(average[0]-CORRECT_RESULT) > 2.*error[0] );
 
     // this integral, instead, will provide the right answer
     mci->setX(x);
-    mci->integrate(NMC, average, error);
-    for (int i=0; i<mci->getNObsDim(); ++i) {
-        assert( abs(average[i]-CORRECT_RESULT) < 2.*error[i] );
-    }
+    mci->integrate(NMC, average, error, 10, 1000);
+    assert( abs(average[0]-CORRECT_RESULT) < 2.*error[0] );
 
     // now, doing an integral without finding again the MRT2step and doing the initialDecorrelation will also result in a correct result
-    mci->integrate(NMC, average, error, false, false);
-    for (int i=0; i<mci->getNObsDim(); ++i) {
-        assert( abs(average[i]-CORRECT_RESULT) < 2.*error[i] );
-    }
+    mci->integrate(NMC, average, error, 0, 0);
+    assert( abs(average[0]-CORRECT_RESULT) < 2.*error[0] );
+
+    // and using fixed blocking also gives the same result
+    mci->integrate(NMC, average, error, 0, 0, 15);
+    assert( abs(average[0]-CORRECT_RESULT) < 2.*error[0] );
 
 
     delete pdf;
-    delete obs1d;
-    delete obs3d;
+    delete obs;
     delete mci;
     delete [] x;
-    delete [] average;
-    delete [] error;
+    delete average;
+    delete error;
 
     return 0;
 }

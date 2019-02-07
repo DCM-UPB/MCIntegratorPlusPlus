@@ -5,7 +5,7 @@
 #include <string>
 #include <fstream>
 #include <mpi.h>
-#include "MCIntegrator.hpp"
+#include "mci/MCIntegrator.hpp"
 
 namespace MPIMCI
 {

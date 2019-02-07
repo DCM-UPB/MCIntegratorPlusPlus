@@ -1,5 +1,5 @@
-#include "MCIntegrator.hpp"
-#include "Estimators.hpp"
+#include "mci/MCIntegrator.hpp"
+#include "mci/Estimators.hpp"
 
 #include <limits>
 #include <iostream>

@@ -1,9 +1,9 @@
 #ifndef MCINTEGRATOR
 #define MCINTEGRATOR
 
-#include "MCISamplingFunctionInterface.hpp"
-#include "MCIObservableFunctionInterface.hpp"
-#include "MCICallBackOnAcceptanceInterface.hpp"
+#include "mci/MCISamplingFunctionInterface.hpp"
+#include "mci/MCIObservableFunctionInterface.hpp"
+#include "mci/MCICallBackOnAcceptanceInterface.hpp"
 #include <vector>
 #include <random>
 #include <fstream>

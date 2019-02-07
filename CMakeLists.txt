@@ -1,0 +1,28 @@
+cmake_minimum_required (VERSION 3.5)
+include(FindPackageHandleStandardArgs)
+
+project (mci LANGUAGES CXX VERSION 0.0.1)
+
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${USER_CXX_FLAGS}")
+
+# find packages
+message(STATUS "Configured CMAKE_CXX_FLAGS: ${CMAKE_CXX_FLAGS}")
+
+find_package(MPI)
+message(STATUS "MPI_INCLUDE_PATH: ${MPI_INCLUDE_PATH}")
+message(STATUS "MPI_CXX_LIBRARIES: ${MPI_CXX_LIBRARIES}")
+
+# set header / library paths
+include_directories(include/) # headers
+include_directories(SYSTEM ${MPI_INCLUDE_PATH})
+
+enable_testing()
+
+# continue with subdirectories
+add_subdirectory(src) 
+add_subdirectory(test)
+add_subdirectory(examples)
+

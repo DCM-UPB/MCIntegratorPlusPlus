@@ -4,8 +4,8 @@
 #include <math.h>
 #include <fstream>
 
-#include "MCIntegrator.hpp"
-#include "MPIMCI.hpp"
+#include "mci/MCIntegrator.hpp"
+#include "mci/MPIMCI.hpp"
 
 
 // Observable functions
@@ -66,8 +66,8 @@ int main() {
     const int ndim = 1;
     MCI * mci = new MCI(ndim);
 
-    // seed the different MPI threads from a file
-    MPIMCI::setSeed(mci, "rseed.txt", 0); // offset x -> start from the x-th seed in file
+    // this can be used to seed the different MPI threads from a file
+    //MPIMCI::setSeed(mci, "rseed.txt", 0); // offset x -> start from the x-th seed in file
 
     if (myrank == 0) cout << "ndim = " << mci->getNDim() << endl;
 

@@ -3,7 +3,7 @@
 #include <math.h>
 #include <fstream>
 
-#include "MCIntegrator.hpp"
+#include "mci/MCIntegrator.hpp"
 
 
 
