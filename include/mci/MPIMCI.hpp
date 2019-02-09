@@ -1,3 +1,5 @@
+#if USE_MPI==1
+
 #ifndef MPIMCI
 #define MPIMCI
 
@@ -122,5 +124,7 @@ namespace MPIMCI
         MPI_Finalize();
     }
 };
+
+#endif
 
 #endif

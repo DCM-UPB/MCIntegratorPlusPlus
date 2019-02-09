@@ -62,10 +62,7 @@ DerivedData
 lib*
 build
 config.sh
-*exe*
 vgcore*
-
-test/*.txt
 
 doc/*.aux
 doc/*.dvi

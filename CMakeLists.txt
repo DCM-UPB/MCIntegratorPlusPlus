@@ -12,12 +12,15 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${USER_CXX_FLAGS}")
 message(STATUS "Configured CMAKE_CXX_FLAGS: ${CMAKE_CXX_FLAGS}")
 
 find_package(MPI)
-message(STATUS "MPI_INCLUDE_PATH: ${MPI_INCLUDE_PATH}")
-message(STATUS "MPI_CXX_LIBRARIES: ${MPI_CXX_LIBRARIES}")
+if (MPI_FOUND)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSE_MPI=1")
+  include_directories(SYSTEM ${MPI_INCLUDE_PATH})
+  message(STATUS "MPI_INCLUDE_PATH: ${MPI_INCLUDE_PATH}")
+  message(STATUS "MPI_CXX_LIBRARIES: ${MPI_CXX_LIBRARIES}")
+endif()
 
 # set header / library paths
 include_directories(include/) # headers
-include_directories(SYSTEM ${MPI_INCLUDE_PATH})
 
 enable_testing()
 
