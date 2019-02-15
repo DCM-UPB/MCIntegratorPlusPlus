@@ -21,6 +21,7 @@ protected:
     std::uniform_real_distribution<double> _rd;  //after initialization (done in the constructor) can be used with _rd(_rgen)
 
     int _ndim;  // number of dimensions
+    double ** _rrange;  // ranges for random initialization
     double ** _irange;  // integration ranges
     double _vol;  // Integration volume
 
@@ -28,8 +29,11 @@ protected:
     double * _xnew;  //walker proposed position
     double * _mrt2step;  // M(RT)^2 random step
 
-    double _targetaccrate;  // accepted and rejected moves
-    int _acc, _rej;  // the MC integration will be done sampling from this pdf
+    int _NfindMRT2steps; // how many MRT2 step adjustment iterations to do before integrating
+    int _NdecorrelationSteps; // how many decorrelation steps to do before integrating
+    int _nblocks; // how many blocks to use for error estimation (0 for auto -> high RAM usage)
+
+    double _targetaccrate;  // desired acceptance ratio
 
     std::vector<MCISamplingFunctionInterface *> _pdf; //vector of sampling functions
     bool _flagpdf;  // did the user provide a sampling function?
@@ -39,6 +43,7 @@ protected:
 
     std::vector<MCICallBackOnAcceptanceInterface *> _cback;  // Vector of observable functions
 
+    int _acc, _rej;  // internal counters
     int _ridx;  // running index, which keeps track of the number of MC steps
     int _bidx; // index of the current block/datax element
     double ** _datax;  // array that will contain all the measured observable (or block averages if used)
@@ -70,17 +75,15 @@ protected:
     void applyPBC(double * v);
     void computeNewX();
     void updateX();
-    void doStepMRT2(bool * flagacc);  //use this if there is a pdf
+    bool doStepMRT2();  //use this if there is a pdf, returns whether step was accepted or not
 
-    void findMRT2Step(const int &NfindMRT2stepIterations = -1);
+    void findMRT2Step();
+    void initialDecorrelation();
 
     void sample(const long &npoints, const bool &flagobs, const long &stepsPerBlock = 1);
 
-    void initialDecorrelation(const int &NdecorrelationSteps = -1);
-
     void storeObservables();
     void storeWalkerPositions();
-
 
 public:
     MCI(const int & ndim);  //Constructor, need the number of dimensions
@@ -89,13 +92,17 @@ public:
     // --- Setters
     void setSeed(const uint_fast64_t seed);
 
-    void setIRange(const double * const * irange);
+    void setRRange(const double * const * rrange); // if set, initialize walkers within these bounds on every newRandomX(), else use irange
+    void setIRange(const double * const * irange); // keep walkers within these bounds during integration (defaults to full range of double floats)
 
     void setX(const double * x);
     void newRandomX();  // use if you want to take a new random _xold
-    void setMRT2Step(const double * mrt2step);
 
-    void setTargetAcceptanceRate(const double * targetaccrate);
+    void setMRT2Step(const double * mrt2step);
+    void setNfindMRT2steps(const int niterations /* -1 == auto, 0 == disabled */){_NfindMRT2steps=niterations;} // how many MRT2 step adjustment iterations to do before integrating
+    void setNdecorrelationSteps(const int nsteps /* -1 == auto, 0 == disabled */){_NdecorrelationSteps=nsteps;} // how many decorrelation steps to do before integrating
+    void setNBlocks(const int nblocks /* 0 == auto -> high RAM usage */){_nblocks=nblocks;} // how many blocks to use for error estimation
+    void setTargetAcceptanceRate(const double targetaccrate);
 
     void addObservable(MCIObservableFunctionInterface * obs);
     void clearObservables();
@@ -111,9 +118,13 @@ public:
 
     // --- Getters
     int getNDim(){return _ndim;}
+    double getRRange(const int &i, const int &j){return *(*(_rrange+i)+j);}
     double getIRange(const int &i, const int &j){return *(*(_irange+i)+j);}
     double getX(const int &i){return *(_xold+i);}
     double getMRT2Step(const int &i){return *(_mrt2step+i);}
+    int getNfindMRT2steps(){return _NfindMRT2steps;}
+    int getNdecorrelationSteps(){return _NdecorrelationSteps;}
+    int getNBlocks(){return _nblocks;}
 
     MCIObservableFunctionInterface * getObservable(const int &i){return _obs[i];}
     int getNObs(){return _obs.size();}
@@ -130,13 +141,8 @@ public:
 
     // --- Integrate
 
-    // Wrapper for easiness/compatibility. Using automatic methods for findMRT2step and initial decorrelation (if enabled).
-    void integrate(const long &Nmc, double * average, double * error, bool findMRT2step=true, bool initialdecorrelation = true, size_t nblocks = 0); // nblocks == 0 means using auto-blocking (no RAM benefit)
-
-    // Actual integrate implemention. With integer controls: -1 -> auto, 0 -> disabled, >0 -> use fixed step/iteration counts, e.g. useful for parallel computation
-    void integrate(const long &Nmc, double * average, double * error, int NfindMRT2stepIterations, int NdecorrelationSteps, size_t nblocks = 0);
-
-
+    // Actual integrate implemention. With flags to skip the configured step adjustment/decorrelation.
+    void integrate(const long &Nmc, double * average, double * error, const bool doFindMRT2step = true, const bool doDecorrelation = true);
 };
 
 #endif

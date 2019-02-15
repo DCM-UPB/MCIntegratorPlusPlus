@@ -12,7 +12,7 @@
 namespace MPIMCI
 {
     // return my rank
-    int rank()
+    int myrank() // we cannot use rank() here because it collides with "using namespace std"
     {
         int myrank;
         MPI_Comm_rank(MPI_COMM_WORLD, &myrank);
@@ -34,14 +34,15 @@ namespace MPIMCI
         MPI_Initialized(&isinit);
         if (isinit==1) throw std::runtime_error("MPI already initialized!");
         MPI_Init(NULL, NULL);
-        return rank();
+
+        return myrank();
     }
 
     // set different random seeds per thread from a file
     void setSeed(MCI * const mci, const std::string &filename, const int &offset = 0) // with offset you can control how many seeds to skip initially
     {
-        int myrank = rank();
-        int nranks = size();
+        int myrank = MPIMCI::myrank();
+        int nranks = MPIMCI::size();
 
         uint_fast64_t seeds[nranks];
         uint_fast64_t myseed;
@@ -70,46 +71,33 @@ namespace MPIMCI
 
     // integrate in parallel and accumulate results
 
-    void integrate(MCI * const mci, const long &Nmc, double * average, double * error, int NfindMRT2stepIterations, int NdecorrelationSteps, size_t nblocks=0, bool use_mpi=true) // by setting use_mpi to false you can use this without requiring MPI
+    void integrate(MCI * const mci, const long &Nmc, double * average, double * error, const bool doFindMRT2Step = true, const bool doDecorrelation = true)
     {
-        if (use_mpi) {
-            // make sure the user has MPI in the correct state
-            int isinit, isfinal;
-            MPI_Initialized(&isinit);
-            if (isinit==0) {throw std::runtime_error("MPI not initialized!");}
-            MPI_Finalized(&isfinal);
-            if (isfinal==1) {throw std::runtime_error("MPI already finalized!");}
+        // make sure the user has MPI in the correct state
+        int isinit, isfinal;
+        MPI_Initialized(&isinit);
+        if (isinit==0) {throw std::runtime_error("MPI not initialized!");}
+        MPI_Finalized(&isfinal);
+        if (isfinal==1) {throw std::runtime_error("MPI already finalized!");}
 
-            int nranks = size();
+        int nranks = size();
 
-            // the results are stored in myAverage/Error and then reduced into the same average/error for all processes
-            double myAverage[mci->getNObsDim()];
-            double myError[mci->getNObsDim()];
+        // the results are stored in myAverage/Error and then reduced into the same average/error for all processes
+        double myAverage[mci->getNObsDim()];
+        double myError[mci->getNObsDim()];
 
-            mci->integrate(Nmc, myAverage, myError, NfindMRT2stepIterations, NdecorrelationSteps, nblocks);
+        mci->integrate(Nmc, myAverage, myError, doFindMRT2Step, doDecorrelation);
 
-            for (int i=0; i<mci->getNObsDim(); ++i) {
-                MPI_Allreduce(&myAverage[i], &average[i], 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+        for (int i=0; i<mci->getNObsDim(); ++i) {
+            MPI_Allreduce(&myAverage[i], &average[i], 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
 
-                myError[i] *= myError[i];
-                MPI_Allreduce(&myError[i], &error[i], 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+            myError[i] *= myError[i];
+            MPI_Allreduce(&myError[i], &error[i], 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
 
-                average[i] /= nranks;
-                error[i] = sqrt(error[i]) / nranks;
-            }
-        }
-        else {
-            mci->integrate(Nmc, average, error, NfindMRT2stepIterations, NdecorrelationSteps, nblocks); // regular single thread call
+            average[i] /= nranks;
+            error[i] = sqrt(error[i]) / nranks;
         }
     }
-
-    void integrate(MCI * const mci, const long &Nmc, double * average, double * error, bool findMRT2step=true, bool initialdecorrelation=true, size_t nblocks=0, bool use_mpi=true) // auto-mode-wrapper
-    {
-        int stepsMRT2 = findMRT2step ? -1 : 0;
-        int stepsDecorr = initialdecorrelation ? -1 : 0;
-        integrate(mci, Nmc, average, error, stepsMRT2, stepsDecorr, nblocks, use_mpi);
-    }
-
 
     // finalize MPI
     void finalize()

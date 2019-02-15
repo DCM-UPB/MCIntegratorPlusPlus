@@ -99,9 +99,7 @@ int main() {
 
 
     // target acceptance rate
-    double * targetacceptrate = new double[1];
-    targetacceptrate[0] = 0.7;
-    mci->setTargetAcceptanceRate(targetacceptrate);
+    mci->setTargetAcceptanceRate(0.7);
 
     cout << "Acceptance rate = " << mci->getTargetAcceptanceRate() << endl;
     cout << endl << endl;
@@ -191,8 +189,6 @@ int main() {
     delete sf;
 
     delete obs;
-
-    delete[] targetacceptrate;
 
     delete[] step;
 

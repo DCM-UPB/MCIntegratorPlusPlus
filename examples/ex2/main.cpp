@@ -66,9 +66,6 @@ int main() {
     const int ndim = 1;
     MCI * mci = new MCI(ndim);
 
-    // this can be used to seed the different MPI threads from a file
-    //MPIMCI::setSeed(mci, "rseed.txt", 0); // offset x -> start from the x-th seed in file
-
     if (myrank == 0) cout << "ndim = " << mci->getNDim() << endl;
 
     // set the integration range to [-1:3]
@@ -95,9 +92,7 @@ int main() {
     if (myrank == 0) cout << "MRT2 step = " << mci->getMRT2Step(0) << endl;
 
     // target acceptance rate
-    double * targetacceptrate = new double[1];
-    targetacceptrate[0] = 0.7;
-    mci->setTargetAcceptanceRate(targetacceptrate);
+    mci->setTargetAcceptanceRate(0.7);
 
     if (myrank == 0) {
         cout << "Acceptance rate = " << mci->getTargetAcceptanceRate() << endl;
@@ -169,8 +164,6 @@ int main() {
     delete sf;
 
     delete obs;
-
-    delete[] targetacceptrate;
 
     delete[] step;
 
