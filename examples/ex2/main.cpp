@@ -4,14 +4,14 @@
 #include <math.h>
 #include <fstream>
 
-#include "MCIntegrator.hpp"
-#include "MPIMCI.hpp"
+#include "mci/MCIntegrator.hpp"
+#include "mci/MPIMCI.hpp"
 
 
 // Observable functions
 class Parabola: public MCIObservableFunctionInterface{
 public:
-    Parabola(const int &ndim): MCIObservableFunctionInterface(ndim, 1) {}
+    explicit Parabola(const int &ndim): MCIObservableFunctionInterface(ndim, 1) {}
 
     void observableFunction(const double * in, double * out){
         out[0] = 4.*in[0] - in[0]*in[0];
@@ -20,7 +20,7 @@ public:
 
 class NormalizedParabola: public MCIObservableFunctionInterface{
 public:
-    NormalizedParabola(const int &ndim): MCIObservableFunctionInterface(ndim, 1) {}
+    explicit NormalizedParabola(const int &ndim): MCIObservableFunctionInterface(ndim, 1) {}
 
     void observableFunction(const double * in, double * out){
         out[0] = (4. - in[0]) * 5.;
@@ -34,7 +34,7 @@ public:
 // the 48 is for normalization (even if not strictly necessary)
 class NormalizedLine: public MCISamplingFunctionInterface{
 public:
-    NormalizedLine(const int &ndim): MCISamplingFunctionInterface(ndim, 1) {}
+    explicit NormalizedLine(const int &ndim): MCISamplingFunctionInterface(ndim, 1) {}
 
     void samplingFunction(const double * in, double * protovalue){
         protovalue[0] = 0.2 * abs(in[0]);
@@ -66,9 +66,6 @@ int main() {
     const int ndim = 1;
     MCI * mci = new MCI(ndim);
 
-    // seed the different MPI threads from a file
-    MPIMCI::setSeed(mci, "rseed.txt", 0); // offset x -> start from the x-th seed in file
-
     if (myrank == 0) cout << "ndim = " << mci->getNDim() << endl;
 
     // set the integration range to [-1:3]
@@ -95,9 +92,7 @@ int main() {
     if (myrank == 0) cout << "MRT2 step = " << mci->getMRT2Step(0) << endl;
 
     // target acceptance rate
-    double * targetacceptrate = new double[1];
-    targetacceptrate[0] = 0.7;
-    mci->setTargetAcceptanceRate(targetacceptrate);
+    mci->setTargetAcceptanceRate(0.7);
 
     if (myrank == 0) {
         cout << "Acceptance rate = " << mci->getTargetAcceptanceRate() << endl;
@@ -169,8 +164,6 @@ int main() {
     delete sf;
 
     delete obs;
-
-    delete[] targetacceptrate;
 
     delete[] step;
 

@@ -1,19 +1,8 @@
 #!/bin/bash
 
-# Library name
-LIBNAME="mci"
+#C++ compiler
+CXX_COMPILER="g++"
 
-# C++ compiler
-CC="g++"
+# C++ flags
+CXX_FLAGS="-O3 -flto -Wall -Wno-unused-function"
 
-# MPI compiler wrapper
-MPICC="mpic++"
-
-# C++ flags (std=c++11 is necessary)
-FLAGS="-std=c++11 -Wall -Werror"
-
-# Optimization flags
-OPTFLAGS="-O3 -flto"
-
-# Debuggin flags
-DEBUGFLAGS="-g -O0"

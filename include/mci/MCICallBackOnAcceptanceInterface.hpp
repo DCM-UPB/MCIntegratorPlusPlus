@@ -22,7 +22,6 @@ public:
     // Call-back function, called if a move is accepted by the MCI Integrator
     virtual void callBackFunction(const double *in, const bool flag_observation) = 0;
     //                                   ^walker position
-
 };
 
 

@@ -39,7 +39,6 @@ public:
     // Compute the observable and store it inside out
     virtual void observableFunction(const double * in, double * out) = 0;
     //                               ^input = walker positions  ^resulting observables
-
 };
 
 

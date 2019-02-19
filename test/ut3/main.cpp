@@ -1,41 +1,13 @@
-#include "MCIntegrator.hpp"
-#include "MCISamplingFunctionInterface.hpp"
+#include "mci/MCIntegrator.hpp"
+#include "mci/MCISamplingFunctionInterface.hpp"
 
 #include <iostream>
 #include <math.h>
 #include <assert.h>
 
+#include "TestMCIFunctions.hpp"
+
 using namespace std;
-
-
-
-class ThreeDimGaussianPDF: public MCISamplingFunctionInterface{
-public:
-    ThreeDimGaussianPDF(): MCISamplingFunctionInterface(3, 1){}
-    ~ThreeDimGaussianPDF(){}
-
-    void samplingFunction(const double *in, double * protovalues){
-        protovalues[0] = (in[0]*in[0]) + (in[1]*in[1]) + (in[2]*in[2]);
-    }
-
-
-    double getAcceptance(const double * protoold, const double * protonew){
-        return exp(-protonew[0]+protoold[0]);
-    }
-
-};
-
-
-class XSquared: public MCIObservableFunctionInterface{
-public:
-    XSquared(): MCIObservableFunctionInterface(3, 1){}
-    ~XSquared(){}
-
-    void observableFunction(const double * in, double * out){
-        out[0] = in[0] * in[0];
-    }
-};
-
 
 
 int main(){
@@ -49,6 +21,8 @@ int main(){
     mci->setSeed(5649871);
     mci->addSamplingFunction(pdf);
     mci->addObservable(obs);
+    mci->setNBlocks(0); // use auto-blocking
+
     // the integral should provide 0.5 as answer!
 
     double * x = new double[3];
@@ -57,22 +31,27 @@ int main(){
     double * average = new double;
     double * error = new double;
 
+    // configure the number of steps to use in pre-sampling
+    mci->setNfindMRT2steps(10);
+    mci->setNdecorrelationSteps(1000);
+
     // this integral will give a wrong answer! This is because the starting point is very bad and initialDecorrelation is skipped (as well as the MRT2step automatic setting)
     mci->setX(x);
-    mci->integrate(NMC, average, error, 0, 0);
+    mci->integrate(NMC, average, error, false, false);
     assert( abs(average[0]-CORRECT_RESULT) > 2.*error[0] );
 
     // this integral, instead, will provide the right answer
     mci->setX(x);
-    mci->integrate(NMC, average, error, 10, 1000);
+    mci->integrate(NMC, average, error, true, true);
     assert( abs(average[0]-CORRECT_RESULT) < 2.*error[0] );
 
     // now, doing an integral without finding again the MRT2step and doing the initialDecorrelation will also result in a correct result
-    mci->integrate(NMC, average, error, 0, 0);
+    mci->integrate(NMC, average, error, false, false);
     assert( abs(average[0]-CORRECT_RESULT) < 2.*error[0] );
 
     // and using fixed blocking also gives the same result
-    mci->integrate(NMC, average, error, 0, 0, 15);
+    mci->setNBlocks(15);
+    mci->integrate(NMC, average, error, false, false);
     assert( abs(average[0]-CORRECT_RESULT) < 2.*error[0] );
 
 
