@@ -17,7 +17,6 @@ void MCI::integrate(const long &Nmc, double * average, double * error, const boo
         throw std::invalid_argument("The requested number of MC steps is smaller than the requested number of blocks.");
     }
 
-    long i,j;
     const bool fixedBlocks = (_nblocks>0);
     const long stepsPerBlock = fixedBlocks ? Nmc/_nblocks : 1;
     const long trueNmc = fixedBlocks ? stepsPerBlock*_nblocks : Nmc;
@@ -33,7 +32,7 @@ void MCI::integrate(const long &Nmc, double * average, double * error, const boo
 
     //allocation of the array where the data will be stored
     _datax = new double*[ndatax];
-    for (i=0; i<ndatax; ++i) { *(_datax+i) = new double[_nobsdim]; }
+    for (long i=0; i<ndatax; ++i) { *(_datax+i) = new double[_nobsdim]; }
 
     //sample the observables
     if (_flagobsfile) _obsfile.open(_pathobsfile);
@@ -47,8 +46,8 @@ void MCI::integrate(const long &Nmc, double * average, double * error, const boo
     //reduce block averages
     if (fixedBlocks) {
         const double fac = 1./stepsPerBlock;
-        for (i=0; i<ndatax; ++i) {
-            for (j=0; j<_nobsdim; ++j) {
+        for (long i=0; i<ndatax; ++i) {
+            for (int j=0; j<_nobsdim; ++j) {
                 *(*(_datax+i)+j) *= fac;
             }
         }
@@ -63,7 +62,7 @@ void MCI::integrate(const long &Nmc, double * average, double * error, const boo
         {
             mci::MultiDimUncorrelatedEstimator(ndatax, _nobsdim, _datax, average, error);
             if (!_flagpdf) {
-                for (i=0; i<_nobsdim; ++i) {
+                for (int i=0; i<_nobsdim; ++i) {
                     *(average+i) *=_vol;
                     *(error+i) *=_vol;
                 }
@@ -382,17 +381,9 @@ void MCI::updateX()
 
 void MCI::newRandomX()
 {
-    if (!_rrange) {
-        //generate a new random x (within the irange)
-        for (int i=0; i<_ndim; ++i) {
-            *(_xold+i) = *(*(_irange+i)) + ( *(*(_irange+i)+1) - *(*(_irange+i)) ) * _rd(_rgen);
-        }
-    }
-    else {
-        for (int i=0; i<_ndim; ++i) {
-            *(_xold+i) = *(*(_rrange+i)) + ( *(*(_rrange+i)+1) - *(*(_rrange+i)) ) * _rd(_rgen);
-        }
-        applyPBC(_xold);
+    //generate a new random x (within the irange)
+    for (int i=0; i<_ndim; ++i) {
+        *(_xold+i) = *(*(_irange+i)) + ( *(*(_irange+i)+1) - *(*(_irange+i)) ) * _rd(_rgen);
     }
 }
 
@@ -459,7 +450,6 @@ void MCI::computeObservables()
         {
             _obs[i]->computeObservables(_xold);
         }
-
 }
 
 
@@ -561,22 +551,6 @@ void MCI::setX(const double * x)
 }
 
 
-void MCI::setRRange(const double * const * rrange)
-{
-    // Set _rrange, the random initialization range
-
-    if (!_rrange) { // we need to allocate the array first
-        _rrange = new double*[_ndim];
-        for (int i=0; i<_ndim; ++i) {
-            *(_rrange+i) = new double[2];
-        }
-    }
-    for (int i=0; i<_ndim; ++i) {
-        *(*(_rrange+i)) = *(*(rrange+i));
-        *(*(_rrange+i)+1) = *(*(rrange+i)+1);
-    }
-}
-
 void MCI::setIRange(const double * const * irange)
 {
     // Set _irange and apply PBC to the initial walker position _x
@@ -607,8 +581,6 @@ MCI::MCI(const int & ndim)
     int i;
     // _ndim
     _ndim = ndim;
-    // _rrange
-    _rrange = nullptr; // per default we just use irange for randomNewX()
     // _irange
     _irange = new double*[_ndim];
     for (i=0; i<_ndim; ++i)
@@ -641,7 +613,7 @@ MCI::MCI(const int & ndim)
     // other controls, defaulting to auto behavior
     _NfindMRT2steps = -1;
     _NdecorrelationSteps = -1;
-    _nblocks = 0; // but defaulting to 16 would probably be better
+    _nblocks = 16; // defaulting to auto-blocking is not good idea, so we use 16 block default
 
     // probability density function
     _flagpdf = false;
@@ -663,10 +635,6 @@ MCI::MCI(const int & ndim)
 
 MCI::~MCI()
 {
-    if (_rrange) {
-        for (int i=0; i<_ndim; ++i){delete[] *(_rrange+i);}
-        delete [] _rrange;
-    }
     // _irange
     for (int i=0; i<_ndim; ++i){delete[] *(_irange+i);}
     delete[] _irange;

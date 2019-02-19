@@ -7,7 +7,7 @@
 class Constval: public MCIObservableFunctionInterface
 {
 public:
-    Constval(const int &ndim): MCIObservableFunctionInterface(ndim, 1) {}
+    explicit Constval(const int &ndim): MCIObservableFunctionInterface(ndim, 1) {}
 
     void observableFunction(const double * in, double * out)
     {
@@ -18,7 +18,7 @@ public:
 class Polynom: public MCIObservableFunctionInterface
 {
 public:
-    Polynom(const int &ndim): MCIObservableFunctionInterface(ndim, 1) {}
+    explicit Polynom(const int &ndim): MCIObservableFunctionInterface(ndim, 1) {}
 
     void observableFunction(const double * in, double * out)
     {
@@ -33,7 +33,7 @@ public:
 class X2: public MCIObservableFunctionInterface
 {
 public:
-    X2(const int &ndim): MCIObservableFunctionInterface(ndim,1) {}
+    explicit X2(const int &ndim): MCIObservableFunctionInterface(ndim,1) {}
 
     void observableFunction(const double * in, double * out)
     {
@@ -48,7 +48,7 @@ public:
 class Gauss: public MCISamplingFunctionInterface
 {
 public:
-    Gauss(const int &ndim): MCISamplingFunctionInterface(ndim,1) {}
+    explicit Gauss(const int &ndim): MCISamplingFunctionInterface(ndim,1) {}
 
     void samplingFunction(const double * in, double * out)
     {
@@ -242,5 +242,4 @@ int main(){
     //cout << " + Acceptance = " << mci_1dgauss_complex.getAcceptanceRate() << endl << endl << endl;
     //delete[] average;
     //delete[] error;
-
 }

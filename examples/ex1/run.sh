@@ -1,5 +1,3 @@
-#!/bin/bash
-ORIGDIR=$(pwd)
+#!/bin/sh
 cd ../../build/examples
 ./ex1.exe
-cd "${ORIGDIR}"

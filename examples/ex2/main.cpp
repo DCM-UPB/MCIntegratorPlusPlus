@@ -11,7 +11,7 @@
 // Observable functions
 class Parabola: public MCIObservableFunctionInterface{
 public:
-    Parabola(const int &ndim): MCIObservableFunctionInterface(ndim, 1) {}
+    explicit Parabola(const int &ndim): MCIObservableFunctionInterface(ndim, 1) {}
 
     void observableFunction(const double * in, double * out){
         out[0] = 4.*in[0] - in[0]*in[0];
@@ -20,7 +20,7 @@ public:
 
 class NormalizedParabola: public MCIObservableFunctionInterface{
 public:
-    NormalizedParabola(const int &ndim): MCIObservableFunctionInterface(ndim, 1) {}
+    explicit NormalizedParabola(const int &ndim): MCIObservableFunctionInterface(ndim, 1) {}
 
     void observableFunction(const double * in, double * out){
         out[0] = (4. - in[0]) * 5.;
@@ -34,7 +34,7 @@ public:
 // the 48 is for normalization (even if not strictly necessary)
 class NormalizedLine: public MCISamplingFunctionInterface{
 public:
-    NormalizedLine(const int &ndim): MCISamplingFunctionInterface(ndim, 1) {}
+    explicit NormalizedLine(const int &ndim): MCISamplingFunctionInterface(ndim, 1) {}
 
     void samplingFunction(const double * in, double * protovalue){
         protovalue[0] = 0.2 * abs(in[0]);

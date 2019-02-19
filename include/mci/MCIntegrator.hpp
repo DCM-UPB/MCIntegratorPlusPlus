@@ -21,7 +21,6 @@ protected:
     std::uniform_real_distribution<double> _rd;  //after initialization (done in the constructor) can be used with _rd(_rgen)
 
     int _ndim;  // number of dimensions
-    double ** _rrange;  // ranges for random initialization
     double ** _irange;  // integration ranges
     double _vol;  // Integration volume
 
@@ -86,13 +85,12 @@ protected:
     void storeWalkerPositions();
 
 public:
-    MCI(const int & ndim);  //Constructor, need the number of dimensions
+    explicit MCI(const int & ndim);  //Constructor, need the number of dimensions
     ~MCI();  //Destructor
 
     // --- Setters
     void setSeed(const uint_fast64_t seed);
 
-    void setRRange(const double * const * rrange); // if set, initialize walkers within these bounds on every newRandomX(), else use irange
     void setIRange(const double * const * irange); // keep walkers within these bounds during integration (defaults to full range of double floats)
 
     void setX(const double * x);
@@ -118,7 +116,6 @@ public:
 
     // --- Getters
     int getNDim(){return _ndim;}
-    double getRRange(const int &i, const int &j){return *(*(_rrange+i)+j);}
     double getIRange(const int &i, const int &j){return *(*(_irange+i)+j);}
     double getX(const int &i){return *(_xold+i);}
     double getMRT2Step(const int &i){return *(_mrt2step+i);}

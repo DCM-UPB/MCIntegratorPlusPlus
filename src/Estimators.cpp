@@ -85,10 +85,9 @@ namespace mci
 
         double *av = new double[MAX_BLOCKS-MIN_BLOCKS+1];
         double *err = new double[MAX_BLOCKS-MIN_BLOCKS+1];
-        int nblocks;
         for (int i1=0; i1<MAX_BLOCKS-MIN_BLOCKS+1; ++i1)
             {
-                nblocks=i1+MIN_BLOCKS;
+                const int nblocks=i1+MIN_BLOCKS;
                 BlockEstimator(n, x, nblocks, av+i1, err+i1);
                 //cout << "Nblocks = " << nblocks << "   average = " << *(av+i1) << "   error = " << *(err+i1) << endl;
             }
@@ -236,7 +235,6 @@ namespace mci
 
         for (int j=0; j<nblocks; ++j){ delete [] *(av+j); }
         delete [] av;
-
     }
 
 
