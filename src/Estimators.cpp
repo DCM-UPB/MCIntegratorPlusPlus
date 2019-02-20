@@ -257,10 +257,9 @@ namespace mci
         double ** err = new double*[MAX_BLOCKS-MIN_BLOCKS+1];
         for (int j=0; j<MAX_BLOCKS-MIN_BLOCKS+1; ++j){ *(err+j) = new double[ndim]; }
 
-        int nblocks;
         for (int i1=0; i1<MAX_BLOCKS-MIN_BLOCKS+1; ++i1)
             {
-                nblocks=i1+MIN_BLOCKS;
+                const int nblocks=i1+MIN_BLOCKS;
                 MultiDimBlockEstimator(n, ndim, x, nblocks, *(av+i1), *(err+i1));
             }
 

@@ -55,7 +55,7 @@ before_install:
   if [[ "$USE_GCOV" == "TRUE" ]]; then echo "USE_COVERAGE=1" >> config.sh;
   else
   echo "USE_COVERAGE=0" >> config.sh;
-  fi; 
+  fi;
 
 script:
 - |
@@ -66,7 +66,7 @@ script:
   fi;
 - |
   if [[ "$USE_DOCKER" == "TRUE" ]]; then
-  if [[ "$USE_GCOV" == "TRUE" ]]; then 
+  if [[ "$USE_GCOV" == "TRUE" ]]; then
   docker run -it -v $(pwd):/root/repo nnvmc/base /bin/bash -c "cd /root/repo/test && ./run.sh";
   docker run -e TRAVIS=$TRAVIS -e TRAVIS_JOB_ID=$TRAVIS_JOB_ID -it -v $(pwd):/root/repo nnvmc/base /bin/bash -c "pip install cpp-coveralls && cd /root/repo/build && coveralls --verbose -b ./ -r ../ -i include -i src -x .cpp -x .hpp --gcov-options '\-lp'";
   else
