@@ -6,3 +6,8 @@ if (MPI_FOUND)
   target_link_libraries(mci ${MPI_CXX_LIBRARIES})
   target_link_libraries(mci_static ${MPI_CXX_LIBRARIES})
 endif()
+
+if (USE_COVERAGE)
+  target_link_libraries(mci --coverage)
+  target_link_libraries(mci_static --coverage)
+endif()
