@@ -6,13 +6,10 @@ services:
 addons:
   apt:
     packages:
-    - cmake
     - valgrind
-    - python-pip
 
   homebrew:
     packages:
-    - cmake
     - valgrind
 
 matrix:

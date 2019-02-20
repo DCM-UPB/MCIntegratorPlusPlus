@@ -37,20 +37,20 @@ int main(){
     mci->setX(x);
     mci->integrate(NMC, average, error, false, false);
     for (int i=0; i<mci->getNObsDim(); ++i) {
-        assert( abs(average[i]-CORRECT_RESULT) > 2.*error[i] );
+        assert( fabs(average[i]-CORRECT_RESULT) > 2.*error[i] );
     }
 
     // this integral, instead, will provide the right answer
     mci->setX(x);
     mci->integrate(NMC, average, error);
     for (int i=0; i<mci->getNObsDim(); ++i) {
-        assert( abs(average[i]-CORRECT_RESULT) < 2.*error[i] );
+        assert( fabs(average[i]-CORRECT_RESULT) < 2.*error[i] );
     }
 
     // now, doing an integral without finding again the MRT2step and doing the initialDecorrelation will also result in a correct result
     mci->integrate(NMC, average, error, false, false);
     for (int i=0; i<mci->getNObsDim(); ++i) {
-        assert( abs(average[i]-CORRECT_RESULT) < 2.*error[i] );
+        assert( fabs(average[i]-CORRECT_RESULT) < 2.*error[i] );
     }
 
 

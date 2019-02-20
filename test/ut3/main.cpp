@@ -38,21 +38,21 @@ int main(){
     // this integral will give a wrong answer! This is because the starting point is very bad and initialDecorrelation is skipped (as well as the MRT2step automatic setting)
     mci->setX(x);
     mci->integrate(NMC, average, error, false, false);
-    assert( abs(average[0]-CORRECT_RESULT) > 2.*error[0] );
+    assert( fabs(average[0]-CORRECT_RESULT) > 2.*error[0] );
 
     // this integral, instead, will provide the right answer
     mci->setX(x);
     mci->integrate(NMC, average, error, true, true);
-    assert( abs(average[0]-CORRECT_RESULT) < 2.*error[0] );
+    assert( fabs(average[0]-CORRECT_RESULT) < 2.*error[0] );
 
     // now, doing an integral without finding again the MRT2step and doing the initialDecorrelation will also result in a correct result
     mci->integrate(NMC, average, error, false, false);
-    assert( abs(average[0]-CORRECT_RESULT) < 2.*error[0] );
+    assert( fabs(average[0]-CORRECT_RESULT) < 2.*error[0] );
 
     // and using fixed blocking also gives the same result
     mci->setNBlocks(15);
     mci->integrate(NMC, average, error, false, false);
-    assert( abs(average[0]-CORRECT_RESULT) < 2.*error[0] );
+    assert( fabs(average[0]-CORRECT_RESULT) < 2.*error[0] );
 
 
     delete pdf;
