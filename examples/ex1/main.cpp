@@ -63,9 +63,9 @@ int main() {
 
     // declare a 1-dimensional integrator
     const int ndim = 1;
-    MCI * mci = new MCI(ndim);
+    MCI mci(ndim);
 
-    cout << "ndim = " << mci->getNDim() << endl;
+    cout << "ndim = " << mci.getNDim() << endl;
 
 
 
@@ -74,34 +74,34 @@ int main() {
     irange[0] = new double[2];
     irange[0][0] = -1.;
     irange[0][1] = 3.;
-    mci->setIRange(irange);
+    mci.setIRange(irange);
 
-    cout << "irange = [ " << mci->getIRange(0, 0) << " ; " << mci->getIRange(0, 1) << " ]" << endl;
+    cout << "irange = [ " << mci.getIRange(0, 0) << " ; " << mci.getIRange(0, 1) << " ]" << endl;
 
 
 
     // initial walker position
-    double * initpos = new double[ndim];
+    double initpos[ndim];
     initpos[0] = -0.5;
-    mci->setX(initpos);
+    mci.setX(initpos);
 
-    cout << "initial walker position = " << mci->getX(0) << endl;
+    cout << "initial walker position = " << mci.getX(0) << endl;
 
 
 
     // initial MRT2 step
-    double * step = new double[ndim];
+    double step[ndim];
     step[0] = 0.5;
-    mci->setMRT2Step(step);
+    mci.setMRT2Step(step);
 
-    cout << "MRT2 step = " << mci->getMRT2Step(0) << endl;
+    cout << "MRT2 step = " << mci.getMRT2Step(0) << endl;
 
 
 
     // target acceptance rate
-    mci->setTargetAcceptanceRate(0.7);
+    mci.setTargetAcceptanceRate(0.7);
 
-    cout << "Acceptance rate = " << mci->getTargetAcceptanceRate() << endl;
+    cout << "Acceptance rate = " << mci.getTargetAcceptanceRate() << endl;
     cout << endl << endl;
 
 
@@ -117,22 +117,22 @@ int main() {
 
     // observable
     MCIObservableFunctionInterface * obs = new Parabola(ndim);
-    mci->addObservable(obs);
+    mci.addObservable(obs);
 
-    cout << "Number of observables set = " << mci->getNObs() << endl;
+    cout << "Number of observables set = " << mci.getNObs() << endl;
 
 
 
     // sampling function
-    cout << "Number of sampling function set = " << mci->getNSampF() << endl;
+    cout << "Number of sampling function set = " << mci.getNSampF() << endl;
 
 
 
     // integrate
     const long Nmc = 1000000;
-    double * average = new double[mci->getNObsDim()];
-    double * error = new double[mci->getNObsDim()];
-    mci->integrate(Nmc, average, error);
+    double average[mci.getNObsDim()];
+    double error[mci.getNObsDim()];
+    mci.integrate(Nmc, average, error);
 
     cout << "The integral gives as result = " << average[0] << "   +-   " << error[0] << endl;
     cout << "--------------------------------------------------------" << endl << endl;
@@ -153,23 +153,23 @@ int main() {
     // observable
     delete obs;
     obs = new NormalizedParabola(ndim);
-    mci->clearObservables();  // we first remove the old observable
-    mci->addObservable(obs);
+    mci.clearObservables();  // we first remove the old observable
+    mci.addObservable(obs);
 
-    cout << "Number of observables set = " << mci->getNObs() << endl;
+    cout << "Number of observables set = " << mci.getNObs() << endl;
 
 
 
     // sampling function
     MCISamplingFunctionInterface * sf = new NormalizedLine(ndim);
-    mci->addSamplingFunction(sf);
+    mci.addSamplingFunction(sf);
 
-    cout << "Number of sampling function set = " << mci->getNSampF() << endl;
+    cout << "Number of sampling function set = " << mci.getNSampF() << endl;
 
 
 
     // integrate
-    mci->integrate(Nmc, average, error);
+    mci.integrate(Nmc, average, error);
 
     cout << "The integral gives as result = " << average[0] << "   +-   " << error[0] << endl;
     cout << "--------------------------------------------------------" << endl << endl;
@@ -183,22 +183,13 @@ int main() {
 
 
     // deallocate
-    delete[] average;
-    delete[] error;
 
     delete sf;
 
     delete obs;
 
-    delete[] step;
-
-    delete[] initpos;
-
     delete[] irange[0];
     delete[] irange;
-
-    delete mci;
-
 
 
     // end

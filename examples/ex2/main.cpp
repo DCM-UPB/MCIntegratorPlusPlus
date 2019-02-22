@@ -64,38 +64,38 @@ int main() {
     }
 
     const int ndim = 1;
-    MCI * mci = new MCI(ndim);
+    MCI mci(ndim);
 
-    if (myrank == 0) cout << "ndim = " << mci->getNDim() << endl;
+    if (myrank == 0) cout << "ndim = " << mci.getNDim() << endl;
 
     // set the integration range to [-1:3]
     double ** irange = new double*[ndim];
     irange[0] = new double[2];
     irange[0][0] = -1.;
     irange[0][1] = 3.;
-    mci->setIRange(irange);
+    mci.setIRange(irange);
 
-    if (myrank == 0) cout << "irange = [ " << mci->getIRange(0, 0) << " ; " << mci->getIRange(0, 1) << " ]" << endl;
+    if (myrank == 0) cout << "irange = [ " << mci.getIRange(0, 0) << " ; " << mci.getIRange(0, 1) << " ]" << endl;
 
     // initial walker position
-    double * initpos = new double[ndim];
+    double initpos[ndim];
     initpos[0] = -0.5;
-    mci->setX(initpos);
+    mci.setX(initpos);
 
-    if (myrank == 0) cout << "initial walker position = " << mci->getX(0) << endl;
+    if (myrank == 0) cout << "initial walker position = " << mci.getX(0) << endl;
 
     // initial MRT2 step
-    double * step = new double[ndim];
+    double step[ndim];
     step[0] = 0.5;
-    mci->setMRT2Step(step);
+    mci.setMRT2Step(step);
 
-    if (myrank == 0) cout << "MRT2 step = " << mci->getMRT2Step(0) << endl;
+    if (myrank == 0) cout << "MRT2 step = " << mci.getMRT2Step(0) << endl;
 
     // target acceptance rate
-    mci->setTargetAcceptanceRate(0.7);
+    mci.setTargetAcceptanceRate(0.7);
 
     if (myrank == 0) {
-        cout << "Acceptance rate = " << mci->getTargetAcceptanceRate() << endl;
+        cout << "Acceptance rate = " << mci.getTargetAcceptanceRate() << endl;
         cout << endl << endl;
 
         // first way of integrating
@@ -106,20 +106,25 @@ int main() {
 
     // observable
     MCIObservableFunctionInterface * obs = new Parabola(ndim);
-    mci->addObservable(obs);
+    mci.addObservable(obs);
 
     if (myrank == 0) {
-        cout << "Number of observables set = " << mci->getNObs() << endl;
+        cout << "Number of observables set = " << mci.getNObs() << endl;
         // sampling function
-        cout << "Number of sampling function set = " << mci->getNSampF() << endl;
+        cout << "Number of sampling function set = " << mci.getNSampF() << endl;
     }
 
     // integrate
     const long Nmc = 1000000;
-    double * average = new double[mci->getNObsDim()];
-    double * error = new double[mci->getNObsDim()];
+    double average[mci.getNObsDim()];
+    double error[mci.getNObsDim()];
 
-    MPIMCI::integrate(mci, Nmc, average, error);
+    // ! set fixed amount of findMRT2 and decorrelation steps    !
+    // ! this is very important for efficient parallel execution !
+    mci.setNfindMRT2steps(50);
+    mci.setNdecorrelationSteps(5000);
+
+    MPIMCI::integrate(&mci, Nmc, average, error);
 
     if (myrank == 0) {
         cout << "The integral gives as result = " << average[0] << "   +-   " << error[0] << endl;
@@ -134,21 +139,21 @@ int main() {
     // observable
     delete obs;
     obs = new NormalizedParabola(ndim);
-    mci->clearObservables();  // we first remove the old observable
-    mci->addObservable(obs);
+    mci.clearObservables();  // we first remove the old observable
+    mci.addObservable(obs);
 
-    if (myrank == 0) cout << "Number of observables set = " << mci->getNObs() << endl;
+    if (myrank == 0) cout << "Number of observables set = " << mci.getNObs() << endl;
 
 
     // sampling function
     MCISamplingFunctionInterface * sf = new NormalizedLine(ndim);
-    mci->addSamplingFunction(sf);
+    mci.addSamplingFunction(sf);
 
-    if (myrank == 0) cout << "Number of sampling function set = " << mci->getNSampF() << endl;
+    if (myrank == 0) cout << "Number of sampling function set = " << mci.getNSampF() << endl;
 
 
     // integrate
-    MPIMCI::integrate(mci, Nmc, average, error);
+    MPIMCI::integrate(&mci, Nmc, average, error);
 
     if (myrank == 0) {
         cout << "The integral gives as result = " << average[0] << "   +-   " << error[0] << endl;
@@ -165,17 +170,8 @@ int main() {
 
     delete obs;
 
-    delete[] step;
-
-    delete[] initpos;
-
     delete[] irange[0];
     delete[] irange;
-
-    delete[] average;
-    delete[] error;
-
-    delete mci;
 
     // finalize MPI
     MPIMCI::finalize();

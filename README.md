@@ -46,3 +46,11 @@ Note that we build out-of-tree, so the compiled library and executable files can
 # First steps
 
 You may want to read `doc/user_manual.pdf` to get a quick overview of the libraries functionality. However, it is not guaranteed to be perfectly up-to-date and accurate. Therefore, the best way to get your own code started is by studying the examples in `examples/`. See `examples/README.md` for further guidance.
+
+
+# Multi-threading: MPI
+
+This library supports multi-threaded MC integration with a distributed-memory paradigm, thanks to Message Passing interface (MPI).
+
+To be able to use this feature, just compile the library with a MPI implementation present on your system. The header `MPIMCI.hpp` provides convenient functions
+for using MCI++ with MPI. For example usage, look into example ex2.
