@@ -1,7 +1,7 @@
-#include <iostream>
 #include <cmath>
-#include <math.h>
+#include <cmath>
 #include <fstream>
+#include <iostream>
 
 #include "mci/MCIntegrator.hpp"
 
@@ -12,7 +12,7 @@ class Parabola: public MCIObservableFunctionInterface{
 public:
     explicit Parabola(const int &ndim): MCIObservableFunctionInterface(ndim, 1) {}
 
-    void observableFunction(const double * in, double * out){
+    void observableFunction(const double * in, double * out) override{
         out[0] = 4.*in[0] - in[0]*in[0];
     }
 };
@@ -21,9 +21,9 @@ class NormalizedParabola: public MCIObservableFunctionInterface{
 public:
     explicit NormalizedParabola(const int &ndim): MCIObservableFunctionInterface(ndim, 1) {}
 
-    void observableFunction(const double * in, double * out){
+    void observableFunction(const double * in, double * out) override{
         out[0] = (4. - in[0]) * 5.;
-        if (std::signbit(in[0])) out[0] = -out[0];
+        if (std::signbit(in[0])) { out[0] = -out[0];}
     }
 };
 
@@ -35,11 +35,11 @@ class NormalizedLine: public MCISamplingFunctionInterface{
 public:
     explicit NormalizedLine(const int &ndim): MCISamplingFunctionInterface(ndim, 1) {}
 
-    void samplingFunction(const double * in, double * protovalue){
-        protovalue[0] = 0.2 * abs(in[0]);
+    void samplingFunction(const double * in, double * protovalue) override{
+        protovalue[0] = 0.2 * fabs(in[0]);
     }
 
-    double getAcceptance(const double * protoold, const double * protonew){
+    double getAcceptance(const double * protoold, const double * protonew) override{
         return protonew[0] / protoold[0];
     }
 };
@@ -70,7 +70,7 @@ int main() {
 
 
     // set the integration range to [-1:3]
-    double ** irange = new double*[ndim];
+    auto ** irange = new double*[ndim];
     irange[0] = new double[2];
     irange[0][0] = -1.;
     irange[0][1] = 3.;

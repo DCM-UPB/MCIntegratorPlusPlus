@@ -1,11 +1,11 @@
 #include "mci/MCIntegrator.hpp"
 #include "mci/MCISamplingFunctionInterface.hpp"
 
+#include <cassert>
+#include <cmath>
 #include <iostream>
-#include <math.h>
-#include <assert.h>
 
-#include "TestMCIFunctions.hpp"
+#include "../common/TestMCIFunctions.hpp"
 
 using namespace std;
 
@@ -14,8 +14,8 @@ int main(){
     const long NMC = 10000;
     const double CORRECT_RESULT = 0.5;
 
-    ThreeDimGaussianPDF * pdf = new ThreeDimGaussianPDF();
-    XSquared * obs = new XSquared();
+    auto * pdf = new ThreeDimGaussianPDF();
+    auto * obs = new XSquared();
 
     MCI * mci = new MCI(3);
     mci->setSeed(5649871);
@@ -25,11 +25,11 @@ int main(){
 
     // the integral should provide 0.5 as answer!
 
-    double * x = new double[3];
+    auto * x = new double[3];
     x[0] = 5.; x[1] = -5.; x[2] = 10.;
 
-    double * average = new double;
-    double * error = new double;
+    auto * average = new double;
+    auto * error = new double;
 
     // this integral will give a wrong answer! This is because the starting point is very bad and initialDecorrelation is skipped (as well as the MRT2step automatic setting)
     mci->setX(x);

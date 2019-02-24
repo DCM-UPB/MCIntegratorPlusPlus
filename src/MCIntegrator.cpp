@@ -1,52 +1,58 @@
 #include "mci/MCIntegrator.hpp"
 #include "mci/Estimators.hpp"
 
-#include <limits>
-#include <iostream>
 #include <algorithm>
-#include <vector>
+#include <iostream>
+#include <limits>
 #include <random>
 #include <stdexcept>
+#include <vector>
 
 
 //   --- Integrate
 
-void MCI::integrate(const long &Nmc, double * average, double * error, const bool doFindMRT2step, const bool doDecorrelation)
+void MCI::integrate(const int64_t &Nmc, double * average, double * error, const bool doFindMRT2step, const bool doDecorrelation)
 {
-    if (Nmc<(long)_nblocks) {
+    if (Nmc<static_cast<int64_t>(_nblocks)) {
         throw std::invalid_argument("The requested number of MC steps is smaller than the requested number of blocks.");
     }
 
     const bool fixedBlocks = (_nblocks>0);
-    const long stepsPerBlock = fixedBlocks ? Nmc/_nblocks : 1;
-    const long trueNmc = fixedBlocks ? stepsPerBlock*_nblocks : Nmc;
-    const long ndatax = fixedBlocks ? _nblocks : Nmc;
+    const int64_t stepsPerBlock = fixedBlocks ? Nmc/_nblocks : 1;
+    const int64_t trueNmc = fixedBlocks ? stepsPerBlock*_nblocks : Nmc;
+    const int64_t ndatax = fixedBlocks ? _nblocks : Nmc;
 
     if ( _flagpdf )
     {
         //find the optimal mrt2 step
-        if (doFindMRT2step) this->findMRT2Step();
+        if (doFindMRT2step) { this->findMRT2Step();
+}
         // take care to do the initial decorrelation of the walker
-        if (doDecorrelation) this->initialDecorrelation();
+        if (doDecorrelation) { this->initialDecorrelation();
+}
     }
 
     //allocation of the array where the data will be stored
     _datax = new double*[ndatax];
-    for (long i=0; i<ndatax; ++i) { *(_datax+i) = new double[_nobsdim]; }
+    for (int64_t i=0; i<ndatax; ++i) { *(_datax+i) = new double[_nobsdim]; }
 
     //sample the observables
-    if (_flagobsfile) _obsfile.open(_pathobsfile);
-    if (_flagwlkfile) _wlkfile.open(_pathwlkfile);
+    if (_flagobsfile) { _obsfile.open(_pathobsfile);
+}
+    if (_flagwlkfile) { _wlkfile.open(_pathwlkfile);
+}
     _flagMC = true;
     this->sample(trueNmc, true, stepsPerBlock);
     _flagMC = false;
-    if (_flagobsfile) _obsfile.close();
-    if (_flagwlkfile) _wlkfile.close();
+    if (_flagobsfile) { _obsfile.close();
+}
+    if (_flagwlkfile) { _wlkfile.close();
+}
 
     //reduce block averages
     if (fixedBlocks) {
         const double fac = 1./stepsPerBlock;
-        for (long i=0; i<ndatax; ++i) {
+        for (int64_t i=0; i<ndatax; ++i) {
             for (int j=0; j<_nobsdim; ++j) {
                 *(*(_datax+i)+j) *= fac;
             }
@@ -85,10 +91,10 @@ void MCI::storeObservables()
     if ( _ridx%_freqobsfile == 0 )
         {
             _obsfile << _ridx;
-            for (size_t i=0; i<_obs.size(); ++i) {
-                for (int j=0; j<_obs[i]->getNObs(); ++j)
+            for (auto & _ob : _obs) {
+                for (int j=0; j<_ob->getNObs(); ++j)
                 {
-                    _obsfile << "   " << _obs[i]->getObservable(j);
+                    _obsfile << "   " << _ob->getObservable(j);
                 }
             }
             _obsfile << std::endl;
@@ -113,20 +119,20 @@ void MCI::storeWalkerPositions()
 void MCI::initialDecorrelation()
 {
     if (_NdecorrelationSteps < 0) {
-        long i;
+        int64_t i;
         //constants
-        const long MIN_NMC=100;
+        const int64_t MIN_NMC=100;
         //allocate the data array that will be used
         _datax = new double*[MIN_NMC];
         for (i=0; i<MIN_NMC; ++i) { *(_datax+i) = new double[_nobsdim]; }
         //do a first estimate of the observables
         this->sample(MIN_NMC, true);
-        double * oldestimate = new double[_nobsdim];
+        auto * oldestimate = new double[_nobsdim];
         double olderrestim[_nobsdim];
         mci::MultiDimCorrelatedEstimator(MIN_NMC, _nobsdim, _datax, oldestimate, olderrestim);
         //start a loop which will stop when the observables are stabilized
         bool flag_loop=true;
-        double * newestimate = new double[_nobsdim];
+        auto * newestimate = new double[_nobsdim];
         double newerrestim[_nobsdim];
         double * foo;
         while ( flag_loop ) {
@@ -155,7 +161,7 @@ void MCI::initialDecorrelation()
 }
 
 
-void MCI::sample(const long &npoints, const bool &flagobs, const long &stepsPerBlock)
+void MCI::sample(const int64_t &npoints, const bool &flagobs, const int64_t &stepsPerBlock)
 {
     if (flagobs && stepsPerBlock>0 && npoints%stepsPerBlock!=0) {
         throw std::invalid_argument("If fixed blocking is used, npoints must be a multiple of stepsPerBlock.");
@@ -169,7 +175,7 @@ void MCI::sample(const long &npoints, const bool &flagobs, const long &stepsPerB
     if (flagobs) {
         // set the data to 0
         for (i=0; i<npoints/stepsPerBlock; ++i) {
-            for (long j=0; j<_nobsdim; ++j) {
+            for (int64_t j=0; j<_nobsdim; ++j) {
                 *(*(_datax+i)+j) = 0.;
             }
         }
@@ -207,8 +213,10 @@ void MCI::sample(const long &npoints, const bool &flagobs, const long &stepsPerB
                                     this->saveObservables();
                                 }
                             if (_flagMC){
-                                if (_flagobsfile) this->storeObservables();
-                                if (_flagwlkfile) this->storeWalkerPositions();
+                                if (_flagobsfile) { this->storeObservables();
+}
+                                if (_flagwlkfile) { this->storeWalkerPositions();
+}
                             }
                             _ridx++;
                             _bidx = _ridx / stepsPerBlock;
@@ -234,8 +242,10 @@ void MCI::sample(const long &npoints, const bool &flagobs, const long &stepsPerB
                             this->computeObservables();
                             this->saveObservables();
                             if (_flagMC){
-                                if (_flagobsfile) this->storeObservables();
-                                if (_flagwlkfile) this->storeWalkerPositions();
+                                if (_flagobsfile) { this->storeObservables();
+}
+                                if (_flagwlkfile) { this->storeWalkerPositions();
+}
                             }
                             _ridx++;
                             _bidx = _ridx / stepsPerBlock;
@@ -299,7 +309,7 @@ void MCI::findMRT2Step()
                     cons_count++;
                 }
             //check if the loop is running since too long
-            if ( counter > MAX_NUM_ATTEMPTS ) cons_count=MIN_CONS;
+            if ( counter > MAX_NUM_ATTEMPTS ) { cons_count=MIN_CONS; }
             //mrt2step = Infinity
             for (j=0; j<_ndim; ++j)
                 {
@@ -407,9 +417,9 @@ void MCI::computeNewX()
 
 void MCI::updateSamplingFunction()
 {
-    for (std::vector<MCISamplingFunctionInterface>::size_type i=0; i<_pdf.size(); ++i)
+    for (auto & sf : _pdf)
         {
-            _pdf[i]->newToOld();
+            sf->newToOld();
         }
 }
 
@@ -417,9 +427,9 @@ void MCI::updateSamplingFunction()
 double MCI::computeAcceptance()
 {
     double acceptance=1.;
-    for (std::vector<MCISamplingFunctionInterface>::size_type i=0; i<_pdf.size(); ++i)
+    for (auto & sf : _pdf)
         {
-            acceptance*=_pdf[i]->getAcceptance();
+            acceptance*=sf->getAcceptance();
         }
     return acceptance;
 }
@@ -427,28 +437,28 @@ double MCI::computeAcceptance()
 
 void MCI::computeOldSamplingFunction()
 {
-    for (std::vector<MCISamplingFunctionInterface>::size_type i=0; i<_pdf.size(); ++i)
+    for (auto & sf : _pdf)
         {
-            _pdf[i]->computeNewSamplingFunction(_xold);
-            _pdf[i]->newToOld();
+            sf->computeNewSamplingFunction(_xold);
+            sf->newToOld();
         }
 }
 
 
 void MCI::computeNewSamplingFunction()
 {
-    for (std::vector<MCISamplingFunctionInterface>::size_type i=0; i<_pdf.size(); ++i)
+    for (auto & sf : _pdf)
         {
-            _pdf[i]->computeNewSamplingFunction(_xnew);
+            sf->computeNewSamplingFunction(_xnew);
         }
 }
 
 
 void MCI::computeObservables()
 {
-    for (std::vector<MCIObservableFunctionInterface>::size_type i=0; i<_obs.size(); ++i)
+    for (auto & _ob : _obs)
         {
-            _obs[i]->computeObservables(_xold);
+            _ob->computeObservables(_xold);
         }
 }
 
@@ -457,11 +467,11 @@ void MCI::saveObservables()
 {
     int idx=0;
     //save in _datax the observables contained in _obs
-    for (std::vector<MCIObservableFunctionInterface>::size_type i=0; i<_obs.size(); ++i)
+    for (auto & _ob : _obs)
         {
-            for (int j=0; j<_obs[i]->getNObs(); ++j)
+            for (int j=0; j<_ob->getNObs(); ++j)
                 {
-                    _datax[_bidx][idx]+=_obs[i]->getObservable(j);
+                    _datax[_bidx][idx]+=_ob->getObservable(j);
                     idx++;
                 }
         }

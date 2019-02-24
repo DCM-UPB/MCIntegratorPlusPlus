@@ -1,5 +1,5 @@
-#ifndef CALL_BACK_ON_ACCEPTANCE_INTERFACE
-#define CALL_BACK_ON_ACCEPTANCE_INTERFACE
+#ifndef MCI_MCICALLBACKONACCEPTANCEINTERFACE_HPP
+#define MCI_MCICALLBACKONACCEPTANCEINTERFACE_HPP
 
 
 class MCICallBackOnAcceptanceInterface
@@ -8,10 +8,10 @@ protected:
     int _ndim; //dimension of the input array (walker position)
 
 public:
-    MCICallBackOnAcceptanceInterface(const int &ndim){
+    explicit MCICallBackOnAcceptanceInterface(const int &ndim){
         _ndim=ndim;
     }
-    virtual ~MCICallBackOnAcceptanceInterface(){}
+    virtual ~MCICallBackOnAcceptanceInterface()= default;
 
     // Getters
     int getNDim(){return _ndim;}
@@ -20,7 +20,7 @@ public:
     // --- METHODS THAT MUST BE IMPLEMENTED
 
     // Call-back function, called if a move is accepted by the MCI Integrator
-    virtual void callBackFunction(const double *in, const bool flag_observation) = 0;
+    virtual void callBackFunction(const double *in, bool flag_observation) = 0;
     //                                   ^walker position
 };
 

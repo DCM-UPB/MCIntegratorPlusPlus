@@ -1,18 +1,21 @@
+#ifndef MCI_MPIMCI_HPP
+#define MCI_MPIMCI_HPP
+
 #if USE_MPI==1
 
 #ifndef MPIMCI
 #define MPIMCI
 
-#include <stdexcept>
-#include <string>
+#include "mci/MCIntegrator.hpp"
 #include <fstream>
 #include <mpi.h>
-#include "mci/MCIntegrator.hpp"
+#include <stdexcept>
+#include <string>
 
 namespace MPIMCI
 {
     // return my rank
-    int myrank() // we cannot use rank() here because it collides with "using namespace std"
+    inline int myrank() // we cannot use rank() here because it collides with "using namespace std"
     {
         int myrank;
         MPI_Comm_rank(MPI_COMM_WORLD, &myrank);
@@ -20,7 +23,7 @@ namespace MPIMCI
     }
 
     // return size
-    int size()
+    inline int size()
     {
         int size;
         MPI_Comm_size(MPI_COMM_WORLD, &size);
@@ -28,18 +31,18 @@ namespace MPIMCI
     }
 
     // init MPI and return rank of process
-    int init()
+    inline int init()
     {
         int isinit;
         MPI_Initialized(&isinit);
-        if (isinit==1) throw std::runtime_error("MPI already initialized!");
-        MPI_Init(NULL, NULL);
+        if (isinit==1) { throw std::runtime_error("MPI already initialized!");}
+        MPI_Init(nullptr, nullptr);
 
         return myrank();
     }
 
     // set different random seeds per thread from a file
-    void setSeed(MCI * const mci, const std::string &filename, const int &offset = 0) // with offset you can control how many seeds to skip initially
+    inline void setSeed(MCI * const mci, const std::string &filename, const int &offset = 0) // with offset you can control how many seeds to skip initially
     {
         int myrank = MPIMCI::myrank();
         int nranks = MPIMCI::size();
@@ -71,7 +74,7 @@ namespace MPIMCI
 
     // integrate in parallel and accumulate results
 
-    void integrate(MCI * const mci, const long &Nmc, double * average, double * error, const bool doFindMRT2Step = true, const bool doDecorrelation = true)
+    inline void integrate(MCI * const mci, const long &Nmc, double * average, double * error, const bool doFindMRT2Step = true, const bool doDecorrelation = true)
     {
         // make sure the user has MPI in the correct state
         int isinit, isfinal;
@@ -100,7 +103,7 @@ namespace MPIMCI
     }
 
     // finalize MPI
-    void finalize()
+    inline void finalize()
     {
         // make sure the user has MPI in the correct state
         int isinit, isfinal;
@@ -111,7 +114,9 @@ namespace MPIMCI
 
         MPI_Finalize();
     }
-};
+}  // namespace
+
+#endif
 
 #endif
 

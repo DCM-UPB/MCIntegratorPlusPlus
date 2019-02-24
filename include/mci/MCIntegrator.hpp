@@ -1,13 +1,13 @@
-#ifndef MCINTEGRATOR
-#define MCINTEGRATOR
+#ifndef MCI_MCINTEGRATOR_HPP
+#define MCI_MCINTEGRATOR_HPP
 
-#include "mci/MCISamplingFunctionInterface.hpp"
-#include "mci/MCIObservableFunctionInterface.hpp"
 #include "mci/MCICallBackOnAcceptanceInterface.hpp"
-#include <vector>
-#include <random>
+#include "mci/MCIObservableFunctionInterface.hpp"
+#include "mci/MCISamplingFunctionInterface.hpp"
 #include <fstream>
+#include <random>
 #include <string>
+#include <vector>
 
 
 
@@ -42,7 +42,7 @@ protected:
 
     std::vector<MCICallBackOnAcceptanceInterface *> _cback;  // Vector of observable functions
 
-    int _acc, _rej;  // internal counters
+    int _acc{}, _rej{};  // internal counters
     int _ridx;  // running index, which keeps track of the number of MC steps
     int _bidx; // index of the current block/datax element
     double ** _datax;  // array that will contain all the measured observable (or block averages if used)
@@ -50,12 +50,12 @@ protected:
 
     std::ofstream _obsfile;  //ofstream for storing obs values while sampling
     std::string _pathobsfile;
-    int _freqobsfile;
+    int _freqobsfile{};
     bool _flagobsfile;  // should write an output file with sampled obs values?
 
     std::ofstream _wlkfile;  //ofstream for storing obs values while sampling
     std::string _pathwlkfile;
-    int _freqwlkfile;
+    int _freqwlkfile{};
     bool _flagwlkfile;  // should write an output file with sampled obs values?
 
 
@@ -89,7 +89,7 @@ public:
     ~MCI();  //Destructor
 
     // --- Setters
-    void setSeed(const uint_fast64_t seed);
+    void setSeed(uint_fast64_t seed);
 
     void setIRange(const double * const * irange); // keep walkers within these bounds during integration (defaults to full range of double floats)
 
@@ -100,7 +100,7 @@ public:
     void setNfindMRT2steps(const int niterations /* -1 == auto, 0 == disabled */){_NfindMRT2steps=niterations;} // how many MRT2 step adjustment iterations to do before integrating
     void setNdecorrelationSteps(const int nsteps /* -1 == auto, 0 == disabled */){_NdecorrelationSteps=nsteps;} // how many decorrelation steps to do before integrating
     void setNBlocks(const int nblocks /* 0 == auto -> high RAM usage */){_nblocks=nblocks;} // how many blocks to use for error estimation
-    void setTargetAcceptanceRate(const double targetaccrate);
+    void setTargetAcceptanceRate(double targetaccrate);
 
     void addObservable(MCIObservableFunctionInterface * obs);
     void clearObservables();
@@ -139,7 +139,7 @@ public:
     // --- Integrate
 
     // Actual integrate implemention. With flags to skip the configured step adjustment/decorrelation.
-    void integrate(const long &Nmc, double * average, double * error, const bool doFindMRT2step = true, const bool doDecorrelation = true);
+    void integrate(const long &Nmc, double * average, double * error, bool doFindMRT2step = true, bool doDecorrelation = true);
 };
 
 #endif

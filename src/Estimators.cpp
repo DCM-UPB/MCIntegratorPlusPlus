@@ -1,12 +1,12 @@
 #include "mci/Estimators.hpp"
 
-#include <iostream>
-#include <math.h>
 #include <cmath>
+#include <cmath>
+#include <iostream>
 
 namespace mci
 {
-    void UncorrelatedEstimator(const long &n, const double * x, double * average, double * error)
+    void UncorrelatedEstimator(const int64_t &n, const double * x, double * average, double * error)
     {
         using namespace std;
 
@@ -20,13 +20,13 @@ namespace mci
 
         *average=0.;
         *error=0.;
-        for (long i=0; i<n; ++i)
+        for (int64_t i=0; i<n; ++i)
             {
                 *average+=*(x+i);
                 *error+=(*(x+i))*(*(x+i));
             }
 
-        double norm = 1./((double) n);
+        double norm = 1./(static_cast<double>(n));
         *average*=norm;
         *error*=norm;
         if ( ((*(error))-(*(average))*(*(average))) < SMALLEST_ERROR )
@@ -34,12 +34,12 @@ namespace mci
                 *(error)=0.;
             } else
             {
-                *(error)=sqrt( ((*(error))-(*(average))*(*(average)))/((double) (n-1)) );
+                *(error)=sqrt( ((*(error))-(*(average))*(*(average)))/(static_cast<double>(n-1)) );
             }
     }
 
 
-    void BlockEstimator(const long &n, const double * x, const int &nblocks, double * average, double * error)
+    void BlockEstimator(const int64_t &n, const double * x, const int &nblocks, double * average, double * error)
     {
         using namespace std;
 
@@ -49,28 +49,28 @@ namespace mci
                 exit(EXIT_FAILURE);
             }
 
-        long nperblock=(n)/(nblocks);
-        double norm = 1./((double) (nperblock));
+        int64_t nperblock=(n)/(nblocks);
+        double norm = 1./(static_cast<double>(nperblock));
 
-        double *av = new double[nblocks];
+        auto *av = new double[nblocks];
         for (int i1=0; i1<(nblocks); ++i1)
             {
                 *(av+i1)=0;
-                for (long i2=(i1)*(nperblock); i2<(i1+1)*(nperblock); ++i2)
+                for (int64_t i2=(i1)*(nperblock); i2<(i1+1)*(nperblock); ++i2)
                     {
                         *(av+i1)+=*(x+i2);
                     }
                 *(av+i1)*=norm;
             }
 
-        long n_ue=nblocks;
+        int64_t n_ue=nblocks;
         UncorrelatedEstimator(n_ue, av, average, error);
 
         delete [] av;
     }
 
 
-    void CorrelatedEstimator(const long &n, const double * x, double * average, double * error)
+    void CorrelatedEstimator(const int64_t &n, const double * x, double * average, double * error)
     {
         const int MIN_BLOCKS=6, MAX_BLOCKS=50;
         const int MAX_PLATEAU_AVERAGE=4;
@@ -83,8 +83,8 @@ namespace mci
                 exit(EXIT_FAILURE);
             }
 
-        double *av = new double[MAX_BLOCKS-MIN_BLOCKS+1];
-        double *err = new double[MAX_BLOCKS-MIN_BLOCKS+1];
+        auto *av = new double[MAX_BLOCKS-MIN_BLOCKS+1];
+        auto *err = new double[MAX_BLOCKS-MIN_BLOCKS+1];
         for (int i1=0; i1<MAX_BLOCKS-MIN_BLOCKS+1; ++i1)
             {
                 const int nblocks=i1+MIN_BLOCKS;
@@ -93,7 +93,7 @@ namespace mci
             }
 
         double delta = 0.;
-        double *accdelta = new double[MAX_BLOCKS-MIN_BLOCKS+1-2*MAX_PLATEAU_AVERAGE];
+        auto *accdelta = new double[MAX_BLOCKS-MIN_BLOCKS+1-2*MAX_PLATEAU_AVERAGE];
         for (int i2=0; i2<MAX_BLOCKS-MIN_BLOCKS+1-2*MAX_PLATEAU_AVERAGE; ++i2)
             {
                 *(accdelta+i2) = 0.;
@@ -132,7 +132,8 @@ namespace mci
         int i_min = 0;
         for (int i2=1; i2<MAX_BLOCKS-MIN_BLOCKS+1-2*MAX_PLATEAU_AVERAGE; ++i2)
             {
-                if ( fabs(*(accdelta+i2)) < fabs(*(accdelta+i_min)) ) i_min=i2;
+                if ( fabs(*(accdelta+i2)) < fabs(*(accdelta+i_min)) ) { i_min=i2;
+}
             }
 
         i_min+=MAX_PLATEAU_AVERAGE;
@@ -146,7 +147,7 @@ namespace mci
     }
 
 
-    void MultiDimUncorrelatedEstimator(const long &n, const int &ndim, const double * const * x, double * average, double * error)
+    void MultiDimUncorrelatedEstimator(const int64_t &n, const int &ndim, const double * const * x, double * average, double * error)
     {
         using namespace std;
 
@@ -164,7 +165,7 @@ namespace mci
                 *(error+j)=0.;
             }
 
-        for (long i=0; i<n; ++i)
+        for (int64_t i=0; i<n; ++i)
             {
                 for (int j=0; j<ndim; ++j)
                     {
@@ -173,8 +174,8 @@ namespace mci
                     }
             }
 
-        double norm = 1./((double) n);
-        double norm2 = (double) (n-1);
+        double norm = 1./(static_cast<double>(n));
+        auto norm2 = static_cast<double>(n-1);
         for (int j=0; j<ndim; ++j)
             {
                 *(average+j)*=norm;
@@ -190,7 +191,7 @@ namespace mci
     }
 
 
-    void MultiDimBlockEstimator(const long &n, const int &ndim, const double * const * x, const int &nblocks, double * average, double * error)
+    void MultiDimBlockEstimator(const int64_t &n, const int &ndim, const double * const * x, const int &nblocks, double * average, double * error)
     {
         using namespace std;
 
@@ -200,10 +201,10 @@ namespace mci
                 exit(EXIT_FAILURE);
             }
 
-        long nperblock=(n)/(nblocks);
-        double norm = 1./((double) nperblock);
+        int64_t nperblock=(n)/(nblocks);
+        double norm = 1./(static_cast<double>(nperblock));
 
-        double ** av = new double*[nblocks];
+        auto ** av = new double*[nblocks];
         for (int j=0; j<nblocks; ++j)
             {
                 *(av+j) = new double[ndim];
@@ -216,7 +217,7 @@ namespace mci
                         *(*(av+i1)+j)=0;
                     }
 
-                for (long i2=(i1)*(nperblock); i2<(i1+1)*(nperblock); ++i2)
+                for (int64_t i2=(i1)*(nperblock); i2<(i1+1)*(nperblock); ++i2)
                     {
                         for (int j=0; j<ndim; ++j)
                             {
@@ -230,7 +231,7 @@ namespace mci
                     }
             }
 
-        long n_ue=(nblocks);
+        int64_t n_ue=(nblocks);
         MultiDimUncorrelatedEstimator(n_ue, ndim, av, average, error);
 
         for (int j=0; j<nblocks; ++j){ delete [] *(av+j); }
@@ -238,7 +239,7 @@ namespace mci
     }
 
 
-    void MultiDimCorrelatedEstimator(const long &n, const int &ndim, const double * const * x, double * average, double * error)
+    void MultiDimCorrelatedEstimator(const int64_t &n, const int &ndim, const double * const * x, double * average, double * error)
     {
         const int MIN_BLOCKS=6, MAX_BLOCKS=50;
         const int MAX_PLATEAU_AVERAGE=4;
@@ -251,10 +252,10 @@ namespace mci
                 exit(EXIT_FAILURE);
             }
 
-        double ** av = new double*[MAX_BLOCKS-MIN_BLOCKS+1];
+        auto ** av = new double*[MAX_BLOCKS-MIN_BLOCKS+1];
         for (int j=0; j<MAX_BLOCKS-MIN_BLOCKS+1; ++j){ *(av+j) = new double[ndim]; }
 
-        double ** err = new double*[MAX_BLOCKS-MIN_BLOCKS+1];
+        auto ** err = new double*[MAX_BLOCKS-MIN_BLOCKS+1];
         for (int j=0; j<MAX_BLOCKS-MIN_BLOCKS+1; ++j){ *(err+j) = new double[ndim]; }
 
         for (int i1=0; i1<MAX_BLOCKS-MIN_BLOCKS+1; ++i1)
@@ -263,10 +264,10 @@ namespace mci
                 MultiDimBlockEstimator(n, ndim, x, nblocks, *(av+i1), *(err+i1));
             }
 
-        double *delta=new double[ndim];
+        auto *delta=new double[ndim];
         for (int j=0; j<ndim; ++j) {*(delta+j)=0.;}
 
-        double **accdelta = new double*[MAX_BLOCKS-MIN_BLOCKS+1-2*MAX_PLATEAU_AVERAGE];
+        auto **accdelta = new double*[MAX_BLOCKS-MIN_BLOCKS+1-2*MAX_PLATEAU_AVERAGE];
         for (int j=0; j<MAX_BLOCKS-MIN_BLOCKS+1-2*MAX_PLATEAU_AVERAGE; ++j){ *(accdelta+j)=new double[ndim]; }
         for (int i2=0; i2<MAX_BLOCKS-MIN_BLOCKS+1-2*MAX_PLATEAU_AVERAGE; ++i2)
             {
@@ -308,7 +309,8 @@ namespace mci
             {
                 for (int j=0; j<ndim; ++j)
                     {
-                        if ( fabs(*(*(accdelta+i2)+j)) < fabs( *(*(accdelta+(*(i_min+j)))+j) ) ) *(i_min+j)=i2;
+                        if ( fabs(*(*(accdelta+i2)+j)) < fabs( *(*(accdelta+(*(i_min+j)))+j) ) ) { *(i_min+j)=i2;
+}
                     }
             }
         for (int j=0; j<ndim; ++j){ *(i_min+j) += MAX_PLATEAU_AVERAGE; }
@@ -333,4 +335,4 @@ namespace mci
         delete[] err;
     }
 
-}
+}  // namespace mci

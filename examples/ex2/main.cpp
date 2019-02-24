@@ -1,8 +1,8 @@
 #include "mpi.h"
-#include <iostream>
 #include <cmath>
-#include <math.h>
+#include <cmath>
 #include <fstream>
+#include <iostream>
 
 #include "mci/MCIntegrator.hpp"
 #include "mci/MPIMCI.hpp"
@@ -13,7 +13,7 @@ class Parabola: public MCIObservableFunctionInterface{
 public:
     explicit Parabola(const int &ndim): MCIObservableFunctionInterface(ndim, 1) {}
 
-    void observableFunction(const double * in, double * out){
+    void observableFunction(const double * in, double * out) override{
         out[0] = 4.*in[0] - in[0]*in[0];
     }
 };
@@ -22,9 +22,9 @@ class NormalizedParabola: public MCIObservableFunctionInterface{
 public:
     explicit NormalizedParabola(const int &ndim): MCIObservableFunctionInterface(ndim, 1) {}
 
-    void observableFunction(const double * in, double * out){
+    void observableFunction(const double * in, double * out) override{
         out[0] = (4. - in[0]) * 5.;
-        if (std::signbit(in[0])) out[0] = -out[0];
+        if (std::signbit(in[0])) { out[0] = -out[0];}
     }
 };
 
@@ -36,11 +36,11 @@ class NormalizedLine: public MCISamplingFunctionInterface{
 public:
     explicit NormalizedLine(const int &ndim): MCISamplingFunctionInterface(ndim, 1) {}
 
-    void samplingFunction(const double * in, double * protovalue){
-        protovalue[0] = 0.2 * abs(in[0]);
+    void samplingFunction(const double * in, double * protovalue) override{
+        protovalue[0] = 0.2 * fabs(in[0]);
     }
 
-    double getAcceptance(const double * protoold, const double * protonew){
+    double getAcceptance(const double * protoold, const double * protonew) override{
         return protonew[0] / protoold[0];
     }
 };
@@ -66,30 +66,30 @@ int main() {
     const int ndim = 1;
     MCI mci(ndim);
 
-    if (myrank == 0) cout << "ndim = " << mci.getNDim() << endl;
+    if (myrank == 0) { cout << "ndim = " << mci.getNDim() << endl;}
 
     // set the integration range to [-1:3]
-    double ** irange = new double*[ndim];
+    auto ** irange = new double*[ndim];
     irange[0] = new double[2];
     irange[0][0] = -1.;
     irange[0][1] = 3.;
     mci.setIRange(irange);
 
-    if (myrank == 0) cout << "irange = [ " << mci.getIRange(0, 0) << " ; " << mci.getIRange(0, 1) << " ]" << endl;
+    if (myrank == 0) { cout << "irange = [ " << mci.getIRange(0, 0) << " ; " << mci.getIRange(0, 1) << " ]" << endl;}
 
     // initial walker position
     double initpos[ndim];
     initpos[0] = -0.5;
     mci.setX(initpos);
 
-    if (myrank == 0) cout << "initial walker position = " << mci.getX(0) << endl;
+    if (myrank == 0) { cout << "initial walker position = " << mci.getX(0) << endl;}
 
     // initial MRT2 step
     double step[ndim];
     step[0] = 0.5;
     mci.setMRT2Step(step);
 
-    if (myrank == 0) cout << "MRT2 step = " << mci.getMRT2Step(0) << endl;
+    if (myrank == 0) { cout << "MRT2 step = " << mci.getMRT2Step(0) << endl;}
 
     // target acceptance rate
     mci.setTargetAcceptanceRate(0.7);
@@ -142,14 +142,14 @@ int main() {
     mci.clearObservables();  // we first remove the old observable
     mci.addObservable(obs);
 
-    if (myrank == 0) cout << "Number of observables set = " << mci.getNObs() << endl;
+    if (myrank == 0) { cout << "Number of observables set = " << mci.getNObs() << endl;}
 
 
     // sampling function
     MCISamplingFunctionInterface * sf = new NormalizedLine(ndim);
     mci.addSamplingFunction(sf);
 
-    if (myrank == 0) cout << "Number of sampling function set = " << mci.getNSampF() << endl;
+    if (myrank == 0) { cout << "Number of sampling function set = " << mci.getNSampF() << endl;}
 
 
     // integrate

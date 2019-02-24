@@ -1,5 +1,5 @@
-#ifndef ESTIMATORS
-#define ESTIMATORS
+#ifndef MCI_ESTIMATORS_HPP
+#define MCI_ESTIMATORS_HPP
 
 namespace mci
 {
@@ -30,6 +30,6 @@ namespace mci
     // Compute average and error for correlated data, using the blocking technique
     void MultiDimCorrelatedEstimator(const long &n, const int &ndim, const double * const * x, double * average, double * error);
 
-}
+} // namespace mci
 
 #endif
