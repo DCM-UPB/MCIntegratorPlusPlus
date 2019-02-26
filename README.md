@@ -11,7 +11,7 @@ interface to execute the MC integration in parallel, via Message Passing Interfa
 
 In `doc/` there is a user manual in pdf and a config for doxygen.
 
-In `examples/` and `test/` there are examples and tests for the library.
+In `examples/`, `test/` and `benchmark/` there are examples, tests and benchmarks for the library.
 
 In `res/` we provide a true random seed file.
 
