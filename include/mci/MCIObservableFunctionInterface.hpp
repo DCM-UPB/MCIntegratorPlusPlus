@@ -1,22 +1,21 @@
 #ifndef MCI_MCIOBSERVABLEFUNCTIONINTERFACE_HPP
 #define MCI_MCIOBSERVABLEFUNCTIONINTERFACE_HPP
 
-
+#include <algorithm>
 
 class MCIObservableFunctionInterface
 {
 protected:
-    int _ndim;  //dimension of the input array (walker poistion)
-    int _nobs;  //number of values provided by the observable
+    const int _ndim;  //dimension of the input array (walker poistion)
+    const int _nobs;  //number of values provided by the observable
     double * _obs; //array that stores the last observables computed
 
 
 public:
-    MCIObservableFunctionInterface(const int &ndim, const int &nobs)
+    MCIObservableFunctionInterface(const int &ndim, const int &nobs): _ndim(ndim), _nobs(nobs)
     {
-        _ndim=ndim; _nobs=nobs;
         _obs = new double[nobs];
-        for (int i=0; i<nobs; ++i){_obs[i]=0.;}
+        std::fill(_obs, _obs+nobs, 0.);
     }
     virtual ~MCIObservableFunctionInterface()
     {

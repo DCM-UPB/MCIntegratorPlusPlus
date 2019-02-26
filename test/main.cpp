@@ -74,23 +74,23 @@ int main(){
     uniform_real_distribution<double> rand_num(0.0,1.0);
 
     long N = 1000l;
-    auto *x = new double[N];
+    auto * x = new double[N];
     for (long i=0; i<N; ++i){
-        *(x+i)=3.5 + rand_num(rand_gen);
+        x[i] = 3.5 + rand_num(rand_gen);
     }
     double avg1D = 0.;
     double err1D = 0.;
 
-    mci::UncorrelatedEstimator(N, x, &avg1D, &err1D);
+    mci::UncorrelatedEstimator(N, x, avg1D, err1D);
     cout << "- UncorrelatedEstimator()" << endl;
     cout << "     avg1D = " << avg1D << "     error = " << err1D << endl << endl;
 
     int nblocks=12;
-    mci::BlockEstimator(N, x, nblocks, &avg1D, &err1D);
+    mci::BlockEstimator(N, x, nblocks, avg1D, err1D);
     cout << "- BlockEstimator()" << endl;
     cout << "     average = " << avg1D << "     error = " << err1D << endl << endl;
 
-    mci::CorrelatedEstimator(N, x, &avg1D, &err1D);
+    mci::CorrelatedEstimator(N, x, avg1D, err1D);
     cout << "- CorrelatedEstimator()" << endl;
     cout << "     average = " << avg1D << "     error = " << err1D << endl << endl;
 
@@ -102,12 +102,10 @@ int main(){
 
 
     int nd=2;
-    auto **data = new double*[N];
-    for (int i=0; i<N; ++i){ *(data+i) = new double[nd]; }
-
+    auto * data = new double[N*nd];
     for (long i=0; i<N; ++i){
-        data[i][0] = 2.5 + rand_num(rand_gen);
-        data[i][1] = -5.5 + rand_num(rand_gen);
+        data[i*2] = 2.5 + rand_num(rand_gen);
+        data[i*2+1] = -5.5 + rand_num(rand_gen);
     }
     double avg2D[nd];
     double err2D[nd];
@@ -127,7 +125,6 @@ int main(){
     cout << "     average1 = " << avg2D[0] << "     error1 = " << err2D[0] << endl;
     cout << "     average2 = " << avg2D[1] << "     error2 = " << err2D[1] << endl << endl;
 
-    for (int j=0; j<N; ++j){ delete [] *(data+j); }
     delete[] data;
 
     cout << endl << "Monte Carlo integrator" << endl << endl;

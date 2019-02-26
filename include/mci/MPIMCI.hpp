@@ -3,9 +3,6 @@
 
 #if USE_MPI==1
 
-#ifndef MPIMCI
-#define MPIMCI
-
 #include "mci/MCIntegrator.hpp"
 #include <fstream>
 #include <mpi.h>
@@ -115,8 +112,6 @@ namespace MPIMCI
         MPI_Finalize();
     }
 }  // namespace
-
-#endif
 
 #endif
 

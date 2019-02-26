@@ -45,7 +45,7 @@ protected:
     int _acc{}, _rej{};  // internal counters
     int _ridx;  // running index, which keeps track of the number of MC steps
     int _bidx; // index of the current block/datax element
-    double ** _datax;  // array that will contain all the measured observable (or block averages if used)
+    double * _datax;  // array that will contain all the measured observable (or block averages if used)
     bool _flagMC; //flag that is true only when MCI is accumulating data for the integral
 
     std::ofstream _obsfile;  //ofstream for storing obs values while sampling
