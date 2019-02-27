@@ -8,7 +8,7 @@
 #include <random>
 #include <string>
 #include <vector>
-
+#include <tuple>
 
 
 class MCI
@@ -21,7 +21,8 @@ protected:
     std::uniform_real_distribution<double> _rd;  //after initialization (done in the constructor) can be used with _rd(_rgen)
 
     int _ndim;  // number of dimensions
-    double ** _irange;  // integration ranges
+    double * _lbound; // integration lower bounds
+    double * _ubound; // integration upper bounds
     double _vol;  // Integration volume
 
     double * _xold;  // walker position
@@ -42,7 +43,7 @@ protected:
 
     std::vector<MCICallBackOnAcceptanceInterface *> _cback;  // Vector of observable functions
 
-    int _acc{}, _rej{};  // internal counters
+    int _acc, _rej;  // internal counters
     int _ridx;  // running index, which keeps track of the number of MC steps
     int _bidx; // index of the current block/datax element
     double * _datax;  // array that will contain all the measured observable (or block averages if used)
@@ -71,6 +72,7 @@ protected:
 
     void resetAccRejCounters();
 
+    void updateVolume();
     void applyPBC(double * v);
     void computeNewX();
     void updateX();
@@ -91,7 +93,9 @@ public:
     // --- Setters
     void setSeed(uint_fast64_t seed);
 
-    void setIRange(const double * const * irange); // keep walkers within these bounds during integration (defaults to full range of double floats)
+    // keep walkers within these bounds during integration (defaults to full range of double floats)
+    void setIRange(const double &lbound, const double &ubound); // set the same range on all dimensions
+    void setIRange(const double * lbound, const double * ubound);
 
     void setX(const double * x);
     void newRandomX();  // use if you want to take a new random _xold
@@ -116,9 +120,12 @@ public:
 
     // --- Getters
     int getNDim(){return _ndim;}
-    double getIRange(const int &i, const int &j){return *(*(_irange+i)+j);}
-    double getX(const int &i){return *(_xold+i);}
-    double getMRT2Step(const int &i){return *(_mrt2step+i);}
+    double getLBound(const int &i){return _lbound[i];}
+    double getUBound(const int &i){return _ubound[i];}
+    std::pair<double, double> getIRange(const int &i){return std::pair<double, double>(_lbound[i], _ubound[i]);}
+
+    double getX(const int &i){return _xold[i];}
+    double getMRT2Step(const int &i){return _mrt2step[i];}
     int getNfindMRT2steps(){return _NfindMRT2steps;}
     int getNdecorrelationSteps(){return _NdecorrelationSteps;}
     int getNBlocks(){return _nblocks;}
@@ -134,7 +141,7 @@ public:
     int getNCallBacks(){return _cback.size();}
 
     double getTargetAcceptanceRate(){return _targetaccrate;}
-    double getAcceptanceRate(){return (double(_acc)/(double(_acc+_rej)));}
+    double getAcceptanceRate(){return (_acc>0) ? static_cast<double>(_acc)/(_acc+_rej) : 0.;}
 
     // --- Integrate
 

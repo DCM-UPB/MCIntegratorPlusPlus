@@ -134,16 +134,10 @@ int main(){
     MCI mci(nd);
     cout << "Initialized a MCI object for an integration in a space with ndim=" << mci.getNDim() << endl;
 
-    auto **irange = new double*[nd];
-    for (int i=0; i<nd; ++i){
-        irange[i] = new double[2];
-        irange[i][0] = 0.;
-        irange[i][1] = 1.;
-    }
-    mci.setIRange(irange);
-    cout << "Integration range: " << mci.getIRange(0,0) << "   " << mci.getIRange(0,1) << endl;
+    mci.setIRange(0., 1.);
+    cout << "Integration range: " << mci.getLBound(0) << "   " << mci.getUBound(0) << endl;
     for (int i=1; i<nd; ++i){
-        cout << "                   " << mci.getIRange(i,0) << "   " << mci.getIRange(i,1) << endl;
+        cout << "                   " << mci.getLBound(i) << "   " << mci.getUBound(i) << endl;
     }
 
     double r[nd];
@@ -165,27 +159,15 @@ int main(){
     cout << "Average 1 (Constval=1.3)         = " << avg2D[0] << " +- " << err2D[0] << endl;
     cout << "Average 2 (Polynom=x+y+z -> 1.5) = " << avg2D[1] << " +- " << err2D[1] << endl << endl << endl;
 
-    for (int i=0; i<nd; ++i){delete [] irange[i];}
-    delete [] irange;
-
     nd = 1;
     MCI mci_1d(1);
-    irange = new double*[nd];
-    for (int i=0; i<nd; ++i){
-        irange[i] = new double[2];
-        irange[i][0] = -1.;
-        irange[i][1] = 1.;
-    }
-    mci_1d.setIRange(irange);
+    mci_1d.setIRange(-1., 1.);
     X2 x2(nd);
     mci_1d.addObservable(&x2);
     N=10000;
     mci_1d.integrate(N,&avg1D,&err1D);
     cout << "Integral of x^2 between -1 and +1 (expected 2./3.): " << endl;
     cout << "Integral = " << avg1D << " +- " << err1D << endl << endl << endl;
-    for (int i=0; i<nd; ++i){delete [] irange[i];}
-    delete [] irange;
-
 
     nd = 1;
     MCI mci_1dgauss(1);

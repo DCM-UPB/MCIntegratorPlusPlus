@@ -69,13 +69,9 @@ int main() {
     if (myrank == 0) { cout << "ndim = " << mci.getNDim() << endl;}
 
     // set the integration range to [-1:3]
-    auto ** irange = new double*[ndim];
-    irange[0] = new double[2];
-    irange[0][0] = -1.;
-    irange[0][1] = 3.;
-    mci.setIRange(irange);
+    mci.setIRange(-1., 3.);
 
-    if (myrank == 0) { cout << "irange = [ " << mci.getIRange(0, 0) << " ; " << mci.getIRange(0, 1) << " ]" << endl;}
+    if (myrank == 0) { cout << "irange = [ " << mci.getLBound(0) << " ; " << mci.getUBound(0) << " ]" << endl;}
 
     // initial walker position
     double initpos[ndim];
@@ -167,11 +163,7 @@ int main() {
 
     // deallocate per-thread allocations
     delete sf;
-
     delete obs;
-
-    delete[] irange[0];
-    delete[] irange;
 
     // finalize MPI
     MPIMCI::finalize();

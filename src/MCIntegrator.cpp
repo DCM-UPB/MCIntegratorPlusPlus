@@ -266,8 +266,8 @@ void MCI::findMRT2Step()
         if ( counter > MAX_NUM_ATTEMPTS ) { cons_count=MIN_CONS; }
         //mrt2step = Infinity
         for (j=0; j<_ndim; ++j) {
-            if ( _mrt2step[j] - ( _irange[j][1] - _irange[j][0] ) > 0. ) {
-                _mrt2step[j] = ( _irange[j][1] - _irange[j][0] );
+            if ( _mrt2step[j] - ( _ubound[j] - _lbound[j] ) > 0. ) {
+                _mrt2step[j] = ( _ubound[j] - _lbound[j] );
             }
         }
         //mrt2step ~ 0
@@ -312,14 +312,24 @@ bool MCI::doStepMRT2()
 }
 
 
+void MCI::updateVolume()
+{
+    // Set the integration volume
+    _vol=1.;
+    for (int i=0; i<_ndim; ++i) {
+        _vol = _vol*( _ubound[i] - _lbound[i] );
+    }
+}
+
+
 void MCI::applyPBC(double * v)
 {
     for (int i=0; i<_ndim; ++i) {
-        while ( v[i] < _irange[i][0] ) {
-            v[i] += _irange[i][1] - _irange[i][0];
+        while ( v[i] < _lbound[i] ) {
+            v[i] += _ubound[i] - _lbound[i];
         }
-        while ( v[i] > _irange[i][1] ) {
-            v[i] -= _irange[i][1] - _irange[i][0];
+        while ( v[i] > _ubound[i] ) {
+            v[i] -= _ubound[i] - _lbound[i];
         }
     }
 }
@@ -337,7 +347,7 @@ void MCI::newRandomX()
 {
     //generate a new random x (within the irange)
     for (int i=0; i<_ndim; ++i) {
-        _xold[i] = _irange[i][0] + ( _irange[i][1] - _irange[i][0] ) * _rd(_rgen);
+        _xold[i] = _lbound[i] + ( _ubound[i] - _lbound[i] ) * _rd(_rgen);
     }
 }
 
@@ -480,34 +490,34 @@ void MCI::setTargetAcceptanceRate(const double targetaccrate)
 
 void MCI::setMRT2Step(const double * mrt2step)
 {
-    for (int i=0; i<_ndim; ++i) {
-        _mrt2step[i] = mrt2step[i];
-    }
+    std::copy(mrt2step, mrt2step+_ndim, _mrt2step);
 }
 
 
 void MCI::setX(const double * x)
 {
-    for (int i=0; i<_ndim; ++i) {
-        _xold[i] = x[i];
-    }
+    std::copy(x, x+_ndim, _xold);
     applyPBC(_xold);
 }
 
-
-void MCI::setIRange(const double * const * irange)
+void MCI::setIRange(const double &lbound, const double &ubound)
 {
-    // Set _irange and apply PBC to the initial walker position _x
-    for (int i=0; i<_ndim; ++i) {
-        _irange[i][0] = irange[i][0];
-        _irange[i][1] = irange[i][1];
-    }
+    // Set irange and apply PBC to the initial walker position _x
+    std::fill(_lbound, _lbound+_ndim, lbound);
+    std::fill(_ubound, _ubound+_ndim, ubound);
+    updateVolume();
+
     applyPBC(_xold);
-    // Set the integration volume
-    _vol=1.;
-    for (int i=0; i<_ndim; ++i) {
-        _vol = _vol*( _irange[i][1] - _irange[i][0] );
-    }
+}
+
+void MCI::setIRange(const double * lbound, const double * ubound)
+{
+    // Set irange and apply PBC to the initial walker position _x
+    std::copy(lbound, lbound+_ndim, _lbound);
+    std::copy(ubound, ubound+_ndim, _ubound);
+    updateVolume();
+
+    applyPBC(_xold);
 }
 
 void MCI::setSeed(const uint_fast64_t seed) // fastest unsigned integer which is at least 64 bit (as expected by rgen)
@@ -520,33 +530,25 @@ void MCI::setSeed(const uint_fast64_t seed) // fastest unsigned integer which is
 
 MCI::MCI(const int & ndim)
 {
-    int i;
     // _ndim
     _ndim = ndim;
-    // _irange
-    _irange = new double*[_ndim];
-    for (i=0; i<_ndim; ++i) {
-        _irange[i] = new double[2];
-        _irange[i][0] = -std::numeric_limits<double>::max();
-        _irange[i][1] = std::numeric_limits<double>::max();
-    }
+    // _lbound and _ubound
+    _lbound = new double[_ndim];
+    _ubound = new double[_ndim];
+    std::fill(_lbound, _lbound+_ndim, -std::numeric_limits<double>::max());
+    std::fill(_ubound, _ubound+_ndim, std::numeric_limits<double>::max());
     // _vol
     _vol=0.;
+
     // _x
     _xold = new double[_ndim];
-    for (i=0; i<_ndim; ++i) {
-        _xold[i] = 0.;
-    }
+    std::fill(_xold, _xold+_ndim, 0.);
     _xnew = new double[_ndim];
-    for (i=0; i<_ndim; ++i) {
-        _xnew[i] = 0.;
-    }
+    std::fill(_xnew, _xnew+_ndim, 0.);
     _flagwlkfile=false;
     // _mrt2step
     _mrt2step = new double[_ndim];
-    for (i=0; i<_ndim; ++i) {
-        _mrt2step[i] = INITIAL_STEP;
-    }
+    std::fill(_mrt2step, _mrt2step+_ndim, INITIAL_STEP);
 
     // other controls, defaulting to auto behavior
     _NfindMRT2steps = -1;
@@ -565,6 +567,9 @@ MCI::MCI(const int & ndim)
     _ridx=0;
     _bidx=0;
     _datax=nullptr;
+    //initialize the acceptance counters
+    _acc=0;
+    _rej=0;
     // initialize all the other variables
     _targetaccrate=0.5;
     _flagMC=false;
@@ -584,7 +589,7 @@ MCI::~MCI()
     delete [] _xnew;
     delete [] _xold;
 
-    // _irange
-    for (int i=0; i<_ndim; ++i){delete[] *(_irange+i);}
-    delete[] _irange;
+    // lbound and ubound
+    delete [] _ubound;
+    delete [] _lbound;
 }
