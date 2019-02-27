@@ -4,13 +4,13 @@
 namespace mci
 {
     // Compute average and standard deviation (error) of a set of data x[N], assuming that they are not correlated
-    void UncorrelatedEstimator(const long &n, const double * x, double & average, double & error);
+    void UncorrelatedEstimator(const int &n, const double * x, double & average, double & error);
 
     // Compute average and error, using the blocking technique
-    void BlockEstimator(const long &n, const double * x, const int &nblocks, double & average, double & error);
+    void BlockEstimator(const int &n, const double * x, const int &nblocks, double & average, double & error);
 
     // Compute average and error for correlated data, using the blocking technique
-    void CorrelatedEstimator(const long &n, const double * x, double & average, double & error);
+    void CorrelatedEstimator(const int &n, const double * x, double & average, double & error);
 
 
     // Estimators for multidimensional observable data
@@ -22,13 +22,13 @@ namespace mci
     // The output will be given by arrays: average[ndim] and error[ndim]
 
     // Compute average and standard deviation (error) of a set of data x[N], assuming that they are not correlated
-    void MultiDimUncorrelatedEstimator(const long &n, const int &ndim, const double * x, double * average, double * error);
+    void MultiDimUncorrelatedEstimator(const int &n, const int &ndim, const double * x, double * average, double * error);
 
     // Compute average and error, using the blocking technique
-    void MultiDimBlockEstimator(const long &n, const int &ndim, const double * x, const int &nblocks, double * average, double * error);
+    void MultiDimBlockEstimator(const int &n, const int &ndim, const double * x, const int &nblocks, double * average, double * error);
 
     // Compute average and error for correlated data, using the blocking technique
-    void MultiDimCorrelatedEstimator(const long &n, const int &ndim, const double * x, double * average, double * error);
+    void MultiDimCorrelatedEstimator(const int &n, const int &ndim, const double * x, double * average, double * error);
 
 } // namespace mci
 

@@ -8,7 +8,6 @@
 #include <random>
 #include <string>
 #include <vector>
-#include <tuple>
 
 
 class MCI
@@ -81,7 +80,7 @@ protected:
     void findMRT2Step();
     void initialDecorrelation();
 
-    void sample(const long &npoints, const bool &flagobs, const long &stepsPerBlock = 1);
+    void sample(const int &npoints, const bool &flagobs, const int &stepsPerBlock = 1);
 
     void storeObservables();
     void storeWalkerPositions();
@@ -122,7 +121,6 @@ public:
     int getNDim(){return _ndim;}
     double getLBound(const int &i){return _lbound[i];}
     double getUBound(const int &i){return _ubound[i];}
-    std::pair<double, double> getIRange(const int &i){return std::pair<double, double>(_lbound[i], _ubound[i]);}
 
     double getX(const int &i){return _xold[i];}
     double getMRT2Step(const int &i){return _mrt2step[i];}
@@ -141,12 +139,12 @@ public:
     int getNCallBacks(){return _cback.size();}
 
     double getTargetAcceptanceRate(){return _targetaccrate;}
-    double getAcceptanceRate(){return (_acc>0) ? static_cast<double>(_acc)/(_acc+_rej) : 0.;}
+    double getAcceptanceRate(){return (_acc>0) ? static_cast<double>(_acc)/(static_cast<double>(_acc)+_rej) : 0.;}
 
     // --- Integrate
 
     // Actual integrate implemention. With flags to skip the configured step adjustment/decorrelation.
-    void integrate(const long &Nmc, double * average, double * error, bool doFindMRT2step = true, bool doDecorrelation = true);
+    void integrate(const int &Nmc, double * average, double * error, bool doFindMRT2step = true, bool doDecorrelation = true);
 };
 
 #endif

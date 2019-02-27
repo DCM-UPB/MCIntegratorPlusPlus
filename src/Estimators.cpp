@@ -1,7 +1,7 @@
 #include "mci/Estimators.hpp"
 
-#include <cmath>
 #include <algorithm>
+#include <cmath>
 #include <iostream>
 
 double calcErrDelta(const int mode, const double * err /* length 9 */)
@@ -27,7 +27,7 @@ double calcErrDelta(const int mode, const double * err /* length 9 */)
 
 namespace mci
 {
-    void UncorrelatedEstimator(const long &n, const double * x, double & average, double & error)
+    void UncorrelatedEstimator(const int &n, const double * x, double & average, double & error)
     {
         using namespace std;
 
@@ -40,7 +40,7 @@ namespace mci
 
         average=0.;
         error=0.;
-        for (long i=0; i<n; ++i){
+        for (int i=0; i<n; ++i){
             average+=x[i];
             error+=x[i]*x[i];
         }
@@ -56,7 +56,7 @@ namespace mci
     }
 
 
-    void BlockEstimator(const long &n, const double * x, const int &nblocks, double & average, double & error)
+    void BlockEstimator(const int &n, const double * x, const int &nblocks, double & average, double & error)
     {
         using namespace std;
 
@@ -65,23 +65,23 @@ namespace mci
             exit(EXIT_FAILURE);
         }
 
-        const long nperblock=n/nblocks; // if there is a rest, it is ignored
+        const int nperblock=n/nblocks; // if there is a rest, it is ignored
         const double norm = 1./nperblock;
 
         double av[nblocks]; // nblocks wont be huge number, so we can just stack-allocate
         for (int i1=0; i1<nblocks; ++i1) {
             av[i1]=0.;
-            for (long i2=i1*nperblock; i2<(i1+1)*nperblock; ++i2) {
+            for (int i2=i1*nperblock; i2<(i1+1)*nperblock; ++i2) {
                 av[i1]+=x[i2];
             }
             av[i1]*=norm;
         }
 
-        UncorrelatedEstimator(static_cast<long>(nblocks), av, average, error);
+        UncorrelatedEstimator(nblocks, av, average, error);
     }
 
 
-    void CorrelatedEstimator(const long &n, const double * x, double & average, double & error)
+    void CorrelatedEstimator(const int &n, const double * x, double & average, double & error)
     {
         const int MIN_BLOCKS=6, MAX_BLOCKS=50;
         const int MAX_PLATEAU_AVERAGE=4;
@@ -127,7 +127,7 @@ namespace mci
     }
 
 
-    void MultiDimUncorrelatedEstimator(const long &n, const int &ndim, const double * x, double * average, double * error)
+    void MultiDimUncorrelatedEstimator(const int &n, const int &ndim, const double * x, double * average, double * error)
     {   // we create an explicit multidimensional implementation, for better efficiency in memory access
         using namespace std;
 
@@ -141,7 +141,7 @@ namespace mci
         fill(average, average+ndim, 0.);
         fill(error, error+ndim, 0.);
 
-        for (long i=0; i<n; ++i) {
+        for (int i=0; i<n; ++i) {
             for (int j=0; j<ndim; ++j) {
                 average[j] += x[i*ndim+j];
                 error[j] += x[i*ndim+j]*x[i*ndim+j];
@@ -162,7 +162,7 @@ namespace mci
     }
 
 
-    void MultiDimBlockEstimator(const long &n, const int &ndim, const double * x, const int &nblocks, double * average, double * error)
+    void MultiDimBlockEstimator(const int &n, const int &ndim, const double * x, const int &nblocks, double * average, double * error)
     {   // we create an explicit multidimensional implementation, for better efficiency in memory access
         using namespace std;
 
@@ -171,7 +171,7 @@ namespace mci
             exit(EXIT_FAILURE);
         }
 
-        const long nperblock=n/nblocks; // if there is a rest, it is ignored
+        const int nperblock=n/nblocks; // if there is a rest, it is ignored
         const double norm = 1./nperblock;
         const int ndata = nblocks*ndim;
 
@@ -179,7 +179,7 @@ namespace mci
         fill(av, av+ndata, 0.);
 
         for (int i1=0; i1<nblocks; ++i1) {
-            for (long i2=i1*nperblock; i2<(i1+1)*nperblock; ++i2) {
+            for (int i2=i1*nperblock; i2<(i1+1)*nperblock; ++i2) {
                 for (int j=0; j<ndim; ++j) {
                     av[i1*ndim+j] += x[i2*ndim+j];
                 }
@@ -189,13 +189,13 @@ namespace mci
             av[i] *= norm;
         }
 
-        MultiDimUncorrelatedEstimator(static_cast<long>(nblocks), ndim, av, average, error);
+        MultiDimUncorrelatedEstimator(nblocks, ndim, av, average, error);
 
         delete [] av;
     }
 
 
-    void MultiDimCorrelatedEstimator(const long &n, const int &ndim, const double * x, double * average, double * error)
+    void MultiDimCorrelatedEstimator(const int &n, const int &ndim, const double * x, double * average, double * error)
     {   // we create an explicit multidimensional implementation, for better efficiency in memory access
         const int MIN_BLOCKS=6, MAX_BLOCKS=50;
         const int MAX_PLATEAU_AVERAGE=4;

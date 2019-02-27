@@ -11,7 +11,7 @@ using namespace std;
 
 
 int main(){
-    const long NMC = 10000;
+    const int NMC = 10000;
     const double CORRECT_RESULT = 0.5;
 
     auto * pdf = new ThreeDimGaussianPDF();

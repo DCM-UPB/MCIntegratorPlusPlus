@@ -73,9 +73,9 @@ int main(){
     default_random_engine rand_gen;
     uniform_real_distribution<double> rand_num(0.0,1.0);
 
-    long N = 1000l;
+    int N = 1000l;
     auto * x = new double[N];
-    for (long i=0; i<N; ++i){
+    for (int i=0; i<N; ++i){
         x[i] = 3.5 + rand_num(rand_gen);
     }
     double avg1D = 0.;
@@ -103,7 +103,7 @@ int main(){
 
     int nd=2;
     auto * data = new double[N*nd];
-    for (long i=0; i<N; ++i){
+    for (int i=0; i<N; ++i){
         data[i*2] = 2.5 + rand_num(rand_gen);
         data[i*2+1] = -5.5 + rand_num(rand_gen);
     }

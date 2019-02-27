@@ -9,7 +9,7 @@
 
 using namespace std;
 
-void run_single_benchmark(const string &label, MCI * mci, const int nruns, const long &NMC) {
+void run_single_benchmark(const string &label, MCI * mci, const int nruns, const int NMC) {
     pair<double, double> result;
     const double time_scale = 1000000.; //microseconds
 
@@ -18,7 +18,7 @@ void run_single_benchmark(const string &label, MCI * mci, const int nruns, const
 }
 
 int main (void) {
-    const long NMC[5] = {10000000, 1000000, 100000, 10000, 1000};
+    const int NMC[5] = {10000000, 1000000, 100000, 10000, 1000};
     const int nruns[5] = {3, 30, 300, 3000, 30000};
 
     ThreeDimGaussianPDF * pdf = new ThreeDimGaussianPDF();

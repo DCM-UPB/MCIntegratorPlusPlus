@@ -125,7 +125,7 @@ int main() {
 
 
     // integrate
-    const long Nmc = 1000000;
+    const int Nmc = 1000000;
     double average[mci.getNObsDim()];
     double error[mci.getNObsDim()];
     mci.integrate(Nmc, average, error);

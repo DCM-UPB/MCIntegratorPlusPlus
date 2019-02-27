@@ -71,7 +71,7 @@ namespace MPIMCI
 
     // integrate in parallel and accumulate results
 
-    inline void integrate(MCI * const mci, const long &Nmc, double * average, double * error, const bool doFindMRT2Step = true, const bool doDecorrelation = true)
+    inline void integrate(MCI * const mci, const int &Nmc, double * average, double * error, const bool doFindMRT2Step = true, const bool doDecorrelation = true)
     {
         // make sure the user has MPI in the correct state
         int isinit, isfinal;
@@ -111,7 +111,7 @@ namespace MPIMCI
 
         MPI_Finalize();
     }
-}  // namespace
+} // namespace MPIMCI
 
 #endif
 

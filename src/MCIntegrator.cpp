@@ -11,17 +11,17 @@
 
 //   --- Integrate
 
-void MCI::integrate(const long &Nmc, double * average, double * error, const bool doFindMRT2step, const bool doDecorrelation)
+void MCI::integrate(const int &Nmc, double * average, double * error, const bool doFindMRT2step, const bool doDecorrelation)
 {
-    if (Nmc<static_cast<long>(_nblocks)) {
+    if (Nmc<_nblocks) {
         throw std::invalid_argument("The requested number of MC steps is smaller than the requested number of blocks.");
     }
 
     const bool fixedBlocks = (_nblocks>0);
-    const long stepsPerBlock = fixedBlocks ? Nmc/_nblocks : 1;
-    const long trueNmc = fixedBlocks ? stepsPerBlock*_nblocks : Nmc;
-    const long ndatax = fixedBlocks ? _nblocks : Nmc;
-    const long ndatax_tot = ndatax*_nobsdim;
+    const int stepsPerBlock = fixedBlocks ? Nmc/_nblocks : 1;
+    const int trueNmc = fixedBlocks ? stepsPerBlock*_nblocks : Nmc;
+    const int ndatax = fixedBlocks ? _nblocks : Nmc;
+    const int ndatax_tot = ndatax*_nobsdim;
 
     if ( _flagpdf ) {
         //find the optimal mrt2 step
@@ -45,7 +45,7 @@ void MCI::integrate(const long &Nmc, double * average, double * error, const boo
     //reduce block averages
     if (fixedBlocks) {
         const double fac = 1./stepsPerBlock;
-        for (long i=0; i<ndatax_tot; ++i) {
+        for (int i=0; i<ndatax_tot; ++i) {
             _datax[i] *= fac;
         }
     }
@@ -103,11 +103,10 @@ void MCI::storeWalkerPositions()
 void MCI::initialDecorrelation()
 {
     if (_NdecorrelationSteps < 0) {
-        long i;
         //constants
-        const long MIN_NMC=100;
+        const int MIN_NMC=100;
         //allocate the data array that will be used
-        const long ndatax_tot = MIN_NMC*_nobsdim;
+        const int ndatax_tot = MIN_NMC*_nobsdim;
         _datax = new double[ndatax_tot];
         //do a first estimate of the observables
         this->sample(MIN_NMC, true);
@@ -123,7 +122,7 @@ void MCI::initialDecorrelation()
             flag_loop = false;
             this->sample(MIN_NMC, true);
             mci::MultiDimCorrelatedEstimator(MIN_NMC, _nobsdim, _datax, newestimate, newerrestim);
-            for (i=0; i<_nobsdim; ++i) {
+            for (int i=0; i<_nobsdim; ++i) {
                 if ( fabs( oldestimate[i] - newestimate[i] ) > ( olderrestim[i] + newerrestim[i] ) ) {
                     flag_loop=true;
                 }
@@ -145,7 +144,7 @@ void MCI::initialDecorrelation()
 }
 
 
-void MCI::sample(const long &npoints, const bool &flagobs, const long &stepsPerBlock)
+void MCI::sample(const int &npoints, const bool &flagobs, const int &stepsPerBlock)
 {
     if (flagobs && stepsPerBlock>0 && npoints%stepsPerBlock!=0) {
         throw std::invalid_argument("If fixed blocking is used, npoints must be a multiple of stepsPerBlock.");
@@ -573,7 +572,6 @@ MCI::MCI(const int & ndim)
     // initialize all the other variables
     _targetaccrate=0.5;
     _flagMC=false;
-    resetAccRejCounters();
 }
 
 MCI::~MCI()

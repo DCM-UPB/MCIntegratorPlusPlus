@@ -53,16 +53,16 @@ void generate1sOrbitalPosition(const double * oldPosition, double * newPosition,
     } while (!accepted);
 }
 
-void generate1sOrbitalWalk(double * datax, const long &NMC, const int ndim)
+void generate1sOrbitalWalk(double * datax, const int NMC, const int ndim)
 {
     for (int j=0; j<ndim; ++j) { datax[j] = 0.; } // set first step to 0
-    for (long i=1; i<NMC; ++i) {
+    for (int i=1; i<NMC; ++i) {
         generate1sOrbitalPosition(datax+(i-1)*ndim, datax+i*ndim, ndim);
     }
 }
 
 
-void run_single_benchmark(const string &label, const int estimatorType /*1 uncorr, 2 block, 3 corr */,const double * datax, const long &NMC, const int ndim, const int nruns)
+void run_single_benchmark(const string &label, const int estimatorType /*1 uncorr, 2 block, 3 corr */,const double * datax, const int NMC, const int ndim, const int nruns)
 {
     pair<double, double> result;
     const double time_scale = 1000000000.; //nanoseconds
@@ -74,7 +74,7 @@ void run_single_benchmark(const string &label, const int estimatorType /*1 uncor
 
 int main (void)
 {
-    const long NMC = 10000000;
+    const int NMC = 10000000;
     const int nruns = 10;
     const int estimatorTypes[3] = {1, 2, 3};
     const int ndims[3] = {1, 10, 100};
@@ -88,7 +88,7 @@ int main (void)
 
     // Estimator benchmark
     for (const int ndim : ndims) {
-        const long trueNMC = NMC/ndim;
+        const int trueNMC = NMC/ndim;
         double * datax = new double[trueNMC*ndim];
         generate1sOrbitalWalk(datax, trueNMC, ndim);
 

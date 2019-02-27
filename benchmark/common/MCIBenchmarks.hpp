@@ -6,7 +6,7 @@
 #include "mci/Estimators.hpp"
 #include "Timer.hpp"
 
-double benchmark_MCIntegrate(MCI * mci, const long &NMC) {
+double benchmark_MCIntegrate(MCI * mci, const int NMC) {
     Timer timer(1.);
     double average[mci->getNObs()];
     double error[mci->getNObs()];
@@ -16,7 +16,7 @@ double benchmark_MCIntegrate(MCI * mci, const long &NMC) {
     return timer.elapsed();
 }
 
-std::pair<double, double> sample_benchmark_MCIntegrate(MCI * mci, const int nruns, const long &NMC) {
+std::pair<double, double> sample_benchmark_MCIntegrate(MCI * mci, const int nruns, const int NMC) {
     double times[nruns];
     double mean = 0., err = 0.;
 
@@ -33,7 +33,7 @@ std::pair<double, double> sample_benchmark_MCIntegrate(MCI * mci, const int nrun
 }
 
 
-double benchmark_estimators(const double * datax, const int estimatorType /* 1 uncorr, 2 block, 3 corr */, const long &NMC, const int ndim) {
+double benchmark_estimators(const double * datax, const int estimatorType /* 1 uncorr, 2 block, 3 corr */, const int NMC, const int ndim) {
     const int nblocks = 20;
     Timer timer(1.);
     double average[ndim];
@@ -57,7 +57,7 @@ double benchmark_estimators(const double * datax, const int estimatorType /* 1 u
     return time;
 }
 
-std::pair<double, double> sample_benchmark_estimators(const double * datax, const int estimatorType, const long &NMC, const int ndim, const int nruns) {
+std::pair<double, double> sample_benchmark_estimators(const double * datax, const int estimatorType, const int NMC, const int ndim, const int nruns) {
     double times[nruns];
     double mean = 0., err = 0.;
 
