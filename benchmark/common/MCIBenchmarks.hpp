@@ -39,39 +39,20 @@ double benchmark_estimators(const double * datax, const int estimatorType /* 1 u
     double average[ndim];
     double error[ndim];
 
-    // hack to use master version
-    double ** jaggedData;
-    if (ndim > 1) {
-        jaggedData = new double*[NMC];
-        for (int i=0; i<NMC; ++i) {
-            jaggedData[i] = new double[ndim];
-            for (int j=0; j<ndim; ++j) {
-                jaggedData[i][j] = datax[i*ndim+j];
-            }
-        }
-    }
-
     timer.reset(); // we contain two if checks in the result, but shouldnt matter
     if (estimatorType == 1) {
-        if (ndim == 1) { mci::UncorrelatedEstimator(NMC, datax, average, error); }
-        else { mci::MultiDimUncorrelatedEstimator(NMC, ndim, jaggedData, average, error); }
+        if (ndim == 1) { mci::UncorrelatedEstimator(NMC, datax, *average, *error); }
+        else { mci::MultiDimUncorrelatedEstimator(NMC, ndim, datax, average, error); }
     }
     else if (estimatorType == 2) {
-        if (ndim == 1) { mci::BlockEstimator(NMC, datax, nblocks, average, error); }
-        else { mci::MultiDimBlockEstimator(NMC, ndim, jaggedData, nblocks, average, error); }
+        if (ndim == 1) { mci::BlockEstimator(NMC, datax, nblocks, *average, *error); }
+        else { mci::MultiDimBlockEstimator(NMC, ndim, datax, nblocks, average, error); }
     }
     else if (estimatorType == 3) {
-        if (ndim == 1) { mci::CorrelatedEstimator(NMC, datax, average, error); }
-        else { mci::MultiDimCorrelatedEstimator(NMC, ndim, jaggedData, average, error); }
+        if (ndim == 1) { mci::CorrelatedEstimator(NMC, datax, *average, *error); }
+        else { mci::MultiDimCorrelatedEstimator(NMC, ndim, datax, average, error); }
     }
     const double time = timer.elapsed();
-
-    if (ndim > 1) {
-        for (int i=0; i<NMC; ++i) {
-            delete [] jaggedData[i];
-        }
-        delete [] jaggedData;
-    }
 
     return time;
 }

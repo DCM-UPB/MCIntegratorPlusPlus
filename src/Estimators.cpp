@@ -48,10 +48,10 @@ namespace mci
         const double norm = 1./n;
         average*=norm;
         error=error*norm - average*average;
-        if ( error < SMALLEST_ERROR ){
-            error=0.;
-        } else {
+        if ( error > SMALLEST_ERROR ){
             error=sqrt( error/(n-1.) );
+        } else {
+            error=0.;
         }
     }
 
@@ -153,10 +153,10 @@ namespace mci
         for (int j=0; j<ndim; ++j) {
             average[j]*=norm;
             error[j]=error[j]*norm - average[j]*average[j];
-            if ( error[j] < SMALLEST_ERROR ) {
-                error[j]=0.;
-            } else {
+            if ( error[j] > SMALLEST_ERROR ) {
                 error[j]=sqrt( error[j]*norm2 );
+            } else {
+                error[j]=0.;
             }
         }
     }
