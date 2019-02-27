@@ -1,14 +1,13 @@
-#ifndef MCINTEGRATOR
-#define MCINTEGRATOR
+#ifndef MCI_MCINTEGRATOR_HPP
+#define MCI_MCINTEGRATOR_HPP
 
-#include "mci/MCISamplingFunctionInterface.hpp"
-#include "mci/MCIObservableFunctionInterface.hpp"
 #include "mci/MCICallBackOnAcceptanceInterface.hpp"
-#include <vector>
-#include <random>
+#include "mci/MCIObservableFunctionInterface.hpp"
+#include "mci/MCISamplingFunctionInterface.hpp"
 #include <fstream>
+#include <random>
 #include <string>
-
+#include <vector>
 
 
 class MCI
@@ -21,7 +20,8 @@ protected:
     std::uniform_real_distribution<double> _rd;  //after initialization (done in the constructor) can be used with _rd(_rgen)
 
     int _ndim;  // number of dimensions
-    double ** _irange;  // integration ranges
+    double * _lbound; // integration lower bounds
+    double * _ubound; // integration upper bounds
     double _vol;  // Integration volume
 
     double * _xold;  // walker position
@@ -45,17 +45,17 @@ protected:
     int _acc, _rej;  // internal counters
     int _ridx;  // running index, which keeps track of the number of MC steps
     int _bidx; // index of the current block/datax element
-    double ** _datax;  // array that will contain all the measured observable (or block averages if used)
+    double * _datax;  // array that will contain all the measured observable (or block averages if used)
     bool _flagMC; //flag that is true only when MCI is accumulating data for the integral
 
     std::ofstream _obsfile;  //ofstream for storing obs values while sampling
     std::string _pathobsfile;
-    int _freqobsfile;
+    int _freqobsfile{};
     bool _flagobsfile;  // should write an output file with sampled obs values?
 
     std::ofstream _wlkfile;  //ofstream for storing obs values while sampling
     std::string _pathwlkfile;
-    int _freqwlkfile;
+    int _freqwlkfile{};
     bool _flagwlkfile;  // should write an output file with sampled obs values?
 
 
@@ -71,6 +71,7 @@ protected:
 
     void resetAccRejCounters();
 
+    void updateVolume();
     void applyPBC(double * v);
     void computeNewX();
     void updateX();
@@ -79,7 +80,7 @@ protected:
     void findMRT2Step();
     void initialDecorrelation();
 
-    void sample(const long &npoints, const bool &flagobs, const long &stepsPerBlock = 1);
+    void sample(const int &npoints, const bool &flagobs, const int &stepsPerBlock = 1);
 
     void storeObservables();
     void storeWalkerPositions();
@@ -89,9 +90,11 @@ public:
     ~MCI();  //Destructor
 
     // --- Setters
-    void setSeed(const uint_fast64_t seed);
+    void setSeed(uint_fast64_t seed);
 
-    void setIRange(const double * const * irange); // keep walkers within these bounds during integration (defaults to full range of double floats)
+    // keep walkers within these bounds during integration (defaults to full range of double floats)
+    void setIRange(const double &lbound, const double &ubound); // set the same range on all dimensions
+    void setIRange(const double * lbound, const double * ubound);
 
     void setX(const double * x);
     void newRandomX();  // use if you want to take a new random _xold
@@ -100,7 +103,7 @@ public:
     void setNfindMRT2steps(const int niterations /* -1 == auto, 0 == disabled */){_NfindMRT2steps=niterations;} // how many MRT2 step adjustment iterations to do before integrating
     void setNdecorrelationSteps(const int nsteps /* -1 == auto, 0 == disabled */){_NdecorrelationSteps=nsteps;} // how many decorrelation steps to do before integrating
     void setNBlocks(const int nblocks /* 0 == auto -> high RAM usage */){_nblocks=nblocks;} // how many blocks to use for error estimation
-    void setTargetAcceptanceRate(const double targetaccrate);
+    void setTargetAcceptanceRate(double targetaccrate);
 
     void addObservable(MCIObservableFunctionInterface * obs);
     void clearObservables();
@@ -116,9 +119,11 @@ public:
 
     // --- Getters
     int getNDim(){return _ndim;}
-    double getIRange(const int &i, const int &j){return *(*(_irange+i)+j);}
-    double getX(const int &i){return *(_xold+i);}
-    double getMRT2Step(const int &i){return *(_mrt2step+i);}
+    double getLBound(const int &i){return _lbound[i];}
+    double getUBound(const int &i){return _ubound[i];}
+
+    double getX(const int &i){return _xold[i];}
+    double getMRT2Step(const int &i){return _mrt2step[i];}
     int getNfindMRT2steps(){return _NfindMRT2steps;}
     int getNdecorrelationSteps(){return _NdecorrelationSteps;}
     int getNBlocks(){return _nblocks;}
@@ -134,12 +139,12 @@ public:
     int getNCallBacks(){return _cback.size();}
 
     double getTargetAcceptanceRate(){return _targetaccrate;}
-    double getAcceptanceRate(){return (double(_acc)/(double(_acc+_rej)));}
+    double getAcceptanceRate(){return (_acc>0) ? static_cast<double>(_acc)/(static_cast<double>(_acc)+_rej) : 0.;}
 
     // --- Integrate
 
     // Actual integrate implemention. With flags to skip the configured step adjustment/decorrelation.
-    void integrate(const long &Nmc, double * average, double * error, const bool doFindMRT2step = true, const bool doDecorrelation = true);
+    void integrate(const int &Nmc, double * average, double * error, bool doFindMRT2step = true, bool doDecorrelation = true);
 };
 
 #endif

@@ -13,7 +13,7 @@ In `doc/` there is a user manual in pdf and a config for doxygen.
 
 In `examples/`, `test/` and `benchmark/` there are examples, tests and benchmarks for the library.
 
-In `res/` we provide a true random seed file.
+In `script/` we collect useful scripts and in `res/` we provide resources, like a true random seed file.
 
 
 Some subdirectories come with an own `README.md` file which provides further information.

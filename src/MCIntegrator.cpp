@@ -1,76 +1,70 @@
 #include "mci/MCIntegrator.hpp"
 #include "mci/Estimators.hpp"
 
-#include <limits>
-#include <iostream>
 #include <algorithm>
-#include <vector>
+#include <iostream>
+#include <limits>
 #include <random>
 #include <stdexcept>
+#include <vector>
 
 
 //   --- Integrate
 
-void MCI::integrate(const long &Nmc, double * average, double * error, const bool doFindMRT2step, const bool doDecorrelation)
+void MCI::integrate(const int &Nmc, double * average, double * error, const bool doFindMRT2step, const bool doDecorrelation)
 {
-    if (Nmc<(long)_nblocks) {
+    if (Nmc<_nblocks) {
         throw std::invalid_argument("The requested number of MC steps is smaller than the requested number of blocks.");
     }
 
     const bool fixedBlocks = (_nblocks>0);
-    const long stepsPerBlock = fixedBlocks ? Nmc/_nblocks : 1;
-    const long trueNmc = fixedBlocks ? stepsPerBlock*_nblocks : Nmc;
-    const long ndatax = fixedBlocks ? _nblocks : Nmc;
+    const int stepsPerBlock = fixedBlocks ? Nmc/_nblocks : 1;
+    const int trueNmc = fixedBlocks ? stepsPerBlock*_nblocks : Nmc;
+    const int ndatax = fixedBlocks ? _nblocks : Nmc;
+    const int ndatax_tot = ndatax*_nobsdim;
 
-    if ( _flagpdf )
-    {
+    if ( _flagpdf ) {
         //find the optimal mrt2 step
-        if (doFindMRT2step) this->findMRT2Step();
+        if (doFindMRT2step) { this->findMRT2Step(); }
         // take care to do the initial decorrelation of the walker
-        if (doDecorrelation) this->initialDecorrelation();
+        if (doDecorrelation) { this->initialDecorrelation(); }
     }
 
     //allocation of the array where the data will be stored
-    _datax = new double*[ndatax];
-    for (long i=0; i<ndatax; ++i) { *(_datax+i) = new double[_nobsdim]; }
+    _datax = new double[ndatax*_nobsdim]; // we fill it via sample
 
     //sample the observables
-    if (_flagobsfile) _obsfile.open(_pathobsfile);
-    if (_flagwlkfile) _wlkfile.open(_pathwlkfile);
+    if (_flagobsfile) { _obsfile.open(_pathobsfile); }
+    if (_flagwlkfile) { _wlkfile.open(_pathwlkfile); }
     _flagMC = true;
     this->sample(trueNmc, true, stepsPerBlock);
     _flagMC = false;
-    if (_flagobsfile) _obsfile.close();
-    if (_flagwlkfile) _wlkfile.close();
+    if (_flagobsfile) { _obsfile.close(); }
+    if (_flagwlkfile) { _wlkfile.close(); }
 
     //reduce block averages
     if (fixedBlocks) {
         const double fac = 1./stepsPerBlock;
-        for (long i=0; i<ndatax; ++i) {
-            for (int j=0; j<_nobsdim; ++j) {
-                *(*(_datax+i)+j) *= fac;
-            }
+        for (int i=0; i<ndatax_tot; ++i) {
+            _datax[i] *= fac;
         }
     }
 
     //estimate average and standard deviation
-    if ( _flagpdf && !fixedBlocks)
-        {
-            mci::MultiDimCorrelatedEstimator(ndatax, _nobsdim, _datax, average, error);
-        }
-    else
-        {
-            mci::MultiDimUncorrelatedEstimator(ndatax, _nobsdim, _datax, average, error);
-            if (!_flagpdf) {
-                for (int i=0; i<_nobsdim; ++i) {
-                    *(average+i) *=_vol;
-                    *(error+i) *=_vol;
-                }
+    if ( _flagpdf && !fixedBlocks) {
+        mci::MultiDimCorrelatedEstimator(ndatax, _nobsdim, _datax, average, error);
+    }
+    else {
+        mci::MultiDimUncorrelatedEstimator(ndatax, _nobsdim, _datax, average, error);
+        if (!_flagpdf) {
+            for (int i=0; i<_nobsdim; ++i) {
+                average[i] *=_vol;
+                error[i] *=_vol;
             }
         }
+    }
 
     //deallocation of the data array
-    for (int i=0; i<ndatax; ++i){ delete [] *(_datax+i); }
     delete [] _datax;
     _datax = nullptr;
 }
@@ -82,70 +76,65 @@ void MCI::integrate(const long &Nmc, double * average, double * error, const boo
 
 void MCI::storeObservables()
 {
-    if ( _ridx%_freqobsfile == 0 )
-        {
-            _obsfile << _ridx;
-            for (size_t i=0; i<_obs.size(); ++i) {
-                for (int j=0; j<_obs[i]->getNObs(); ++j)
-                {
-                    _obsfile << "   " << _obs[i]->getObservable(j);
-                }
+    if ( _ridx%_freqobsfile == 0 ) {
+        _obsfile << _ridx;
+        for (auto & _ob : _obs) {
+            for (int j=0; j<_ob->getNObs(); ++j) {
+                _obsfile << "   " << _ob->getObservable(j);
             }
-            _obsfile << std::endl;
         }
+        _obsfile << std::endl;
+    }
 }
 
 
 void MCI::storeWalkerPositions()
 {
-    if ( _ridx%_freqwlkfile == 0 )
-        {
-            _wlkfile << _ridx;
-            for (int j=0; j<_ndim; ++j)
-                {
-                    _wlkfile << "   " << *(_xold+j) ;
-                }
-            _wlkfile << std::endl;
+    if ( _ridx%_freqwlkfile == 0 ) {
+        _wlkfile << _ridx;
+        for (int j=0; j<_ndim; ++j) {
+            _wlkfile << "   " << _xold[j] ;
         }
+        _wlkfile << std::endl;
+    }
 }
 
 
 void MCI::initialDecorrelation()
 {
     if (_NdecorrelationSteps < 0) {
-        long i;
         //constants
-        const long MIN_NMC=100;
+        const int MIN_NMC=100;
         //allocate the data array that will be used
-        _datax = new double*[MIN_NMC];
-        for (i=0; i<MIN_NMC; ++i) { *(_datax+i) = new double[_nobsdim]; }
+        const int ndatax_tot = MIN_NMC*_nobsdim;
+        _datax = new double[ndatax_tot];
         //do a first estimate of the observables
         this->sample(MIN_NMC, true);
-        double * oldestimate = new double[_nobsdim];
+        auto * oldestimate = new double[_nobsdim];
         double olderrestim[_nobsdim];
         mci::MultiDimCorrelatedEstimator(MIN_NMC, _nobsdim, _datax, oldestimate, olderrestim);
+
         //start a loop which will stop when the observables are stabilized
         bool flag_loop=true;
-        double * newestimate = new double[_nobsdim];
+        auto * newestimate = new double[_nobsdim];
         double newerrestim[_nobsdim];
-        double * foo;
         while ( flag_loop ) {
             flag_loop = false;
             this->sample(MIN_NMC, true);
             mci::MultiDimCorrelatedEstimator(MIN_NMC, _nobsdim, _datax, newestimate, newerrestim);
-            for (i=0; i<_nobsdim; ++i) {
-                if ( fabs( *(oldestimate+i) - *(newestimate+i) ) > *(olderrestim+i) + *(newerrestim+i) ) {
+            for (int i=0; i<_nobsdim; ++i) {
+                if ( fabs( oldestimate[i] - newestimate[i] ) > ( olderrestim[i] + newerrestim[i] ) ) {
                     flag_loop=true;
                 }
             }
-            foo=oldestimate;
+            double * const foo=oldestimate;
             oldestimate=newestimate;
             newestimate=foo;
         }
+
         //memory deallocation
         delete [] newestimate;
         delete [] oldestimate;
-        for (i=0; i<MIN_NMC; ++i){ delete[] *(_datax+i); }
         delete [] _datax;
         _datax = nullptr;
     }
@@ -155,7 +144,7 @@ void MCI::initialDecorrelation()
 }
 
 
-void MCI::sample(const long &npoints, const bool &flagobs, const long &stepsPerBlock)
+void MCI::sample(const int &npoints, const bool &flagobs, const int &stepsPerBlock)
 {
     if (flagobs && stepsPerBlock>0 && npoints%stepsPerBlock!=0) {
         throw std::invalid_argument("If fixed blocking is used, npoints must be a multiple of stepsPerBlock.");
@@ -166,91 +155,71 @@ void MCI::sample(const long &npoints, const bool &flagobs, const long &stepsPerB
     _ridx=0;
     _bidx=0;
 
-    if (flagobs) {
-        // set the data to 0
-        for (i=0; i<npoints/stepsPerBlock; ++i) {
-            for (long j=0; j<_nobsdim; ++j) {
-                *(*(_datax+i)+j) = 0.;
-            }
-        }
+    if (flagobs) { // set the data to 0
+        std::fill(_datax, _datax+(npoints/stepsPerBlock*_nobsdim), 0.);
     }
 
     //initialize the pdf at x
     computeOldSamplingFunction();
     //initialize the observables values at x
-    if (flagobs)
-        {
-            this->computeObservables();
-        }
+    if (flagobs) { this->computeObservables(); }
     //reset acceptance and rejection
     this->resetAccRejCounters();
     //first call of the call-back functions
-    if (flagobs){
+    if (flagobs) {
         for (MCICallBackOnAcceptanceInterface * cback : _cback){
             cback->callBackFunction(_xold, true);
         }
     }
     //start the main loop for sampling
-    if ( _flagpdf )
-        {
-            if ( flagobs )
-                {
-                    for (i=0; i<npoints; ++i)
-                        {
-                            bool flagacc = this->doStepMRT2();
-                            if (flagacc)
-                                {
-                                    this->computeObservables();
-                                    this->saveObservables();
-                                } else
-                                {
-                                    this->saveObservables();
-                                }
-                            if (_flagMC){
-                                if (_flagobsfile) this->storeObservables();
-                                if (_flagwlkfile) this->storeWalkerPositions();
-                            }
-                            _ridx++;
-                            _bidx = _ridx / stepsPerBlock;
-                        }
-                } else
-                {
-                    for (i=0; i<npoints; ++i)
-                        {
-                            this->doStepMRT2();
-                            _ridx++;
-                            _bidx = _ridx / stepsPerBlock;
-                        }
+    if ( _flagpdf ) {
+        if ( flagobs ) {
+            for (i=0; i<npoints; ++i) {
+                const bool flagacc = this->doStepMRT2();
+                if (flagacc) {
+                    this->computeObservables();
+                    this->saveObservables();
+                } else {
+                    this->saveObservables();
                 }
-        }
-    else
-        {
-            if ( flagobs )
-                {
-                    for (i=0; i<npoints; ++i)
-                        {
-                            this->newRandomX();
-                            _acc++; // autoaccept move
-                            this->computeObservables();
-                            this->saveObservables();
-                            if (_flagMC){
-                                if (_flagobsfile) this->storeObservables();
-                                if (_flagwlkfile) this->storeWalkerPositions();
-                            }
-                            _ridx++;
-                            _bidx = _ridx / stepsPerBlock;
-                        }
-                } else
-                {
-                    for (i=0; i<npoints; ++i)
-                        {
-                            this->newRandomX();
-                            _acc++; // autoaccept move
-                            _ridx++;
-                            _bidx = _ridx / stepsPerBlock;
-                        }
+                if (_flagMC) {
+                    if (_flagobsfile) { this->storeObservables(); }
+                    if (_flagwlkfile) { this->storeWalkerPositions(); }
                 }
+                _ridx++;
+                _bidx = _ridx / stepsPerBlock;
+            }
+        } else {
+            for (i=0; i<npoints; ++i) {
+                this->doStepMRT2();
+                _ridx++;
+                _bidx = _ridx / stepsPerBlock;
+            }
         }
+    }
+    else {
+        if ( flagobs ) {
+            for (i=0; i<npoints; ++i) {
+                this->newRandomX();
+                _acc++; // autoaccept move
+                this->computeObservables();
+                this->saveObservables();
+                if (_flagMC) {
+                    if (_flagobsfile) { this->storeObservables(); }
+                    if (_flagwlkfile) { this->storeWalkerPositions(); }
+                }
+                _ridx++;
+                _bidx = _ridx / stepsPerBlock;
+            }
+        } else {
+            for (i=0; i<npoints; ++i) {
+                this->newRandomX();
+                _acc++; // autoaccept move
+                _ridx++;
+                _bidx = _ridx / stepsPerBlock;
+            }
+        }
+    }
 }
 
 
@@ -268,55 +237,45 @@ void MCI::findMRT2Step()
     int cons_count = 0;  //number of consecutive loops without need of changing mrt2step
     int counter = 0;  //counter of loops
     double fact;
-    while ( (cons_count < MIN_CONS && _NfindMRT2steps < 0) || counter < _NfindMRT2steps)
-        {
-            counter++;
-            //do MIN_STAT M(RT)^2 steps
-            this->sample(MIN_STAT,false);
-            //increase or decrease mrt2step depending on the acceptance rate
-            double rate = this->getAcceptanceRate();
-            if ( rate > _targetaccrate+TOLERANCE )
-                {
-                    //need to increase mrt2step
-                    cons_count=0;
-                    fact = std::min(2.,rate/_targetaccrate);
-                    for (j=0; j<_ndim; ++j)
-                        {
-                            *(_mrt2step+j) *= fact;
-                        }
-                } else if ( rate < _targetaccrate-TOLERANCE)
-                {
-                    //need to decrease mrt2step
-                    cons_count=0;
-                    fact = std::max(0.5, rate/_targetaccrate);
-                    for (j=0; j<_ndim; ++j)
-                        {
-                            *(_mrt2step+j) *= fact;
-                        }
-                } else
-                {
-                    //mrt2step was ok
-                    cons_count++;
-                }
-            //check if the loop is running since too long
-            if ( counter > MAX_NUM_ATTEMPTS ) cons_count=MIN_CONS;
-            //mrt2step = Infinity
-            for (j=0; j<_ndim; ++j)
-                {
-                    if ( *(_mrt2step+j) - ( *(*(_irange+j)+1) - *(*(_irange+j)) ) > 0. )
-                        {
-                            *(_mrt2step+j) = ( *(*(_irange+j)+1) - *(*(_irange+j)) );
-                        }
-                }
-            //mrt2step ~ 0
-            for (j=0; j<_ndim; ++j)
-                {
-                    if ( *(_mrt2step+j) < SMALLEST_ACCEPTABLE_DOUBLE )
-                        {
-                            *(_mrt2step+j) = SMALLEST_ACCEPTABLE_DOUBLE;
-                        }
-                }
+    while ( (cons_count < MIN_CONS && _NfindMRT2steps < 0) || counter < _NfindMRT2steps) {
+        counter++;
+        //do MIN_STAT M(RT)^2 steps
+        this->sample(MIN_STAT,false);
+        //increase or decrease mrt2step depending on the acceptance rate
+        double rate = this->getAcceptanceRate();
+        if ( rate > _targetaccrate+TOLERANCE ) {
+            //need to increase mrt2step
+            cons_count=0;
+            fact = std::min(2.,rate/_targetaccrate);
+            for (j=0; j<_ndim; ++j) {
+                _mrt2step[j] *= fact;
+            }
+        } else if ( rate < _targetaccrate-TOLERANCE) {
+            //need to decrease mrt2step
+            cons_count=0;
+            fact = std::max(0.5, rate/_targetaccrate);
+            for (j=0; j<_ndim; ++j) {
+                _mrt2step[j] *= fact;
+            }
+        } else {
+            //mrt2step was ok
+            cons_count++;
         }
+        //check if the loop is running since too long
+        if ( counter > MAX_NUM_ATTEMPTS ) { cons_count=MIN_CONS; }
+        //mrt2step = Infinity
+        for (j=0; j<_ndim; ++j) {
+            if ( _mrt2step[j] - ( _ubound[j] - _lbound[j] ) > 0. ) {
+                _mrt2step[j] = ( _ubound[j] - _lbound[j] );
+            }
+        }
+        //mrt2step ~ 0
+        for (j=0; j<_ndim; ++j) {
+            if ( _mrt2step[j] < SMALLEST_ACCEPTABLE_DOUBLE ) {
+                _mrt2step[j] = SMALLEST_ACCEPTABLE_DOUBLE;
+            }
+        }
+    }
 }
 
 
@@ -332,48 +291,52 @@ bool MCI::doStepMRT2()
     bool flagacc = ( this->computeAcceptance() > _rd(_rgen) );
 
     //update some values according to the acceptance of the mrt2 step
-    if ( flagacc )
-        {
-            //accepted
-            _acc++;
-            //update the walker position x
-            this->updateX();
-            //update the sampling function values pdfx
-            this->updateSamplingFunction();
-            //if there are some call back functions, invoke them
-            for (MCICallBackOnAcceptanceInterface * cback : _cback){
-                cback->callBackFunction(_xold, _flagMC);
-            }
-        } else
-        {
-            //rejected
-            _rej++;
+    if ( flagacc ) {
+        //accepted
+        _acc++;
+        //update the walker position x
+        this->updateX();
+        //update the sampling function values pdfx
+        this->updateSamplingFunction();
+        //if there are some call back functions, invoke them
+        for (MCICallBackOnAcceptanceInterface * cback : _cback){
+            cback->callBackFunction(_xold, _flagMC);
         }
+    } else {
+        //rejected
+        _rej++;
+    }
 
     return flagacc;
 }
 
 
+void MCI::updateVolume()
+{
+    // Set the integration volume
+    _vol=1.;
+    for (int i=0; i<_ndim; ++i) {
+        _vol = _vol*( _ubound[i] - _lbound[i] );
+    }
+}
+
+
 void MCI::applyPBC(double * v)
 {
-    for (int i=0; i<_ndim; ++i)
-        {
-            while ( *(v+i) < *(*(_irange+i)) )
-                {
-                    *(v+i) += *(*(_irange+i)+1) - *(*(_irange+i)) ;
-                }
-            while ( *(v+i) > *(*(_irange+i)+1) )
-                {
-                    *(v+i) -= ( *(*(_irange+i)+1) - *(*(_irange+i)) ) ;
-                }
+    for (int i=0; i<_ndim; ++i) {
+        while ( v[i] < _lbound[i] ) {
+            v[i] += _ubound[i] - _lbound[i];
         }
+        while ( v[i] > _ubound[i] ) {
+            v[i] -= _ubound[i] - _lbound[i];
+        }
+    }
 }
 
 
 void MCI::updateX()
 {
-    double * foo;
-    foo = _xold;
+    double * const foo = _xold;
     _xold = _xnew;
     _xnew = foo;
 }
@@ -383,7 +346,7 @@ void MCI::newRandomX()
 {
     //generate a new random x (within the irange)
     for (int i=0; i<_ndim; ++i) {
-        *(_xold+i) = *(*(_irange+i)) + ( *(*(_irange+i)+1) - *(*(_irange+i)) ) * _rd(_rgen);
+        _xold[i] = _lbound[i] + ( _ubound[i] - _lbound[i] ) * _rd(_rgen);
     }
 }
 
@@ -397,59 +360,53 @@ void MCI::resetAccRejCounters()
 
 void MCI::computeNewX()
 {
-    for (int i=0; i<_ndim; ++i)
-        {
-            *(_xnew+i) = *(_xold+i) + (*(_mrt2step+i)) * (_rd(_rgen)-0.5);
-        }
+    for (int i=0; i<_ndim; ++i) {
+        _xnew[i] = _xold[i] + _mrt2step[i] * (_rd(_rgen)-0.5);
+    }
     applyPBC(_xnew);
 }
 
 
 void MCI::updateSamplingFunction()
 {
-    for (std::vector<MCISamplingFunctionInterface>::size_type i=0; i<_pdf.size(); ++i)
-        {
-            _pdf[i]->newToOld();
-        }
+    for (auto & sf : _pdf) {
+        sf->newToOld();
+    }
 }
 
 
 double MCI::computeAcceptance()
 {
     double acceptance=1.;
-    for (std::vector<MCISamplingFunctionInterface>::size_type i=0; i<_pdf.size(); ++i)
-        {
-            acceptance*=_pdf[i]->getAcceptance();
-        }
+    for (auto & sf : _pdf) {
+        acceptance*=sf->getAcceptance();
+    }
     return acceptance;
 }
 
 
 void MCI::computeOldSamplingFunction()
 {
-    for (std::vector<MCISamplingFunctionInterface>::size_type i=0; i<_pdf.size(); ++i)
-        {
-            _pdf[i]->computeNewSamplingFunction(_xold);
-            _pdf[i]->newToOld();
-        }
+    for (auto & sf : _pdf) {
+        sf->computeNewSamplingFunction(_xold);
+        sf->newToOld();
+    }
 }
 
 
 void MCI::computeNewSamplingFunction()
 {
-    for (std::vector<MCISamplingFunctionInterface>::size_type i=0; i<_pdf.size(); ++i)
-        {
-            _pdf[i]->computeNewSamplingFunction(_xnew);
-        }
+    for (auto & sf : _pdf) {
+        sf->computeNewSamplingFunction(_xnew);
+    }
 }
 
 
 void MCI::computeObservables()
 {
-    for (std::vector<MCIObservableFunctionInterface>::size_type i=0; i<_obs.size(); ++i)
-        {
-            _obs[i]->computeObservables(_xold);
-        }
+    for (auto & _ob : _obs) {
+        _ob->computeObservables(_xold);
+    }
 }
 
 
@@ -457,14 +414,12 @@ void MCI::saveObservables()
 {
     int idx=0;
     //save in _datax the observables contained in _obs
-    for (std::vector<MCIObservableFunctionInterface>::size_type i=0; i<_obs.size(); ++i)
-        {
-            for (int j=0; j<_obs[i]->getNObs(); ++j)
-                {
-                    _datax[_bidx][idx]+=_obs[i]->getObservable(j);
-                    idx++;
-                }
+    for (auto & _ob : _obs) {
+        for (int j=0; j<_ob->getNObs(); ++j) {
+            _datax[_bidx*_nobsdim+idx]+=_ob->getObservable(j);
+            idx++;
         }
+    }
 }
 
 
@@ -534,38 +489,34 @@ void MCI::setTargetAcceptanceRate(const double targetaccrate)
 
 void MCI::setMRT2Step(const double * mrt2step)
 {
-    for (int i=0; i<_ndim; ++i)
-        {
-            *(_mrt2step+i) = *(mrt2step+i);
-        }
+    std::copy(mrt2step, mrt2step+_ndim, _mrt2step);
 }
 
 
 void MCI::setX(const double * x)
 {
-    for (int i=0; i<_ndim; ++i)
-        {
-            *(_xold+i) = *(x+i);
-        }
+    std::copy(x, x+_ndim, _xold);
     applyPBC(_xold);
 }
 
-
-void MCI::setIRange(const double * const * irange)
+void MCI::setIRange(const double &lbound, const double &ubound)
 {
-    // Set _irange and apply PBC to the initial walker position _x
-    for (int i=0; i<_ndim; ++i)
-        {
-            *(*(_irange+i)) = *(*(irange+i));
-            *(*(_irange+i)+1) = *(*(irange+i)+1);
-        }
+    // Set irange and apply PBC to the initial walker position _x
+    std::fill(_lbound, _lbound+_ndim, lbound);
+    std::fill(_ubound, _ubound+_ndim, ubound);
+    updateVolume();
+
     applyPBC(_xold);
-    // Set the integration volume
-    _vol=1.;
-    for (int i=0; i<_ndim; ++i)
-        {
-            _vol = _vol*( *(*(_irange+i)+1) - *(*(_irange+i)) );
-        }
+}
+
+void MCI::setIRange(const double * lbound, const double * ubound)
+{
+    // Set irange and apply PBC to the initial walker position _x
+    std::copy(lbound, lbound+_ndim, _lbound);
+    std::copy(ubound, ubound+_ndim, _ubound);
+    updateVolume();
+
+    applyPBC(_xold);
 }
 
 void MCI::setSeed(const uint_fast64_t seed) // fastest unsigned integer which is at least 64 bit (as expected by rgen)
@@ -578,37 +529,25 @@ void MCI::setSeed(const uint_fast64_t seed) // fastest unsigned integer which is
 
 MCI::MCI(const int & ndim)
 {
-    int i;
     // _ndim
     _ndim = ndim;
-    // _irange
-    _irange = new double*[_ndim];
-    for (i=0; i<_ndim; ++i)
-        {
-            *(_irange+i) = new double[2];
-            *(*(_irange+i)) = -std::numeric_limits<double>::max();
-            *(*(_irange+i)+1) = std::numeric_limits<double>::max();
-        }
+    // _lbound and _ubound
+    _lbound = new double[_ndim];
+    _ubound = new double[_ndim];
+    std::fill(_lbound, _lbound+_ndim, -std::numeric_limits<double>::max());
+    std::fill(_ubound, _ubound+_ndim, std::numeric_limits<double>::max());
     // _vol
     _vol=0.;
+
     // _x
     _xold = new double[_ndim];
-    for (i=0; i<_ndim; ++i)
-        {
-            _xold[i] = 0.;
-        }
+    std::fill(_xold, _xold+_ndim, 0.);
     _xnew = new double[_ndim];
-    for (i=0; i<_ndim; ++i)
-        {
-            _xnew[i] = 0.;
-        }
+    std::fill(_xnew, _xnew+_ndim, 0.);
     _flagwlkfile=false;
     // _mrt2step
     _mrt2step = new double[_ndim];
-    for (i=0; i<_ndim; ++i)
-        {
-            _mrt2step[i] = INITIAL_STEP;
-        }
+    std::fill(_mrt2step, _mrt2step+_ndim, INITIAL_STEP);
 
     // other controls, defaulting to auto behavior
     _NfindMRT2steps = -1;
@@ -627,23 +566,28 @@ MCI::MCI(const int & ndim)
     _ridx=0;
     _bidx=0;
     _datax=nullptr;
+    //initialize the acceptance counters
+    _acc=0;
+    _rej=0;
     // initialize all the other variables
     _targetaccrate=0.5;
     _flagMC=false;
-    resetAccRejCounters();
 }
 
 MCI::~MCI()
 {
-    // _irange
-    for (int i=0; i<_ndim; ++i){delete[] *(_irange+i);}
-    delete[] _irange;
-    // _xold and _xnew
-    delete [] _xold;
-    delete [] _xnew;
-    // _mrt2step
-    delete [] _mrt2step;
     // vectors
     _pdf.clear();
     _obs.clear();
+
+    // _mrt2step
+    delete [] _mrt2step;
+
+    // _xold and _xnew
+    delete [] _xnew;
+    delete [] _xold;
+
+    // lbound and ubound
+    delete [] _ubound;
+    delete [] _lbound;
 }

@@ -1,4 +1,3 @@
-include_directories(common/)
 link_libraries(mci)
 
 add_executable(check main.cpp)
