@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cmath>
 #include <iostream>
+#include <numeric>
 
 double calcErrDelta(const int mode, const double * err /* length 9 */)
 {   // for Francesco's plateau finding algorithm
@@ -38,12 +39,8 @@ namespace mci
             exit(EXIT_FAILURE);
         }
 
-        average=0.;
-        error=0.;
-        for (int i=0; i<n; ++i){
-            average+=x[i];
-            error+=x[i]*x[i];
-        }
+        average = accumulate(x, x+n, 0.);
+        error = inner_product(x, x+n, x, 0.);
 
         const double norm = 1./n;
         average*=norm;
@@ -70,11 +67,8 @@ namespace mci
 
         double av[nblocks]; // nblocks wont be huge number, so we can just stack-allocate
         for (int i1=0; i1<nblocks; ++i1) {
-            av[i1]=0.;
-            for (int i2=i1*nperblock; i2<(i1+1)*nperblock; ++i2) {
-                av[i1]+=x[i2];
-            }
-            av[i1]*=norm;
+            av[i1] = accumulate(x+i1*nperblock, x+(i1+1)*nperblock, 0.);
+            av[i1] *= norm;
         }
 
         UncorrelatedEstimator(nblocks, av, average, error);

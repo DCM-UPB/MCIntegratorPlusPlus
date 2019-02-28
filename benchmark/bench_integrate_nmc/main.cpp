@@ -1,11 +1,11 @@
-#include <iostream>
 #include <iomanip>
+#include <iostream>
 #include <string> 
 
 #include "mci/MCIntegrator.hpp"
 
-#include "MCIBenchmarks.hpp"
 #include "../../test/common/TestMCIFunctions.hpp"
+#include "MCIBenchmarks.hpp"
 
 using namespace std;
 
@@ -14,15 +14,15 @@ void run_single_benchmark(const string &label, MCI * mci, const int nruns, const
     const double time_scale = 1000000.; //microseconds
 
     result = sample_benchmark_MCIntegrate(mci, nruns, NMC);
-    cout << label << ":" << setw(max(1, 20-(int)label.length())) << setfill(' ') << " " << result.first/NMC*time_scale << " +- " << result.second/NMC*time_scale << " microseconds" << endl;
+    cout << label << ":" << setw(max(1, 20-static_cast<int>(label.length()))) << setfill(' ') << " " << result.first/NMC*time_scale << " +- " << result.second/NMC*time_scale << " microseconds" << endl;
 }
 
-int main (void) {
+int main () {
     const int NMC[5] = {10000000, 1000000, 100000, 10000, 1000};
     const int nruns[5] = {3, 30, 300, 3000, 30000};
 
-    ThreeDimGaussianPDF * pdf = new ThreeDimGaussianPDF();
-    XSquared * obs = new XSquared();
+    auto * pdf = new ThreeDimGaussianPDF();
+    auto * obs = new XSquared();
 
     MCI mci(3);
     mci.setSeed(5649871);

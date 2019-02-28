@@ -1,14 +1,14 @@
-#include <iostream>
-#include <iomanip>
-#include <string> 
 #include <cmath>
+#include <iomanip>
+#include <iostream>
 #include <iterator>
+#include <string>
 #include <vector>
 
 #include "mci/Estimators.hpp"
 
-#include "MCIBenchmarks.hpp"
 #include "../../test/common/TestMCIFunctions.hpp"
+#include "MCIBenchmarks.hpp"
 
 using namespace std;
 
@@ -16,17 +16,15 @@ bool isStepAccepted(double oldWFVal, double newWFVal)
 {   // standard VMC acceptance criterion
     if (oldWFVal == 0) {
         return true;
-    } else if (newWFVal == 0) {
-        return false;
-    } else {
-        const double threshold = (newWFVal*newWFVal)/(oldWFVal*oldWFVal);
-        if (threshold >= 1.) {
-            return true;
-        } else {
-            return (rand()*(1.0 / RAND_MAX) > threshold) ? false : true;
-        }
     }
-
+    if (newWFVal == 0) {
+        return false;
+    }
+    const double threshold = (newWFVal*newWFVal)/(oldWFVal*oldWFVal);
+    if (threshold >= 1.) {
+        return true;
+    }
+    return ( rand()*(1.0 / RAND_MAX) <= threshold );
 }
 
 double calc1sOrbitalWFVal(const double * position, const int ndim)
@@ -49,7 +47,6 @@ void generate1sOrbitalPosition(const double * oldPosition, double * newPosition,
         }
         const double newWFVal = calc1sOrbitalWFVal(newPosition, ndim);
         accepted = isStepAccepted(oldWFVal, newWFVal);
-
     } while (!accepted);
 }
 
@@ -68,11 +65,11 @@ void run_single_benchmark(const string &label, const int estimatorType /*1 uncor
     const double time_scale = 1000000000.; //nanoseconds
 
     result = sample_benchmark_estimators(datax, estimatorType, NMC, ndim, nruns);
-    cout << label << ":" << setw(max(1, 20-(int)label.length())) << setfill(' ') << " " << result.first*time_scale/(NMC*ndim) << " +- " << result.second*time_scale/(NMC*ndim) << " nanoseconds" << endl;
+    cout << label << ":" << setw(max(1, 20-static_cast<int>(label.length()))) << setfill(' ') << " " << result.first*time_scale/(NMC*ndim) << " +- " << result.second*time_scale/(NMC*ndim) << " nanoseconds" << endl;
 }
 
 
-int main (void)
+int main ()
 {
     const int NMC = 10000000;
     const int nruns = 10;
@@ -89,7 +86,7 @@ int main (void)
     // Estimator benchmark
     for (const int ndim : ndims) {
         const int trueNMC = NMC/ndim;
-        double * datax = new double[trueNMC*ndim];
+        auto * datax = new double[trueNMC*ndim];
         generate1sOrbitalWalk(datax, trueNMC, ndim);
 
         for (const int etype : estimatorTypes) {

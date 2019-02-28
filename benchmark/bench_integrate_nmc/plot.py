@@ -6,7 +6,6 @@ class benchmark_integrate_nmc:
         self.label = label
         self.data = {}
 
-        bnew = True
         with open(filename) as bmfile:
             for line in bmfile:
 
@@ -35,7 +34,6 @@ def plot_compare_nmc(benchmark_list, **kwargs):
         errors = [ benchmark.data[key][1] for key in benchmark.data.keys() ]
         ax.errorbar(xlabels, values, xerr=None, yerr=errors, **kwargs)
 
-    ax.set_title(benchmark.label + ' version')
     ax.set_ylabel('Time per sample [$\mu s$]')
     ax.legend([bench.label for bench in benchmark_list])
 

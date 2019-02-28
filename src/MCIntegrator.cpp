@@ -150,7 +150,6 @@ void MCI::sample(const int &npoints, const bool &flagobs, const int &stepsPerBlo
         throw std::invalid_argument("If fixed blocking is used, npoints must be a multiple of stepsPerBlock.");
     }
 
-    int i;
     //initialize the running indices
     _ridx=0;
     _bidx=0;
@@ -174,7 +173,7 @@ void MCI::sample(const int &npoints, const bool &flagobs, const int &stepsPerBlo
     //start the main loop for sampling
     if ( _flagpdf ) {
         if ( flagobs ) {
-            for (i=0; i<npoints; ++i) {
+            for (int i=0; i<npoints; ++i) {
                 const bool flagacc = this->doStepMRT2();
                 if (flagacc) {
                     this->computeObservables();
@@ -190,7 +189,7 @@ void MCI::sample(const int &npoints, const bool &flagobs, const int &stepsPerBlo
                 _bidx = _ridx / stepsPerBlock;
             }
         } else {
-            for (i=0; i<npoints; ++i) {
+            for (int i=0; i<npoints; ++i) {
                 this->doStepMRT2();
                 _ridx++;
                 _bidx = _ridx / stepsPerBlock;
@@ -199,7 +198,7 @@ void MCI::sample(const int &npoints, const bool &flagobs, const int &stepsPerBlo
     }
     else {
         if ( flagobs ) {
-            for (i=0; i<npoints; ++i) {
+            for (int i=0; i<npoints; ++i) {
                 this->newRandomX();
                 _acc++; // autoaccept move
                 this->computeObservables();
@@ -212,7 +211,7 @@ void MCI::sample(const int &npoints, const bool &flagobs, const int &stepsPerBlo
                 _bidx = _ridx / stepsPerBlock;
             }
         } else {
-            for (i=0; i<npoints; ++i) {
+            for (int i=0; i<npoints; ++i) {
                 this->newRandomX();
                 _acc++; // autoaccept move
                 _ridx++;

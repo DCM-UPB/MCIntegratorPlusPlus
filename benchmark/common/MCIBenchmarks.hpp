@@ -1,22 +1,24 @@
-#include <iostream>
 #include <cmath>
+#include <iostream>
 #include <tuple>
 
-#include "mci/MCIntegrator.hpp"
-#include "mci/Estimators.hpp"
 #include "Timer.hpp"
+#include "mci/Estimators.hpp"
+#include "mci/MCIntegrator.hpp"
 
-double benchmark_MCIntegrate(MCI * mci, const int NMC) {
+inline double benchmark_MCIntegrate(MCI * mci, const int NMC) {
     Timer timer(1.);
     double average[mci->getNObs()];
     double error[mci->getNObs()];
+    std::fill(average, average+mci->getNObs(), 0.);
+    std::fill(error, error+mci->getNObs(), 0.);
 
     timer.reset();
     mci->integrate(NMC, average, error, false, false);
     return timer.elapsed();
 }
 
-std::pair<double, double> sample_benchmark_MCIntegrate(MCI * mci, const int nruns, const int NMC) {
+inline std::pair<double, double> sample_benchmark_MCIntegrate(MCI * mci, const int nruns, const int NMC) {
     double times[nruns];
     double mean = 0., err = 0.;
 
@@ -25,7 +27,8 @@ std::pair<double, double> sample_benchmark_MCIntegrate(MCI * mci, const int nrun
         mean += times[i];
     }
     mean /= nruns;
-    for (int i=0; i<nruns; ++i) err += pow(times[i]-mean, 2);
+    for (int i=0; i<nruns; ++i) { err += pow(times[i]-mean, 2);
+}
     err /= (nruns-1)*nruns; // variance of the mean
     err = sqrt(err); // standard error of the mean
 
@@ -33,11 +36,13 @@ std::pair<double, double> sample_benchmark_MCIntegrate(MCI * mci, const int nrun
 }
 
 
-double benchmark_estimators(const double * datax, const int estimatorType /* 1 uncorr, 2 block, 3 corr */, const int NMC, const int ndim) {
+inline double benchmark_estimators(const double * datax, const int estimatorType /* 1 uncorr, 2 block, 3 corr */, const int NMC, const int ndim) {
     const int nblocks = 20;
     Timer timer(1.);
     double average[ndim];
     double error[ndim];
+    std::fill(average, average+ndim, 0.);
+    std::fill(error, error+ndim, 0.);
 
     timer.reset(); // we contain two if checks in the result, but shouldnt matter
     if (estimatorType == 1) {
@@ -57,7 +62,7 @@ double benchmark_estimators(const double * datax, const int estimatorType /* 1 u
     return time;
 }
 
-std::pair<double, double> sample_benchmark_estimators(const double * datax, const int estimatorType, const int NMC, const int ndim, const int nruns) {
+inline std::pair<double, double> sample_benchmark_estimators(const double * datax, const int estimatorType, const int NMC, const int ndim, const int nruns) {
     double times[nruns];
     double mean = 0., err = 0.;
 
@@ -66,7 +71,8 @@ std::pair<double, double> sample_benchmark_estimators(const double * datax, cons
         mean += times[i];
     }
     mean /= nruns;
-    for (int i=0; i<nruns; ++i) err += pow(times[i]-mean, 2);
+    for (int i=0; i<nruns; ++i) { err += pow(times[i]-mean, 2);
+}
     err /= (nruns-1)*nruns; // variance of the mean
     err = sqrt(err); // standard error of the mean
 
