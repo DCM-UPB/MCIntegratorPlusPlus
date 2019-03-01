@@ -31,7 +31,7 @@ void MCI::integrate(const int &Nmc, double * average, double * error, const bool
     }
 
     //allocation of the array where the data will be stored
-    _datax = new double[ndatax*_nobsdim]; // we fill it via sample
+    _datax = new double[ndatax_tot]; // we fill it via sample
 
     //sample the observables
     if (_flagobsfile) { _obsfile.open(_pathobsfile); }
@@ -52,15 +52,16 @@ void MCI::integrate(const int &Nmc, double * average, double * error, const bool
 
     //estimate average and standard deviation
     if ( _flagpdf && !fixedBlocks) {
-        mci::MultiDimCorrelatedEstimator(ndatax, _nobsdim, _datax, average, error);
+        mci::CorrelatedEstimator(ndatax, _nobsdim, _datax, average, error);
     }
     else {
-        mci::MultiDimUncorrelatedEstimator(ndatax, _nobsdim, _datax, average, error);
-        if (!_flagpdf) {
-            for (int i=0; i<_nobsdim; ++i) {
-                average[i] *=_vol;
-                error[i] *=_vol;
-            }
+        mci::UncorrelatedEstimator(ndatax, _nobsdim, _datax, average, error);
+    }
+
+    if (!_flagpdf) { // we sampled uniformly
+        for (int i=0; i<_nobsdim; ++i) {
+            average[i] *=_vol;
+            error[i] *=_vol;
         }
     }
 
@@ -112,7 +113,7 @@ void MCI::initialDecorrelation()
         this->sample(MIN_NMC, true);
         auto * oldestimate = new double[_nobsdim];
         double olderrestim[_nobsdim];
-        mci::MultiDimCorrelatedEstimator(MIN_NMC, _nobsdim, _datax, oldestimate, olderrestim);
+        mci::CorrelatedEstimator(MIN_NMC, _nobsdim, _datax, oldestimate, olderrestim);
 
         //start a loop which will stop when the observables are stabilized
         bool flag_loop=true;
@@ -121,10 +122,12 @@ void MCI::initialDecorrelation()
         while ( flag_loop ) {
             flag_loop = false;
             this->sample(MIN_NMC, true);
-            mci::MultiDimCorrelatedEstimator(MIN_NMC, _nobsdim, _datax, newestimate, newerrestim);
+            mci::CorrelatedEstimator(MIN_NMC, _nobsdim, _datax, newestimate, newerrestim);
+
             for (int i=0; i<_nobsdim; ++i) {
-                if ( fabs( oldestimate[i] - newestimate[i] ) > ( olderrestim[i] + newerrestim[i] ) ) {
-                    flag_loop=true;
+                if ( fabs( oldestimate[i] - newestimate[i] ) > 2*sqrt( olderrestim[i]*olderrestim[i] + newerrestim[i]*newerrestim[i] ) ) {
+                    flag_loop=true; // if any difference is too large, continue the loop
+                    break; // break the inner for loop
                 }
             }
             double * const foo=oldestimate;
@@ -153,6 +156,8 @@ void MCI::sample(const int &npoints, const bool &flagobs, const int &stepsPerBlo
     //initialize the running indices
     _ridx=0;
     _bidx=0;
+    //reset acceptance and rejection
+    this->resetAccRejCounters();
 
     if (flagobs) { // set the data to 0
         std::fill(_datax, _datax+(npoints/stepsPerBlock*_nobsdim), 0.);
@@ -162,8 +167,6 @@ void MCI::sample(const int &npoints, const bool &flagobs, const int &stepsPerBlo
     computeOldSamplingFunction();
     //initialize the observables values at x
     if (flagobs) { this->computeObservables(); }
-    //reset acceptance and rejection
-    this->resetAccRejCounters();
     //first call of the call-back functions
     if (flagobs) {
         for (MCICallBackOnAcceptanceInterface * cback : _cback){
@@ -171,108 +174,86 @@ void MCI::sample(const int &npoints, const bool &flagobs, const int &stepsPerBlo
         }
     }
     //start the main loop for sampling
-    if ( _flagpdf ) {
-        if ( flagobs ) {
-            for (int i=0; i<npoints; ++i) {
-                const bool flagacc = this->doStepMRT2();
-                if (flagacc) {
-                    this->computeObservables();
-                    this->saveObservables();
-                } else {
-                    this->saveObservables();
-                }
-                if (_flagMC) {
-                    if (_flagobsfile) { this->storeObservables(); }
-                    if (_flagwlkfile) { this->storeWalkerPositions(); }
-                }
-                _ridx++;
-                _bidx = _ridx / stepsPerBlock;
-            }
-        } else {
-            for (int i=0; i<npoints; ++i) {
-                this->doStepMRT2();
-                _ridx++;
-                _bidx = _ridx / stepsPerBlock;
-            }
+    for (int i=0; i<npoints; ++i) {
+        bool flagacc;
+        if (_flagpdf) { // use sampling function
+            flagacc = this->doStepMRT2();
         }
-    }
-    else {
-        if ( flagobs ) {
-            for (int i=0; i<npoints; ++i) {
-                this->newRandomX();
-                _acc++; // autoaccept move
+        else {
+            this->newRandomX();
+            _acc++; // autoaccept move
+            flagacc = true;
+        }
+
+        if (flagobs) {
+            if (flagacc) {
                 this->computeObservables();
                 this->saveObservables();
-                if (_flagMC) {
-                    if (_flagobsfile) { this->storeObservables(); }
-                    if (_flagwlkfile) { this->storeWalkerPositions(); }
-                }
-                _ridx++;
-                _bidx = _ridx / stepsPerBlock;
-            }
-        } else {
-            for (int i=0; i<npoints; ++i) {
-                this->newRandomX();
-                _acc++; // autoaccept move
-                _ridx++;
-                _bidx = _ridx / stepsPerBlock;
+            } else {
+                this->saveObservables();
             }
         }
+
+        if (_flagMC) {
+            if (_flagobsfile) { this->storeObservables(); }
+            if (_flagwlkfile) { this->storeWalkerPositions(); }
+        }
+
+        // update running indices
+        _ridx++;
+        _bidx = _ridx / stepsPerBlock;
     }
 }
 
 
 void MCI::findMRT2Step()
 {
-    int j;
     //constants
-    const int MIN_STAT=100;  //minimum statistic: number of M(RT)^2 steps done before deciding if the step must be increased or decreased
-    const int MIN_CONS=10;  //minimum consecutive: minimum number of consecutive loops without need of changing mrt2step
+    const int MIN_STAT=200;  //minimum statistic: number of M(RT)^2 steps done before deciding if the step must be increased or decreased
+    const int MIN_CONS=5;   //minimum consecutive: minimum number of consecutive loops without need of changing mrt2step
     const double TOLERANCE=0.05;  //tolerance: tolerance for the acceptance rate
-    const int MAX_NUM_ATTEMPTS=100;  //maximum number of attempts: maximum number of time that the main loop can be executed
+    const int MAX_NUM_ATTEMPTS=50;  //maximum number of attempts: maximum number of time that the main loop can be executed
     const double SMALLEST_ACCEPTABLE_DOUBLE=1.e-50;
 
     //initialize index
     int cons_count = 0;  //number of consecutive loops without need of changing mrt2step
     int counter = 0;  //counter of loops
     double fact;
-    while ( (cons_count < MIN_CONS && _NfindMRT2steps < 0) || counter < _NfindMRT2steps) {
-        counter++;
+    while ( ( _NfindMRT2steps < 0 && cons_count < MIN_CONS ) || counter < _NfindMRT2steps ) {
         //do MIN_STAT M(RT)^2 steps
         this->sample(MIN_STAT,false);
+
         //increase or decrease mrt2step depending on the acceptance rate
         double rate = this->getAcceptanceRate();
-        if ( rate > _targetaccrate+TOLERANCE ) {
-            //need to increase mrt2step
-            cons_count=0;
-            fact = std::min(2.,rate/_targetaccrate);
-            for (j=0; j<_ndim; ++j) {
-                _mrt2step[j] *= fact;
-            }
-        } else if ( rate < _targetaccrate-TOLERANCE) {
-            //need to decrease mrt2step
-            cons_count=0;
-            fact = std::max(0.5, rate/_targetaccrate);
-            for (j=0; j<_ndim; ++j) {
-                _mrt2step[j] *= fact;
-            }
-        } else {
+        if ( fabs(rate-_targetaccrate) < TOLERANCE ) {
             //mrt2step was ok
             cons_count++;
         }
-        //check if the loop is running since too long
-        if ( counter > MAX_NUM_ATTEMPTS ) { cons_count=MIN_CONS; }
-        //mrt2step = Infinity
-        for (j=0; j<_ndim; ++j) {
-            if ( _mrt2step[j] - ( _ubound[j] - _lbound[j] ) > 0. ) {
-                _mrt2step[j] = ( _ubound[j] - _lbound[j] );
+        else {
+            //need to change mrt2step
+            cons_count=0;
+            fact = std::min(2., std::max(0.5, rate/_targetaccrate) );
+            for (int j=0; j<_ndim; ++j) {
+                _mrt2step[j] *= fact;
+            }
+
+            // sanity checks
+            for (int j=0; j<_ndim; ++j) { //mrt2step = Infinity
+                if ( _mrt2step[j] > ( _ubound[j] - _lbound[j] ) ) {
+                    _mrt2step[j] = ( _ubound[j] - _lbound[j] );
+                }
+            }
+            for (int j=0; j<_ndim; ++j) { //mrt2step ~ 0
+                if ( _mrt2step[j] < SMALLEST_ACCEPTABLE_DOUBLE ) {
+                    _mrt2step[j] = SMALLEST_ACCEPTABLE_DOUBLE;
+                }
             }
         }
-        //mrt2step ~ 0
-        for (j=0; j<_ndim; ++j) {
-            if ( _mrt2step[j] < SMALLEST_ACCEPTABLE_DOUBLE ) {
-                _mrt2step[j] = SMALLEST_ACCEPTABLE_DOUBLE;
-            }
+        counter++;
+
+        if ( _NfindMRT2steps < 0 && counter >= MAX_NUM_ATTEMPTS ) {
+            std::cout << "Warning [MCI::findMRT2Step]: Max number of attempts reached without convergence." << std::endl;
+            break;
         }
     }
 }
@@ -287,7 +268,7 @@ bool MCI::doStepMRT2()
     this->computeNewSamplingFunction();
 
     //determine if the proposed x is accepted or not
-    bool flagacc = ( this->computeAcceptance() > _rd(_rgen) );
+    const bool flagacc = ( _rd(_rgen) <= this->computeAcceptance() );
 
     //update some values according to the acceptance of the mrt2 step
     if ( flagacc ) {
@@ -343,7 +324,7 @@ void MCI::updateX()
 
 void MCI::newRandomX()
 {
-    //generate a new random x (within the irange)
+    //set xold to new random values (within the irange)
     for (int i=0; i<_ndim; ++i) {
         _xold[i] = _lbound[i] + ( _ubound[i] - _lbound[i] ) * _rd(_rgen);
     }
@@ -535,7 +516,7 @@ MCI::MCI(const int & ndim)
     _ubound = new double[_ndim];
     std::fill(_lbound, _lbound+_ndim, -std::numeric_limits<double>::max());
     std::fill(_ubound, _ubound+_ndim, std::numeric_limits<double>::max());
-    // _vol
+    // _vol (will only be relevant without sampling function)
     _vol=0.;
 
     // _x
@@ -551,7 +532,7 @@ MCI::MCI(const int & ndim)
     // other controls, defaulting to auto behavior
     _NfindMRT2steps = -1;
     _NdecorrelationSteps = -1;
-    _nblocks = 16; // defaulting to auto-blocking is not good idea, so we use 16 block default
+    _nblocks = 20; // defaulting to auto-blocking is not good idea, so we use 20 block default
 
     // probability density function
     _flagpdf = false;

@@ -20,17 +20,19 @@ public:
     }
     virtual ~MCISamplingFunctionInterface()
     {
-        delete[] _protonew;
         delete[] _protoold;
+        delete[] _protonew;
+
     }
 
 
     // Setters
     void setNProto(const int &nproto){
         _nproto=nproto;
-         delete[] _protonew;
          delete[] _protoold;
-        _protonew = new double[_nproto]; _protoold = new double[_nproto];
+         delete[] _protonew;
+        _protonew = new double[_nproto];
+        _protoold = new double[_nproto];
         std::fill(_protonew, _protonew+_nproto, 0.);
         std::fill(_protoold, _protoold+_nproto, 0.);
     }

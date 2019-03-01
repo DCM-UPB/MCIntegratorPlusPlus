@@ -4,13 +4,13 @@
 namespace mci
 {
     // Compute average and standard deviation (error) of a set of data x[N], assuming that they are not correlated
-    void UncorrelatedEstimator(const int &n, const double * x, double & average, double & error);
+    void OneDimUncorrelatedEstimator(const int &n, const double * x, double & average, double & error);
 
     // Compute average and error, using the blocking technique
-    void BlockEstimator(const int &n, const double * x, const int &nblocks, double & average, double & error);
+    void OneDimBlockEstimator(const int &n, const double * x, const int &nblocks, double & average, double & error);
 
     // Compute average and error for correlated data, using the blocking technique
-    void CorrelatedEstimator(const int &n, const double * x, double & average, double & error);
+    void OneDimCorrelatedEstimator(const int &n, const double * x, double & average, double & error);
 
 
     // Estimators for multidimensional observable data
@@ -29,6 +29,12 @@ namespace mci
 
     // Compute average and error for correlated data, using the blocking technique
     void MultiDimCorrelatedEstimator(const int &n, const int &ndim, const double * x, double * average, double * error);
+
+
+    // wrappers for any dim
+    void UncorrelatedEstimator(const int &n, const int &ndim, const double * x, double * average, double * error);
+    void BlockEstimator(const int &n, const int &ndim, const double * x, const int &nblocks, double * average, double * error);
+    void CorrelatedEstimator(const int &n, const int &ndim, const double * x, double * average, double * error);
 
 } // namespace mci
 

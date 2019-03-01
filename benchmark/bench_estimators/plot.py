@@ -26,8 +26,8 @@ def plot_compare_nmc(benchmark_list, **kwargs):
 
     fig = figure()
     fig.suptitle('Estimators benchmark, comparing averaging techniques\n ',fontsize=12)
-    for i in range(3):
-        ax = fig.add_subplot(3, 1, i+1)
+    for i in range(4):
+        ax = fig.add_subplot(2, 2, i+1)
         xlabels = [ tup[1] for tup in list(benchmark_list[0].data.keys())[i*3:(i+1)*3] ] # get the xlabels from first entry in data dict
 
         for benchmark in benchmark_list:
@@ -35,7 +35,7 @@ def plot_compare_nmc(benchmark_list, **kwargs):
             errors = [ benchmark.data[key][1] for key in list(benchmark.data.keys())[i*3:(i+1)*3] ]
             ax.errorbar(xlabels, values, xerr=None, yerr=errors, **kwargs)
         ax.set_title(list(benchmark_list[0].data.keys())[i*3][0])
-        if (i==1):
+        if (i%2==0):
             ax.set_ylabel('Time per element [ns]')
         ax.set_ylim(0.1, 100.)
         ax.set_yscale('log')
@@ -59,5 +59,5 @@ if len(benchmark_list)<1:
 else:
     fig1 = plot_compare_nmc(benchmark_list, fmt='o--')
 
-
+tight_layout()
 show()

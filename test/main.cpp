@@ -81,16 +81,16 @@ int main(){
     double avg1D = 0.;
     double err1D = 0.;
 
-    mci::UncorrelatedEstimator(N, x, avg1D, err1D);
+    mci::OneDimUncorrelatedEstimator(N, x, avg1D, err1D);
     cout << "- UncorrelatedEstimator()" << endl;
     cout << "     avg1D = " << avg1D << "     error = " << err1D << endl << endl;
 
     int nblocks=12;
-    mci::BlockEstimator(N, x, nblocks, avg1D, err1D);
+    mci::OneDimBlockEstimator(N, x, nblocks, avg1D, err1D);
     cout << "- BlockEstimator()" << endl;
     cout << "     average = " << avg1D << "     error = " << err1D << endl << endl;
 
-    mci::CorrelatedEstimator(N, x, avg1D, err1D);
+    mci::OneDimCorrelatedEstimator(N, x, avg1D, err1D);
     cout << "- CorrelatedEstimator()" << endl;
     cout << "     average = " << avg1D << "     error = " << err1D << endl << endl;
 

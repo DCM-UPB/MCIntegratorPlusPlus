@@ -12,12 +12,15 @@ double calcErrDelta(const int mode, const double * err /* length 9 */)
         {
         case 1:
             return ( -0.5*err[im-1] + 0.5*err[im+1] );
+
         case 2:
             return ( (1./12.)*err[im-2] -(2./3.)*err[im-1]
                      +(2./3.)*err[im+1] -(1./12.)*err[im+2] );
+
         case 3:
             return ( -(1./60.)*err[im-3] +(3./20.)*err[im-2] -0.75*err[im-1]
                      +0.75*err[im+1] -(3./20.)*err[im+2] +(1./60.)*err[im+3]  );
+
         case 4:
             return ( (1./280.)*err[im-4] -(4./105.)*err[im-3] +0.2*err[im-2] -0.8*err[im-1]
                      +0.8*err[im+1] -0.2*err[im+2] +(4./105.)*err[im+3] -(1./280.)*err[im+4] );
@@ -28,14 +31,14 @@ double calcErrDelta(const int mode, const double * err /* length 9 */)
 
 namespace mci
 {
-    void UncorrelatedEstimator(const int &n, const double * x, double & average, double & error)
+    void OneDimUncorrelatedEstimator(const int &n, const double * x, double & average, double & error)
     {
         using namespace std;
 
         const double SMALLEST_ERROR=1.e-300;
 
         if ( n < 2) {
-            cout << "MCI error UncorrelatedEstimator() : n must be larger than 1";
+            cout << "MCI error OneDimUncorrelatedEstimator() : n must be larger than 1";
             exit(EXIT_FAILURE);
         }
 
@@ -53,12 +56,12 @@ namespace mci
     }
 
 
-    void BlockEstimator(const int &n, const double * x, const int &nblocks, double & average, double & error)
+    void OneDimBlockEstimator(const int &n, const double * x, const int &nblocks, double & average, double & error)
     {
         using namespace std;
 
         if ( n < nblocks) {
-            cout << "MCI error BlockEstimator() : n must be >= nblocks";
+            cout << "MCI error OneDimBlockEstimator() : n must be >= nblocks";
             exit(EXIT_FAILURE);
         }
 
@@ -71,11 +74,11 @@ namespace mci
             av[i1] *= norm;
         }
 
-        UncorrelatedEstimator(nblocks, av, average, error);
+        OneDimUncorrelatedEstimator(nblocks, av, average, error);
     }
 
 
-    void CorrelatedEstimator(const int &n, const double * x, double & average, double & error)
+    void OneDimCorrelatedEstimator(const int &n, const double * x, double & average, double & error)
     {
         const int MIN_BLOCKS=6, MAX_BLOCKS=50;
         const int MAX_PLATEAU_AVERAGE=4;
@@ -83,7 +86,7 @@ namespace mci
         using namespace std;
 
         if ( n < MAX_BLOCKS) {
-            cout << "MCI error CorrelatedEstimator() : n must be >= " << MAX_BLOCKS;
+            cout << "MCI error OneDimCorrelatedEstimator() : n must be >= " << MAX_BLOCKS;
             exit(EXIT_FAILURE);
         }
 
@@ -92,7 +95,7 @@ namespace mci
         double err[nav];
         for (int i1=0; i1<nav; ++i1) {
             const int nblocks=i1+MIN_BLOCKS;
-            BlockEstimator(n, x, nblocks, av[i1], err[i1]);
+            OneDimBlockEstimator(n, x, nblocks, av[i1], err[i1]);
             //cout << "Nblocks = " << nblocks << "   average = " << av[i1] << "   error = " << err[i1] << endl;
         }
 
@@ -101,7 +104,7 @@ namespace mci
         fill(accdelta, accdelta+naccd, 0.);
         for (int i2=MAX_PLATEAU_AVERAGE; i2<naccd+MAX_PLATEAU_AVERAGE; ++i2) {
             for (int i1=1; i1<=MAX_PLATEAU_AVERAGE; ++i1) {
-                accdelta[i2-MAX_PLATEAU_AVERAGE] += calcErrDelta(i1, &err[i2-4]);
+                accdelta[i2-MAX_PLATEAU_AVERAGE] += calcErrDelta(i1, err+i2-4);
             }
         }
 
@@ -208,7 +211,7 @@ namespace mci
 
         for (int i1=0; i1<nav; ++i1) {
             const int nblocks=i1+MIN_BLOCKS;
-            MultiDimBlockEstimator(n, ndim, x, nblocks, &av[i1*ndim], &err[i1*ndim]);
+            MultiDimBlockEstimator(n, ndim, x, nblocks, av+i1*ndim, err+i1*ndim);
         }
 
         double delta[ndim];
@@ -247,6 +250,35 @@ namespace mci
         delete [] accdelta;
         delete [] err;
         delete [] av;
+    }
+
+
+    // wrappers for any dim
+    void UncorrelatedEstimator(const int &n, const int &ndim, const double * x, double * average, double * error)
+    {
+        if (ndim>1) {
+            MultiDimUncorrelatedEstimator(n, ndim, x, average, error);
+        } else {
+            OneDimUncorrelatedEstimator(n, x, average[0], error[0]);
+        }
+    }
+
+    void BlockEstimator(const int &n, const int &ndim, const double * x, const int &nblocks, double * average, double * error)
+    {
+        if (ndim>1) {
+            MultiDimBlockEstimator(n, ndim, x, nblocks, average, error);
+        } else {
+            OneDimBlockEstimator(n, x, nblocks, average[0], error[0]); 
+        }
+    }
+
+    void CorrelatedEstimator(const int &n, const int &ndim, const double * x, double * average, double * error)
+    {
+        if (ndim>1) {
+            MultiDimCorrelatedEstimator(n, ndim, x, average, error);
+        } else {
+            OneDimCorrelatedEstimator(n, x, average[0], error[0]); 
+        }
     }
 
 }  // namespace mci

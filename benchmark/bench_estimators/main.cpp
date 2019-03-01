@@ -59,7 +59,8 @@ void generate1sOrbitalWalk(double * datax, const int NMC, const int ndim)
 }
 
 
-void run_single_benchmark(const string &label, const int estimatorType /*1 uncorr, 2 block, 3 corr */,const double * datax, const int NMC, const int ndim, const int nruns)
+void run_single_benchmark(const string &label, const int estimatorType /*1 uncorr-1d, 2 block-1d, 3 corr-1d, 4 uncorr-nd, 5 block-nd, 6 corr-nd */,
+                          const double * datax, const int NMC, const int ndim, const int nruns)
 {
     pair<double, double> result;
     const double time_scale = 1000000000.; //nanoseconds
@@ -73,10 +74,10 @@ int main ()
 {
     const int NMC = 10000000;
     const int nruns = 10;
-    const int estimatorTypes[3] = {1, 2, 3};
+    const int estimatorTypes[6] = {1, 2, 3, 4, 5, 6};
     const int ndims[3] = {1, 10, 100};
 
-    vector<string> labels {"noblock", "20-block", "autoblock"};
+    vector<string> labels {"noblock-1D", "20-block-1D", "autoblock-1D", "noblock-ND", "20-block-ND", "autoblock-ND"};
 
     srand(1337); // consistent random seed
 
@@ -84,13 +85,15 @@ int main ()
     cout << "Benchmark results (time per sample):" << endl;
 
     // Estimator benchmark
-    for (const int ndim : ndims) {
+    for (const int &ndim : ndims) {
         const int trueNMC = NMC/ndim;
         auto * datax = new double[trueNMC*ndim];
         generate1sOrbitalWalk(datax, trueNMC, ndim);
 
-        for (const int etype : estimatorTypes) {
-            run_single_benchmark("t/element ( ndim=" + to_string(ndim) + ", " + labels[etype-1] + " )", etype, datax, trueNMC, ndim, nruns);
+        for (const int &etype : estimatorTypes) {
+            if ( !(ndim>1 && etype<4) ) {
+                run_single_benchmark("t/element ( ndim=" + to_string(ndim) + ", " + labels[etype-1] + " )", etype, datax, trueNMC, ndim, nruns);
+            }
         }
 
         delete [] datax;
