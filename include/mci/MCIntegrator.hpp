@@ -105,7 +105,8 @@ public:
     void setNBlocks(int nblocks /* 0 == auto -> high RAM usage */){_nblocks=nblocks;} // how many blocks to use for error estimation
     void setTargetAcceptanceRate(double targetaccrate);
 
-    void addObservable(MCIObservableFunctionInterface * obs);
+    void addObservable(MCIObservableFunctionInterface * obs, bool flag_std = true /* need error on avg? */,
+                       int nskip = 1 /* evaluate every n-th step */, int blocksize = 1 /* use fixed block size (if > 1)*/);
     void clearObservables();
 
     void addSamplingFunction(MCISamplingFunctionInterface * mcisf);

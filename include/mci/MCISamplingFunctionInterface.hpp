@@ -1,8 +1,6 @@
 #ifndef MCI_MCISAMPLINGFUNCTIONINTERFACE_HPP
 #define MCI_MCISAMPLINGFUNCTIONINTERFACE_HPP
 
-#include <algorithm>
-
 class MCISamplingFunctionInterface
 {
 protected:
@@ -12,53 +10,23 @@ protected:
     double * _protoold; //array containing the old proto sampling functions
 
 public:
-    MCISamplingFunctionInterface(int ndim, int nproto):
-        _ndim(ndim), _nproto(nproto)
-    {
-        _protonew = new double[_nproto];
-        _protoold = new double[_nproto];
-        std::fill(_protonew, _protonew+_nproto, 0.);
-        std::fill(_protoold, _protoold+_nproto, 0.);
-    }
-    virtual ~MCISamplingFunctionInterface()
-    {
-        delete[] _protoold;
-        delete[] _protonew;
-    }
+    MCISamplingFunctionInterface(int ndim, int nproto);
 
+    virtual ~MCISamplingFunctionInterface();
 
     // Setters
-    void setNProto(int nproto){
-        _nproto=nproto;
-         delete[] _protoold;
-         delete[] _protonew;
-        _protonew = new double[_nproto];
-        _protoold = new double[_nproto];
-        std::fill(_protonew, _protonew+_nproto, 0.);
-        std::fill(_protoold, _protoold+_nproto, 0.);
-    }
-
+    void setNProto(int nproto);
 
     // Getters
     int getNDim(){ return _ndim;}
     int getNProto(){ return _nproto;}
 
     // Utilities
-    void newToOld()
-    {   // pointer swap
-        double * const foo = _protonew;
-        _protonew=_protoold;
-        _protoold=foo;
-    }
+    void newToOld(); // swap old and new protovalues
 
-    void computeNewSamplingFunction(const double * in)
-    {
-        samplingFunction(in, _protonew);
-    }
+    void computeNewSamplingFunction(const double * in) { samplingFunction(in, _protonew); }
 
-    double getAcceptance(){
-        return getAcceptance(_protoold, _protonew);
-    }
+    double getAcceptance() { return getAcceptance(_protoold, _protonew); }
 
 
     // --- METHODS THAT MUST BE IMPLEMENTED

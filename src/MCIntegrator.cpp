@@ -440,7 +440,7 @@ void MCI::clearObservables()
 }
 
 
-void MCI::addObservable(MCIObservableFunctionInterface * obs)
+void MCI::addObservable(MCIObservableFunctionInterface * obs, const bool flag_std, const int nskip, const int blocksize)
 {
     _obs.push_back(obs);
     _nobsdim+=obs->getNObs();
