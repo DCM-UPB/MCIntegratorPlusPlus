@@ -11,7 +11,7 @@
 
 //   --- Integrate
 
-void MCI::integrate(const int &Nmc, double * average, double * error, const bool doFindMRT2step, const bool doDecorrelation)
+void MCI::integrate(const int Nmc, double * average, double * error, const bool doFindMRT2step, const bool doDecorrelation)
 {
     if (Nmc<_nblocks) {
         throw std::invalid_argument("The requested number of MC steps is smaller than the requested number of blocks.");
@@ -147,7 +147,7 @@ void MCI::initialDecorrelation()
 }
 
 
-void MCI::sample(const int &npoints, const bool &flagobs, const int &stepsPerBlock)
+void MCI::sample(const int npoints, const bool flagobs, const int stepsPerBlock)
 {
     if (flagobs && stepsPerBlock>0 && npoints%stepsPerBlock!=0) {
         throw std::invalid_argument("If fixed blocking is used, npoints must be a multiple of stepsPerBlock.");
@@ -407,7 +407,7 @@ void MCI::saveObservables()
 //   --- Setters
 
 
-void MCI::storeObservablesOnFile(const char * filepath, const int &freq)
+void MCI::storeObservablesOnFile(const char * filepath, const int freq)
 {
     _pathobsfile.assign(filepath);
     _freqobsfile = freq;
@@ -415,7 +415,7 @@ void MCI::storeObservablesOnFile(const char * filepath, const int &freq)
 }
 
 
-void MCI::storeWalkerPositionsOnFile(const char * filepath, const int &freq)
+void MCI::storeWalkerPositionsOnFile(const char * filepath, const int freq)
 {
     _pathwlkfile.assign(filepath);
     _freqwlkfile = freq;
@@ -479,7 +479,7 @@ void MCI::setX(const double * x)
     applyPBC(_xold);
 }
 
-void MCI::setIRange(const double &lbound, const double &ubound)
+void MCI::setIRange(const double lbound, const double ubound)
 {
     // Set irange and apply PBC to the initial walker position _x
     std::fill(_lbound, _lbound+_ndim, lbound);
@@ -507,7 +507,7 @@ void MCI::setSeed(const uint_fast64_t seed) // fastest unsigned integer which is
 
 //   --- Constructor and Destructor
 
-MCI::MCI(const int & ndim)
+MCI::MCI(const int ndim)
 {
     // _ndim
     _ndim = ndim;

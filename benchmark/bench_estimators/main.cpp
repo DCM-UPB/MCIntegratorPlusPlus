@@ -12,7 +12,7 @@
 
 using namespace std;
 
-bool isStepAccepted(double oldWFVal, double newWFVal)
+bool isStepAccepted(const double oldWFVal, double newWFVal)
 {   // standard VMC acceptance criterion
     if (oldWFVal == 0) {
         return true;
@@ -39,7 +39,7 @@ double calc1sOrbitalWFVal(const double * position, const int ndim)
 void generate1sOrbitalPosition(const double * oldPosition, double * newPosition, const int ndim)
 {
     double oldWFVal = calc1sOrbitalWFVal(oldPosition, ndim);
-    
+
     bool accepted = false;
     do {
         for (int i=0; i<ndim; ++i) {
@@ -59,8 +59,9 @@ void generate1sOrbitalWalk(double * datax, const int NMC, const int ndim)
 }
 
 
-void run_single_benchmark(const string &label, const int estimatorType /*1 uncorr-1d, 2 block-1d, 3 corr-1d, 4 uncorr-nd, 5 block-nd, 6 corr-nd */,
-                          const double * datax, const int NMC, const int ndim, const int nruns)
+void run_single_benchmark(const string &label, const double * datax,
+                          const int estimatorType /*1 uncorr-1d, 2 block-1d, 3 corr-1d, 4 uncorr-nd, 5 block-nd, 6 corr-nd */,
+                          const int NMC, const int ndim, const int nruns)
 {
     pair<double, double> result;
     const double time_scale = 1000000000.; //nanoseconds
@@ -92,7 +93,7 @@ int main ()
 
         for (const int &etype : estimatorTypes) {
             if ( !(ndim>1 && etype<4) ) {
-                run_single_benchmark("t/element ( ndim=" + to_string(ndim) + ", " + labels[etype-1] + " )", etype, datax, trueNMC, ndim, nruns);
+                run_single_benchmark("t/element ( ndim=" + to_string(ndim) + ", " + labels[etype-1] + " )", datax, etype, trueNMC, ndim, nruns);
             }
         }
 

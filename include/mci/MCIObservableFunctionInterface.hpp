@@ -12,7 +12,7 @@ protected:
 
 
 public:
-    MCIObservableFunctionInterface(const int &ndim, const int &nobs): _ndim(ndim), _nobs(nobs)
+    MCIObservableFunctionInterface(int ndim, int nobs): _ndim(ndim), _nobs(nobs)
     {
         _obs = new double[nobs];
         std::fill(_obs, _obs+nobs, 0.);
@@ -24,9 +24,9 @@ public:
 
     int getNObs(){return _nobs;}
     int getNDim(){return _ndim;}
-    double getObservable(const int &i){ return _obs[i]; }
+    double getObservable(int i){ return _obs[i]; }
 
-    void computeObservables(const double *in)
+    void computeObservables(const double * in)
     {
         observableFunction(in,_obs);
     }

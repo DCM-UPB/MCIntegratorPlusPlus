@@ -8,7 +8,7 @@ protected:
     const int _ndim; //dimension of the input array (walker position)
 
 public:
-    explicit MCICallBackOnAcceptanceInterface(const int &ndim): _ndim(ndim) {}
+    explicit MCICallBackOnAcceptanceInterface(int ndim): _ndim(ndim) {}
     virtual ~MCICallBackOnAcceptanceInterface()= default;
 
     // Getters

@@ -80,29 +80,29 @@ protected:
     void findMRT2Step();
     void initialDecorrelation();
 
-    void sample(const int &npoints, const bool &flagobs, const int &stepsPerBlock = 1);
+    void sample(int npoints, bool flagobs, int stepsPerBlock = 1);
 
     void storeObservables();
     void storeWalkerPositions();
 
 public:
-    explicit MCI(const int & ndim);  //Constructor, need the number of dimensions
+    explicit MCI(int ndim);  //Constructor, need the number of dimensions
     ~MCI();  //Destructor
 
     // --- Setters
     void setSeed(uint_fast64_t seed);
 
     // keep walkers within these bounds during integration (defaults to full range of double floats)
-    void setIRange(const double &lbound, const double &ubound); // set the same range on all dimensions
+    void setIRange(double lbound, double ubound); // set the same range on all dimensions
     void setIRange(const double * lbound, const double * ubound);
 
     void setX(const double * x);
     void newRandomX();  // use if you want to take a new random _xold
 
     void setMRT2Step(const double * mrt2step);
-    void setNfindMRT2steps(const int niterations /* -1 == auto, 0 == disabled */){_NfindMRT2steps=niterations;} // how many MRT2 step adjustment iterations to do before integrating
-    void setNdecorrelationSteps(const int nsteps /* -1 == auto, 0 == disabled */){_NdecorrelationSteps=nsteps;} // how many decorrelation steps to do before integrating
-    void setNBlocks(const int nblocks /* 0 == auto -> high RAM usage */){_nblocks=nblocks;} // how many blocks to use for error estimation
+    void setNfindMRT2steps(int niterations /* -1 == auto, 0 == disabled */){_NfindMRT2steps=niterations;} // how many MRT2 step adjustment iterations to do before integrating
+    void setNdecorrelationSteps(int nsteps /* -1 == auto, 0 == disabled */){_NdecorrelationSteps=nsteps;} // how many decorrelation steps to do before integrating
+    void setNBlocks(int nblocks /* 0 == auto -> high RAM usage */){_nblocks=nblocks;} // how many blocks to use for error estimation
     void setTargetAcceptanceRate(double targetaccrate);
 
     void addObservable(MCIObservableFunctionInterface * obs);
@@ -114,28 +114,28 @@ public:
     void addCallBackOnAcceptance(MCICallBackOnAcceptanceInterface * cback);
     void clearCallBackOnAcceptance();
 
-    void storeObservablesOnFile(const char * filepath, const int &freq);
-    void storeWalkerPositionsOnFile(const char * filepath, const int &freq);
+    void storeObservablesOnFile(const char * filepath, int freq);
+    void storeWalkerPositionsOnFile(const char * filepath, int freq);
 
     // --- Getters
     int getNDim(){return _ndim;}
-    double getLBound(const int &i){return _lbound[i];}
-    double getUBound(const int &i){return _ubound[i];}
+    double getLBound(int i){return _lbound[i];}
+    double getUBound(int i){return _ubound[i];}
 
-    double getX(const int &i){return _xold[i];}
-    double getMRT2Step(const int &i){return _mrt2step[i];}
+    double getX(int i){return _xold[i];}
+    double getMRT2Step(int i){return _mrt2step[i];}
     int getNfindMRT2steps(){return _NfindMRT2steps;}
     int getNdecorrelationSteps(){return _NdecorrelationSteps;}
     int getNBlocks(){return _nblocks;}
 
-    MCIObservableFunctionInterface * getObservable(const int &i){return _obs[i];}
+    MCIObservableFunctionInterface * getObservable(int i){return _obs[i];}
     int getNObs(){return _obs.size();}
     int getNObsDim(){return _nobsdim;}
 
-    MCISamplingFunctionInterface * getSamplingFunction(const int &i){return _pdf[i];}
+    MCISamplingFunctionInterface * getSamplingFunction(int i){return _pdf[i];}
     int getNSampF(){return _pdf.size();}
 
-    MCICallBackOnAcceptanceInterface * getCallBackOnAcceptance(const int &i){return _cback[i];}
+    MCICallBackOnAcceptanceInterface * getCallBackOnAcceptance(int i){return _cback[i];}
     int getNCallBacks(){return _cback.size();}
 
     double getTargetAcceptanceRate(){return _targetaccrate;}
@@ -144,7 +144,7 @@ public:
     // --- Integrate
 
     // Actual integrate implemention. With flags to skip the configured step adjustment/decorrelation.
-    void integrate(const int &Nmc, double * average, double * error, bool doFindMRT2step = true, bool doDecorrelation = true);
+    void integrate(int Nmc, double * average, double * error, bool doFindMRT2step = true, bool doDecorrelation = true);
 };
 
 #endif

@@ -7,27 +7,28 @@ class MCISamplingFunctionInterface
 {
 protected:
     const int _ndim; //dimension of the input array (walker position)
-    int _nproto{}; //number of proto sampling functions given as output
+    int _nproto; //number of proto sampling functions given as output
     double * _protonew; //array containing the new proto sampling functions
     double * _protoold; //array containing the old proto sampling functions
 
 public:
-    MCISamplingFunctionInterface(const int &ndim, const int &nproto): _ndim(ndim)
+    MCISamplingFunctionInterface(int ndim, int nproto):
+        _ndim(ndim), _nproto(nproto)
     {
-        _protonew = nullptr;
-        _protoold = nullptr;
-        setNProto(nproto);
+        _protonew = new double[_nproto];
+        _protoold = new double[_nproto];
+        std::fill(_protonew, _protonew+_nproto, 0.);
+        std::fill(_protoold, _protoold+_nproto, 0.);
     }
     virtual ~MCISamplingFunctionInterface()
     {
         delete[] _protoold;
         delete[] _protonew;
-
     }
 
 
     // Setters
-    void setNProto(const int &nproto){
+    void setNProto(int nproto){
         _nproto=nproto;
          delete[] _protoold;
          delete[] _protonew;

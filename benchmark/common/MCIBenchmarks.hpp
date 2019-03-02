@@ -37,7 +37,8 @@ inline std::pair<double, double> sample_benchmark_MCIntegrate(MCI * mci, const i
 }
 
 
-inline double benchmark_estimators(const double * datax, const int estimatorType /* 1 uncorr-1d, 2 block-1d, 3 corr-1d, 4 uncorr-nd, 5 block-nd, 6 corr-nd */,
+inline double benchmark_estimators(const double * datax,
+                                   const int estimatorType /* 1 uncorr-1d, 2 block-1d, 3 corr-1d, 4 uncorr-nd, 5 block-nd, 6 corr-nd */,
                                    const int NMC, const int ndim)
 {
     const int nblocks = 20;
