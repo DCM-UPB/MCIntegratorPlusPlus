@@ -10,7 +10,7 @@
 // is desired. Typical use case is if you know how large the blocks have to be for uncorrelated samples
 // and want to avoid the memory&CPU overhead of using automatic blocking.
 //
-class MCIBlockAccumulator
+class MCIBlockAccumulator: public MCIAccumulatorInterface
 {
 protected:
     const int _blocksize;
@@ -37,12 +37,12 @@ protected:
     void _accumulate() override
     {
         for (int i=0; i<_nobs; ++i) {
-            _data[_storeidx + i] += _obs->getObs(i);
+            _data[_storeidx + i] += _obs->getObservable(i);
         }
 
-        if (++bidx == _blocksize) {
+        if (++_bidx == _blocksize) {
             _bidx = 0;
-            _store1idx += _nobs; // move to next block
+            _storeidx += _nobs; // move to next block
         }
     }
 

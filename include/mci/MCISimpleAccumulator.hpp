@@ -7,7 +7,7 @@
 
 // Class to handle accumulation of observables that don't require an error (typically gradients)
 // This mean that all we have to do is to sum up the individual samples
-class MCISimpleAccumulator
+class MCISimpleAccumulator: public MCIAccumulatorInterface
 {
 protected:
     // --- storage method to be implemented
@@ -20,7 +20,7 @@ protected:
     void _accumulate() override
     {
         for (int i=0; i<_nobs; ++i) {
-            _data[i] += _obs->getObs(i);
+            _data[i] += _obs->getObservable(i);
         }
     }
 

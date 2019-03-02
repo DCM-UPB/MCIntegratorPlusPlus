@@ -12,7 +12,7 @@
 // or MCISimpleAccumulator (if no error is required) instead, because the memory requirements
 // of the MCIFullAccumulator may become very large with a large number of MC steps.
 //
-class MCIFullAccumulator
+class MCIFullAccumulator: public MCIAccumulatorInterface
 {
 protected:
     // we store these for fast access
@@ -33,7 +33,7 @@ protected:
     void _accumulate() override
     {
         for (int i=0; i<_nobs; ++i) {
-            _data[_storeidx + i] += _obs->getObs(i);
+            _data[_storeidx + i] += _obs->getObservable(i);
         }
         _storeidx += _nobs;
     }
@@ -57,7 +57,6 @@ public:
     {}
 
     ~MCIFullAccumulator() override { this->_deallocate(); }
-
 
     int getNStored() override { return _nstored; }
 

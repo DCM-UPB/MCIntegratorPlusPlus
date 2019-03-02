@@ -31,6 +31,10 @@ int main(){
     double average;
     double error;
 
+    // configure the number of steps to use in pre-sampling
+    mci->setNfindMRT2steps(10);
+    mci->setNdecorrelationSteps(1000);
+
     // this integral will give a wrong answer! This is because the starting point is very bad and initialDecorrelation is skipped (as well as the MRT2step automatic setting)
     mci->setX(x);
     mci->integrate(NMC, &average, &error, false, false);
@@ -39,7 +43,7 @@ int main(){
 
     // this integral, instead, will provide the right answer
     mci->setX(x);
-    mci->integrate(NMC, &average, &error);
+    mci->integrate(NMC, &average, &error, true, true);
     //std::cout << "average " << average << ", error " << error << ", CORRECT_RESULT" << CORRECT_RESULT << std::endl;
     assert( fabs(average-CORRECT_RESULT) < 2.*error );
 
@@ -48,6 +52,11 @@ int main(){
     //std::cout << "average " << average << ", error " << error << ", CORRECT_RESULT" << CORRECT_RESULT << std::endl;
     assert( fabs(average-CORRECT_RESULT) < 2.*error );
 
+    // and using fixed blocking also gives the same result
+    mci->setNBlocks(15);
+    mci->integrate(NMC, &average, &error, false, false);
+    //std::cout << "average " << average << ", error " << error << ", CORRECT_RESULT" << CORRECT_RESULT << std::endl;
+    assert( fabs(average-CORRECT_RESULT) < 2.*error );
 
 
     delete pdf;

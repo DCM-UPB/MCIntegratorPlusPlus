@@ -1,5 +1,6 @@
 #include "mci/Estimators.hpp"
 #include "mci/MCIntegrator.hpp"
+
 #include <cmath>
 #include <iostream>
 #include <random>
@@ -73,7 +74,7 @@ int main(){
     default_random_engine rand_gen;
     uniform_real_distribution<double> rand_num(0.0,1.0);
 
-    int N = 1000l;
+    int N = 1000;
     auto * x = new double[N];
     for (int i=0; i<N; ++i){
         x[i] = 3.5 + rand_num(rand_gen);
@@ -152,7 +153,7 @@ int main(){
     mci.addObservable(&constval);
     mci.addObservable(&polynom);
 
-    N=10000l;
+    N=10000;
     mci.integrate(N,avg2D,err2D);
 
     cout << "Compute average: " << endl;
