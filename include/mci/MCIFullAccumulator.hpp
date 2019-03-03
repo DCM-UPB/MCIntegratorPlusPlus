@@ -3,8 +3,6 @@
 
 #include "mci/MCIAccumulatorInterface.hpp"
 
-#include <algorithm>
-
 // Class to handle accumulation of observables, when storing every single sample is desired
 // Typically you want this for automatic blocking techniques after the sampling run
 //
@@ -15,40 +13,15 @@
 class MCIFullAccumulator: public MCIAccumulatorInterface
 {
 protected:
-    // we store these for fast access
-    int _nstore;
-    int _ndata;
-
+    int _nstore; // number of allocated storage elements with _nobs length each
     int _storeidx; // storage index offset for next write
 
     // --- storage method to be implemented
-    void _allocate() override
-    {
-        _nstore = this->getNAccu();
-        _data = new double[this->getNData()]; // _nstore * _nobs layout
-        std::fill(_data, _data+this->getNData(), 0.);
-    }
-
-    void _accumulate() override
-    {   // no checks here for performance
-        for (int i=0; i<_nobs; ++i) {
-            _data[_storeidx + i] += _obs->getObservable(i);
-        }
-        _storeidx += _nobs;
-    }
-
-    void _reset() override
-    {
-        _storeidx = 0;
-        std::fill(_data, _data+this->getNData(), 0.);
-    }
-
-    void _deallocate() override
-    {
-        delete [] _data;
-        _data = nullptr;
-        _nstore = 0;
-    }
+    void _allocate() override;
+    void _accumulate() override;
+    void _finalize() override {} // nothing to do
+    void _reset() override;
+    void _deallocate() override;
 
 public:
     MCIFullAccumulator(MCIObservableFunctionInterface * obs, int nskip):
@@ -58,8 +31,6 @@ public:
     ~MCIFullAccumulator() override { this->_deallocate(); }
 
     int getNStore() override { return _nstore; }
-
-    void finalize() override {} // nothing to do
 };
 
 

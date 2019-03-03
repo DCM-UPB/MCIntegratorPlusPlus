@@ -51,8 +51,9 @@ void assertArraysEqual(int ndim, const double * arr1, const double * arr2, doubl
     }
 }
 
+
 void assertAccuAveragesEqual(MCIAccumulatorInterface * accu1, MCIAccumulatorInterface * accu2, double tol = 0.)
-{
+{   // check that averages of contained data are equal within tol
     const int nobs = accu1->getNObs();
     assert(nobs == accu2->getNObs());
 
@@ -61,6 +62,44 @@ void assertAccuAveragesEqual(MCIAccumulatorInterface * accu1, MCIAccumulatorInte
     arrayAvgND(accu2->getNStore(), nobs, accu2->getData(), avg2);
     assertArraysEqual(nobs, avg1, avg2, tol);
 }
+
+void assertAccuResetted(MCIAccumulatorInterface * accu)
+{   // check that accu is in clean reset state (allocated/deallocated doesn't matter)
+    assert(accu->getStepIndex() == 0);
+    assert(accu->isClean());
+    assert(!accu->isFinalized());
+    for (int i=0; i<accu->getNData(); ++i) { assert(accu->getData()[i] == 0.); } 
+}
+
+void assertAccuDeallocated(MCIAccumulatorInterface * accu)
+{   // check that the accu is in proper deallocated state
+    assert(!accu->isAllocated());
+    assert(accu->getNSteps() == 0);
+    assert(accu->getNAccu() == 0);
+    assert(accu->getNStore() == 0);
+    assert(accu->getNData() == 0);
+
+    assertAccuResetted(accu);
+}
+
+void assertAccuAllocated(MCIAccumulatorInterface * accu, int Nmc)
+{   // check that the accu is in allocated state (not necessarily reset state)
+    assert(accu->isAllocated());
+    assert(accu->getNSteps() == Nmc);
+    assert(accu->getNAccu() > 0);
+    assert(accu->getNStore() > 0);
+    assert(accu->getNData() > 0);
+    assert(accu->getNData() == accu->getNStore() * accu->getNObs());
+}
+
+void assertAccuFinalized(MCIAccumulatorInterface * accu, int Nmc)
+{   // check that the accu is properly finalized
+    assert(accu->isAllocated());
+    assert(!accu->isClean());
+    assert(accu->isFinalized());
+    assert(accu->getStepIndex() == Nmc);
+}
+
 
 void accumulateData(MCIAccumulatorInterface * accu, int Nmc, int ndim, const double * datax, const bool * datacc)
 {   // simulated MC observable accumulation
@@ -73,35 +112,38 @@ void accumulateData(MCIAccumulatorInterface * accu, int Nmc, int ndim, const dou
 void checkAccumulator(MCIAccumulatorInterface * accu, int Nmc, int ndim, const double * datax, const bool * datacc,
                       double tol /* tolerance for avg */, bool verbose = false /* to enable printout */)
 {
-    // verify that the accumulator is uninitialized
-    assert(accu->getNSteps() == 0);
-    assert(accu->getNAccu() == 0);
-    assert(accu->getNStore() == 0);
-    assert(accu->getNData() == 0);
-
     // we expect walker-dim == obs-dim
     assert(ndim==accu->getNObs());
 
+    // verify that the accumulator is uninitialized
+    assertAccuDeallocated(accu);
+
     // now allocate
     accu->allocate(Nmc);
+    assertAccuAllocated(accu, Nmc); // allocated
+    assertAccuResetted(accu); // but still clean
 
-    // some checks
-    assert(Nmc==accu->getNSteps());
-    assert(accu->getNData() == accu->getNStore() * accu->getNObs());
-
+    // accumulate the data in pseudo MC loop
     double storedData[accu->getNData()]; // to store away obs data
     accumulateData(accu, Nmc, ndim, datax, datacc);
+    assertAccuFinalized(accu, Nmc);
+
+    // copy the stored data
     const double * const dataptr = accu->getData(); // we acquire a read-only pointer to data
     std::copy(dataptr, dataptr+accu->getNData(), storedData);
 
     // now do the same after reset
     accu->reset();
+    assertAccuResetted(accu);
     accumulateData(accu, Nmc, ndim, datax, datacc);
     assertArraysEqual(accu->getNData(), storedData, accu->getData()); // check that we get the same result
 
     // now do the same after reallocation
     accu->deallocate();
+    assertAccuDeallocated(accu);
     accu->allocate(Nmc);
+    assertAccuAllocated(accu, Nmc);
+    accu->allocate(Nmc); // do it twice on purpose
     accumulateData(accu, Nmc, ndim, datax, datacc);
     assertArraysEqual(accu->getNData(), storedData, accu->getData()); // check that we get the same result
 
