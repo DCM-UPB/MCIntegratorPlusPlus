@@ -2,6 +2,7 @@
 #include "mci/MCISamplingFunctionInterface.hpp"
 
 #include <cmath>
+#include <algorithm>
 #include <random>
 
 class TestWalk1s
@@ -112,5 +113,15 @@ public:
         out[0] = in[0] * in[0];
         out[1] = in[1] * in[1];
         out[2] = in[2] * in[2];
+    }
+};
+
+class XND: public MCIObservableFunctionInterface{
+public:
+    XND(int nd): MCIObservableFunctionInterface(nd, nd){}
+    ~XND() override= default;
+
+    void observableFunction(const double * in, double * out) override{
+        std::copy(in, in+_ndim, out);
     }
 };

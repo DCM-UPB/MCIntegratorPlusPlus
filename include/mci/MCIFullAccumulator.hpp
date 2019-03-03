@@ -16,7 +16,7 @@ class MCIFullAccumulator: public MCIAccumulatorInterface
 {
 protected:
     // we store these for fast access
-    int _nstored;
+    int _nstore;
     int _ndata;
 
     int _storeidx; // storage index offset for next write
@@ -24,14 +24,13 @@ protected:
     // --- storage method to be implemented
     void _allocate() override
     {
-        _nstored = this->getNAccu();
-        _ndata = this->getNData();
-        _data = new double[_ndata]; // _nstored * _nobs layout
-        std::fill(_data, _data+_ndata, 0.);
+        _nstore = this->getNAccu();
+        _data = new double[this->getNData()]; // _nstore * _nobs layout
+        std::fill(_data, _data+this->getNData(), 0.);
     }
 
     void _accumulate() override
-    {
+    {   // no checks here for performance
         for (int i=0; i<_nobs; ++i) {
             _data[_storeidx + i] += _obs->getObservable(i);
         }
@@ -41,24 +40,24 @@ protected:
     void _reset() override
     {
         _storeidx = 0;
-        std::fill(_data, _data+_ndata, 0.);
+        std::fill(_data, _data+this->getNData(), 0.);
     }
 
     void _deallocate() override
     {
         delete [] _data;
-        _nstored = 0;
-        _ndata = 0;
+        _data = nullptr;
+        _nstore = 0;
     }
 
 public:
     MCIFullAccumulator(MCIObservableFunctionInterface * obs, int nskip):
-        MCIAccumulatorInterface(obs, nskip), _nstored(0), _ndata(0), _storeidx(0)
+        MCIAccumulatorInterface(obs, nskip), _nstore(0), _storeidx(0)
     {}
 
     ~MCIFullAccumulator() override { this->_deallocate(); }
 
-    int getNStored() override { return _nstored; }
+    int getNStore() override { return _nstore; }
 
     void finalize() override {} // nothing to do
 };

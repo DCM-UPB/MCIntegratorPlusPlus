@@ -37,9 +37,9 @@ public:
     int getNSkip(){ return _nskip; }
 
     int getNSteps(){ return _nsteps; }
-    int getNAccu(){ return 1 + (_nsteps-1)/_nskip; } // actual number of steps to accumulate
+    int getNAccu(){ return (_nsteps>0) ? 1 + (_nsteps-1)/_nskip : 0; } // actual number of steps to accumulate
 
-    int getNData(){ return this->getNStored()*_nobs; } // total length of stored data
+    int getNData(){ return this->getNStore()*_nobs; } // total length of allocated data
     const double * getData(){ return _data; } // direct read-only access to data
 
     // externally call this before a MC run of nsteps length
@@ -55,7 +55,7 @@ public:
     void deallocate();
 
     // methods to be implemented
-    virtual int getNStored() = 0; // get number of stored data with _nobs length each
+    virtual int getNStore() = 0; // get number of allocated data elements with _nobs length each
     virtual void finalize() = 0; // apply post-processing (usually normalization) to stored data
 };
 

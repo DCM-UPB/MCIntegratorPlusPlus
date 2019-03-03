@@ -13,11 +13,9 @@
 class MCIBlockAccumulator: public MCIAccumulatorInterface
 {
 protected:
-    const int _blocksize;
+    const int _blocksize; // how many samples to accumulate per block
 
-    // we store these for fast access
-    int _nblocks;
-    int _ndata;
+    int _nblocks; // this will be set properly on allocation
 
     int _bidx; // counter to determine when block is finished
     int _storeidx; // storage index offset for next write
@@ -29,13 +27,12 @@ protected:
             throw std::invalid_argument("[MCIBlockAccumulator::allocate] Requested number of accumulations is not a multiple of the requested block size.");
         }
         _nblocks = this->getNAccu() / _blocksize;
-        _ndata = this->getNData();
-        _data = new double[_ndata]; // _nstored * _nobs layout
-        std::fill(_data, _data+_ndata, 0.);
+        _data = new double[this->getNData()]; // _nstore * _nobs layout
+        std::fill(_data, _data+this->getNData(), 0.);
     }
 
     void _accumulate() override
-    {
+    {   // no checks here for performance -> it will fail without prior allocate()
         for (int i=0; i<_nobs; ++i) {
             _data[_storeidx + i] += _obs->getObservable(i);
         }
@@ -50,19 +47,19 @@ protected:
     {
         _bidx = 0;
         _storeidx = 0;
-        std::fill(_data, _data+_ndata, 0.);
+        std::fill(_data, _data+this->getNData(), 0.);
     }
 
     void _deallocate() override
     {
         delete [] _data;
+        _data = nullptr;
         _nblocks = 0;
-        _ndata = 0;
     }
 
 public:
     MCIBlockAccumulator(MCIObservableFunctionInterface * obs, int nskip, int blocksize):
-        MCIAccumulatorInterface(obs, nskip), _blocksize(blocksize), _nblocks(0), _ndata(0), _bidx(0), _storeidx(0)
+        MCIAccumulatorInterface(obs, nskip), _blocksize(blocksize), _nblocks(0), _bidx(0), _storeidx(0)
     {
         if (_blocksize < 1) { throw std::invalid_argument("[MCIBlockAccumulator] Requested blocksize was < 1 ."); }
     }
@@ -70,7 +67,7 @@ public:
     ~MCIBlockAccumulator() override { this->_deallocate(); }
 
     int getBlockSize() { return _blocksize; }
-    int getNStored() override { return _nblocks; }
+    int getNStore() override { return _nblocks; }
 
     void finalize() override
     {
