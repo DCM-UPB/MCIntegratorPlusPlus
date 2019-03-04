@@ -2,34 +2,50 @@
 #define MCI_MCIOBSERVABLECONTAINER_HPP
 
 #include "mci/MCIAccumulatorInterface.hpp"
+#include "mci/MCIObservableFunctionInterface.hpp"
 
+#include <fstream>
 #include <functional>
-#include <stdexcept>
+#include <vector>
 
-struct MCIObservableContainer
+class MCIObservableContainer
 {
-    // Accumulator
-    MCIAccumulatorInterface * const accu;
+private:
+    int _nobsdim {0}; // stores total dimension of contained observables
 
-    // Estimator function used to obtain result of MC integration
-    const std::function< void (double * /*avg*/, double * /*error*/) > estim; // calculating avg/error of stored data, with all parameters bound already (e.g. nstored, nobs)
+    // Accumulators
+    std::vector< MCIAccumulatorInterface * > _accus;
+
+    // Estimator functions used to obtain result of MC integration
+    std::vector< std::function< void (double * /*avg*/, double * /*error*/) > > _estims; // corresponding accumulators are already bound
 
     // flags
-    const bool flag_equil; // should this observable be equilibrated when using automatic equilibration?
+    std::vector< bool > _flags_equil; // should this observable be equilibrated when using automatic equilibration?
 
+public:
+    explicit MCIObservableContainer() = default;
+    ~MCIObservableContainer(){ this->clearObservables(); }
 
-    MCIObservableContainer(MCIAccumulatorInterface * accumulator,
-                           const std::function< void (int /*nstored*/, int /*nobs*/, const double * /*data*/, double * /*avg*/, double * /*error*/) > &estimator,
-                           bool needsEquil):
-        accu(accumulator),
-        estim( [estimator, accumulator](double * average, double * error) { // lambda functional
-                   if(!accumulator->isFinalized()) {
-                       throw std::runtime_error("[MCIObservableContainer.estim] Estimator was called, but accumulator is not finalized.");
-                   }
-                   estimator(accumulator->getNStore(), accumulator->getNObs(), accumulator->getData(), average, error);
-               } ),
-        flag_equil(needsEquil)
-    {}
+    // simple getters
+    int getNObs(){ return _accus.size(); }
+    int getNObsDim(){ return _nobsdim; }
+
+    MCIObservableFunctionInterface * getObservableFunction(int i){ return _accus[i]->getObservableFunction(); }
+
+    // operational methods
+    // add accumulator&estimator for an observable
+    void addObservable(MCIAccumulatorInterface * accumulator,
+                        const std::function< void (int /*nstored*/, int /*nobs*/, const double * /*data*/, double * /*avg*/, double * /*error*/) > &estimator,
+                        bool needsEquil);
+
+    void allocateObservables(int Nmc); // allocate data memory
+    void accumulateObservables(const double * x, bool flagacc); // process accumulation for position x (which is new if flagacc)
+    void printObservableValues(std::ofstream &file); // write last observables values to filestream
+    void finalizeObservables(); // used after sampling to apply all necessary data normalization
+    void estimateObservables(double * average, double * error); // eval estimators on finalized data and return average/error
+    void resetObservables(); // obtain clean state, but keep allocation
+    void deallocateObservables(); // free data memory
+    void clearObservables(); // clear everything
 };
 
 

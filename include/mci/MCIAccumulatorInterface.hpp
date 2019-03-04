@@ -33,7 +33,7 @@ public:
 
     virtual ~MCIAccumulatorInterface() = default;
 
-    MCIObservableFunctionInterface * getObservable(){ return _obs; }
+    MCIObservableFunctionInterface * getObservableFunction(){ return _obs; }
 
     // Getters
     int getNObs(){ return _nobs; }

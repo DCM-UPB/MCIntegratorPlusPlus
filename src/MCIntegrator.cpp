@@ -26,34 +26,30 @@ void MCI::integrate(const int Nmc, double * average, double * error, const bool 
     }
 
     // allocation of the accumulators where the data will be stored
-    this->allocateObservables(Nmc);
+    _obscont.allocateObservables(Nmc);
 
     //sample the observables
     if (_flagobsfile) { _obsfile.open(_pathobsfile); }
     if (_flagwlkfile) { _wlkfile.open(_pathwlkfile); }
     _flagMC = true;
-    this->sample(Nmc, true);
+    this->sample(Nmc, &_obscont); // let sample accumulate data
     _flagMC = false;
     if (_flagobsfile) { _obsfile.close(); }
     if (_flagwlkfile) { _wlkfile.close(); }
 
     // estimate average and standard deviation
-    int obsidx = 0; // observable index offset
-    for (auto & cont : _obsc) {
-        cont.estim(average+obsidx, error+obsidx);
-        obsidx += cont.accu->getNObs();
-    }
+    _obscont.estimateObservables(average, error);
 
     // if we sampled uniformly, scale results by volume
     if (!_flagpdf) {
-        for (int i=0; i<_nobsdim; ++i) {
+        for (int i=0; i<_obscont.getNObsDim(); ++i) {
             average[i] *=_vol;
             error[i] *=_vol;
         }
     }
 
     // deallocate
-    this->deallocateObservables();
+    _obscont.deallocateObservables();
 }
 
 
@@ -64,13 +60,7 @@ void MCI::integrate(const int Nmc, double * average, double * error, const bool 
 void MCI::storeObservables()
 {
     if ( _ridx%_freqobsfile == 0 ) {
-        _obsfile << _ridx;
-        for (auto & cont : _obsc) {
-            MCIObservableFunctionInterface * const obs = cont.accu->getObservable(); // acquire ptr to obs
-            for (int j=0; j<obs->getNObs(); ++j) {
-                _obsfile << "   " << obs->getValue(j);
-            }
-        }
+        _obscont.printObservableValues(_obsfile);
         _obsfile << std::endl;
     }
 }
@@ -93,7 +83,7 @@ void MCI::initialDecorrelation()
     if (_NdecorrelationSteps < 0) {
         // placeholder
         const int NMC_DECORR=1000;
-        this->sample(NMC_DECORR, false);
+        this->sample(NMC_DECORR, nullptr);
 
         /* // auto decorrelation retired for the moment
         //constants
@@ -135,18 +125,20 @@ void MCI::initialDecorrelation()
         */
     }
     else if (_NdecorrelationSteps > 0) {
-        this->sample(_NdecorrelationSteps, false);
+        this->sample(_NdecorrelationSteps, nullptr);
     }
 }
 
 
-void MCI::sample(const int npoints, const bool flagobs)
+void MCI::sample(const int npoints, MCIObservableContainer * container)
 {
+    const bool flagobs = (container != nullptr); // should we sample observables ?
+
     // reset acceptance and rejection
     this->resetAccRejCounters();
 
     // reset observable data
-    if (flagobs) { this->resetObservables(); }
+    if (flagobs) { container->resetObservables(); }
 
     // first call of the call-back functions
     if (_flagpdf) {
@@ -170,8 +162,8 @@ void MCI::sample(const int npoints, const bool flagobs)
             flagacc = true;
         }
 
-        if (flagobs) { // accumulate observables
-            this->accumulateObservables(flagacc); // uses _xold
+        if (flagobs) {
+            container->accumulateObservables(_xold, flagacc); // accumulate observables
             if (_flagMC && _flagobsfile) { this->storeObservables(); } // store obs on file
         }
 
@@ -179,7 +171,7 @@ void MCI::sample(const int npoints, const bool flagobs)
     }
 
     // finalize data
-    if (flagobs) { this->finalizeObservables(); }
+    if (flagobs) { container->finalizeObservables(); }
 }
 
 
@@ -198,7 +190,7 @@ void MCI::findMRT2Step()
     double fact;
     while ( ( _NfindMRT2steps < 0 && cons_count < MIN_CONS ) || counter < _NfindMRT2steps ) {
         //do MIN_STAT M(RT)^2 steps
-        this->sample(MIN_STAT,false);
+        this->sample(MIN_STAT, nullptr);
 
         //increase or decrease mrt2step depending on the acceptance rate
         double rate = this->getAcceptanceRate();
@@ -359,42 +351,6 @@ void MCI::computeNewSamplingFunction()
 }
 
 
-void MCI::allocateObservables(const int Nmc)
-{   // allocate observable accumulators for Nmc steps
-    for (auto & cont : _obsc) {
-        cont.accu->allocate(Nmc);
-    }
-}
-
-void MCI::accumulateObservables(const bool flagacc)
-{   // let the accumulators process the step
-    for (auto & cont : _obsc) {
-        cont.accu->accumulate(_xold, flagacc);
-    }
-}
-
-void MCI::finalizeObservables()
-{   // apply normalization, if necessary
-    for (auto & cont : _obsc) {
-        cont.accu->finalize();
-    }
-}
-
-void MCI::resetObservables()
-{   // reset without deallocation
-    for (auto & cont : _obsc) {
-        cont.accu->reset();
-    }
-}
-
-void MCI::deallocateObservables()
-{   // reset & free memory
-    for (auto & cont : _obsc) {
-        cont.accu->deallocate();
-    }
-}
-
-
 //   --- Setters
 
 
@@ -426,11 +382,7 @@ void MCI::addCallBackOnAcceptance(MCICallBackOnAcceptanceInterface * cback){
 
 void MCI::clearObservables()
 {
-    for (auto & cont : _obsc) {
-        delete cont.accu;
-    }
-    _obsc.clear();
-    _nobsdim=0;
+    _obscont.clearObservables();
 }
 
 
@@ -448,7 +400,8 @@ void MCI::addObservable(MCIObservableFunctionInterface * obs, int blocksize, int
 
     // we need to select these two
     MCIAccumulatorInterface * accu;
-    std::function< void(int /*nstore*/, int /*nobs*/, const double * /*data*/, double * /*avg*/, double * /*error*/) > estim;
+    std::function< void(int /*nstore*/, int /*nobs*/, const
+                        double * /*data*/, double * /*avg*/, double * /*error*/) > estim;
 
     if (blocksize == 0) {
         accu = new MCISimpleAccumulator(obs, nskip);
@@ -466,9 +419,8 @@ void MCI::addObservable(MCIObservableFunctionInterface * obs, int blocksize, int
         estim = flag_correlated ? mci::CorrelatedEstimator : mci::UncorrelatedEstimator ;
     }
 
-    // append to vector of containers
-    _obsc.emplace_back(accu, estim, flag_equil );
-    _nobsdim+=accu->getNObs();
+    // append to container
+    _obscont.addObservable(accu, estim, flag_equil);
 }
 
 
@@ -549,7 +501,7 @@ MCI::MCI(const int ndim)
     std::fill(_xold, _xold+_ndim, 0.);
     _xnew = new double[_ndim];
     std::fill(_xnew, _xnew+_ndim, 0.);
-    _flagwlkfile=false;
+
     // _mrt2step
     _mrt2step = new double[_ndim];
     std::fill(_mrt2step, _mrt2step+_ndim, INITIAL_STEP);
@@ -560,8 +512,8 @@ MCI::MCI(const int ndim)
 
     // probability density function
     _flagpdf = false;
-    // initialize info about observables
-    _nobsdim=0;
+    // initialize file flags
+    _flagwlkfile=false;
     _flagobsfile=false;
     // initialize random generator
     _rgen = std::mt19937_64(_rdev());

@@ -193,7 +193,7 @@ int main(){
     srand(1337); // seed standard random engine
     TestWalk1s testWalk(Nmc, nd, 1.0); // 2-particle walk in 1-dim 1s orbital
     testWalk.generateWalk(xND, accepted);
-    cout << testWalk.getAcceptanceRate() << endl;
+    if (verbose) { cout << testWalk.getAcceptanceRate() << endl; }
 
     // calculate reference averages
     double refAvg[nd];

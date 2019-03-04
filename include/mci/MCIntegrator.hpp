@@ -35,12 +35,11 @@ protected:
 
     double _targetaccrate;  // desired acceptance ratio
 
-    // main object vectors
+    // main object vectors/containers
     std::vector<MCISamplingFunctionInterface *> _pdf; //vector of sampling functions
     bool _flagpdf;  // did the user provide a sampling function?
 
-    std::vector< MCIObservableContainer > _obsc; // vector of observable containers (stored by value!)
-    int _nobsdim; // total dimension of all observables
+    MCIObservableContainer _obscont; // vector of observable containers (stored by value!)
 
     std::vector<MCICallBackOnAcceptanceInterface *> _cback;  // Vector of acceptance callback functions
 
@@ -62,11 +61,6 @@ protected:
 
 
     // --- Internal methods
-    void allocateObservables(int Nmc); // allocate data memory
-    void accumulateObservables(bool flagacc); // process observable step (using _xold)
-    void finalizeObservables(); // used after to apply all necessary data normalization
-    void resetObservables(); // obtain clean state, but keep allocation
-    void deallocateObservables(); // free data memory
 
     void computeNewSamplingFunction(); //compute the new sampling function with new coordinates
     void computeOldSamplingFunction(); //compute the new sampling function with the old coordinates
@@ -87,7 +81,7 @@ protected:
     void initialDecorrelation();
 
     // fill data with samples
-    void sample(int npoints, bool flagobs);
+    void sample(int npoints, MCIObservableContainer * container = nullptr);
 
     // store to file
     void storeObservables();
@@ -115,7 +109,7 @@ public:
     void setNdecorrelationSteps(int nsteps /* -1 == auto, 0 == disabled */){_NdecorrelationSteps=nsteps;}
 
 
-    void addObservable(MCIObservableFunctionInterface * obs /* MCI creates a container with accumulator and estimator for this obs */,
+    void addObservable(MCIObservableFunctionInterface * obs /* MCI adds accumulator and estimator for this obs, with following options: */,
                        int blocksize, /* if > 1, use fixed block size and assume uncorrelated samples, if <= 0, use no blocks and no error calculation */
                        int nskip, /* evaluate observable only every n-th step NOTE: now a block consists of $blocksize non-skipped samples */
                        bool flag_equil, /* observable wants to be equilibrated when using automatic initial decorrelation (blocksize must be > 0) */
@@ -145,11 +139,10 @@ public:
     int getNfindMRT2steps(){ return _NfindMRT2steps; }
     int getNdecorrelationSteps(){ return _NdecorrelationSteps; }
 
-    MCIObservableFunctionInterface * getObservable(int i){ return _obsc[i].accu->getObservable(); }
-    MCIAccumulatorInterface * getAccumulator(int i){ return _obsc[i].accu; }
-    MCIObservableContainer & getObservableContainer(int i){ return _obsc[i]; }
-    int getNObs(){ return _obsc.size(); }
-    int getNObsDim(){ return _nobsdim; }
+    MCIObservableFunctionInterface * getObservable(int i){ return _obscont.getObservableFunction(i); }
+
+    int getNObs(){ return _obscont.getNObs(); }
+    int getNObsDim(){ return _obscont.getNObsDim(); }
 
     MCISamplingFunctionInterface * getSamplingFunction(int i){ return _pdf[i]; }
     int getNSampF(){ return _pdf.size(); }
