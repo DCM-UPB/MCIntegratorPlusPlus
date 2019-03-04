@@ -14,7 +14,7 @@ void MCIFullAccumulator::_allocate()
 void MCIFullAccumulator::_accumulate()
 {
     for (int i=0; i<_nobs; ++i) {
-        _data[_storeidx + i] += _obs->getObservable(i);
+        _data[_storeidx + i] += _obs->getValue(i);
     }
     _storeidx += _nobs;
 }

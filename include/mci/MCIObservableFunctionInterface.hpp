@@ -24,9 +24,9 @@ public:
 
     int getNObs(){return _nobs;}
     int getNDim(){return _ndim;}
-    double getObservable(int i){ return _obs[i]; }
+    double getValue(int i){ return _obs[i]; }
 
-    void computeObservables(const double * in)
+    void computeValues(const double * in)
     {
         observableFunction(in,_obs);
     }

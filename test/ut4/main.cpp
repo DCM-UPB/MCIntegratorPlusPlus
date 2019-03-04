@@ -21,7 +21,6 @@ int main(){
     mci->setSeed(5649871);
     mci->addSamplingFunction(pdf);
     mci->addObservable(obs);
-    mci->setNBlocks(0); // use auto-blocking
 
     // the integral should provide 0.5 as answer!
 
@@ -31,8 +30,8 @@ int main(){
     double average;
     double error;
 
-    // configure the number of steps to use in pre-sampling
-    mci->setNfindMRT2steps(10);
+    // configure a fixed amount steps to use in pre-sampling
+    mci->setNfindMRT2steps(10); // 10 iterations
     mci->setNdecorrelationSteps(1000);
 
     // this integral will give a wrong answer! This is because the starting point is very bad and initialDecorrelation is skipped (as well as the MRT2step automatic setting)
@@ -53,11 +52,18 @@ int main(){
     assert( fabs(average-CORRECT_RESULT) < 2.*error );
 
     // and using fixed blocking also gives the same result
-    mci->setNBlocks(15);
+    mci->clearObservables();
+    mci->addObservable(obs, true, 1, 10); // blocks of size 10
     mci->integrate(NMC, &average, &error, false, false);
     //std::cout << "average " << average << ", error " << error << ", CORRECT_RESULT" << CORRECT_RESULT << std::endl;
     assert( fabs(average-CORRECT_RESULT) < 2.*error );
 
+    // and half the block size with skipping every second step, should be similar again
+    mci->clearObservables();
+    mci->addObservable(obs, true, 2, 5); // nskip 2, blockssize 5
+    mci->integrate(NMC, &average, &error, false, false);
+    //std::cout << "average " << average << ", error " << error << ", CORRECT_RESULT" << CORRECT_RESULT << std::endl;
+    assert( fabs(average-CORRECT_RESULT) < 2.*error );
 
     delete pdf;
     delete obs;

@@ -29,7 +29,7 @@ void MCIAccumulatorInterface::accumulate(const double * in, const bool flagacc)
 
     if (_skipidx == 0) { // accumulate observables
         if (_flag_eval) {
-            _obs->computeObservables(in);
+            _obs->computeValues(in);
             _flag_eval = false;
         }
         this->_accumulate(); // call child storage implementation

@@ -14,7 +14,7 @@ void MCISimpleAccumulator::_allocate()
 void MCISimpleAccumulator::_accumulate()
 {
     for (int i=0; i<_nobs; ++i) {
-        _data[i] += _obs->getObservable(i);
+        _data[i] += _obs->getValue(i);
     }
 }
 

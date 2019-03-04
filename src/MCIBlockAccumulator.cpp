@@ -17,7 +17,7 @@ void MCIBlockAccumulator::_allocate()
 void MCIBlockAccumulator::_accumulate()
 {
     for (int i=0; i<_nobs; ++i) {
-        _data[_storeidx + i] += _obs->getObservable(i);
+        _data[_storeidx + i] += _obs->getValue(i);
     }
 
     if (++_bidx == _blocksize) {

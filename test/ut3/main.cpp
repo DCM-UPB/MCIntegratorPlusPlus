@@ -23,7 +23,6 @@ int main(){
     mci->addSamplingFunction(pdf);
     mci->addObservable(obs1d);
     mci->addObservable(obs3d);
-    mci->setNBlocks(0); // use auto-blocking
 
     // the integral should provide 0.5 as answer!
 
