@@ -34,9 +34,9 @@ int main () {
     MCI mci(3);
     mci.setSeed(5649871);
     mci.addSamplingFunction(pdf);
-    mci.addObservable(obs1, false, 1); // use simple accumulation, no skipping
-    mci.addObservable(obs2, true, 1); // use auto-blocking, no skipping
-    mci.addObservable(obs3, true, 2, 5); // nskip 2, fixed blocksize 5
+    mci.addObservable(obs1, 0); // use simple accu (i.e. no error), no skipping
+    mci.addObservable(obs2, 1); // use auto-blocking, no skipping
+    mci.addObservable(obs3, 5, 2); // fixed blocksize 5, skip every 2nd step (i.e. "effective" block size of 10)
 
     cout << mci.getNObsDim() << endl;
     double avg[mci.getNObsDim()],err[mci.getNObsDim()];

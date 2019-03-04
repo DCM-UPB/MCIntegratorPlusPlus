@@ -1,8 +1,8 @@
 #include "mci/MCIObservableFunctionInterface.hpp"
 #include "mci/MCISamplingFunctionInterface.hpp"
 
-#include <cmath>
 #include <algorithm>
+#include <cmath>
 #include <random>
 
 class TestWalk1s
@@ -118,7 +118,7 @@ public:
 
 class XND: public MCIObservableFunctionInterface{
 public:
-    XND(int nd): MCIObservableFunctionInterface(nd, nd){}
+    explicit XND(int nd): MCIObservableFunctionInterface(nd, nd){}
     ~XND() override= default;
 
     void observableFunction(const double * in, double * out) override{

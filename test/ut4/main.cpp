@@ -53,14 +53,14 @@ int main(){
 
     // and using fixed blocking also gives the same result
     mci->clearObservables();
-    mci->addObservable(obs, true, 1, 10); // blocks of size 10
+    mci->addObservable(obs, 10); // blocks of size 10
     mci->integrate(NMC, &average, &error, false, false);
     //std::cout << "average " << average << ", error " << error << ", CORRECT_RESULT" << CORRECT_RESULT << std::endl;
     assert( fabs(average-CORRECT_RESULT) < 2.*error );
 
     // and half the block size with skipping every second step, should be similar again
     mci->clearObservables();
-    mci->addObservable(obs, true, 2, 5); // nskip 2, blockssize 5
+    mci->addObservable(obs, 5, 2); // blocksize 5, nskip 2 (i.e. "effective" blocksize of 10)
     mci->integrate(NMC, &average, &error, false, false);
     //std::cout << "average " << average << ", error " << error << ", CORRECT_RESULT" << CORRECT_RESULT << std::endl;
     assert( fabs(average-CORRECT_RESULT) < 2.*error );

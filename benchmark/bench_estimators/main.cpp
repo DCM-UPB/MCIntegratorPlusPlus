@@ -1,5 +1,5 @@
-#include <cmath>
 #include <cassert>
+#include <cmath>
 #include <iomanip>
 #include <iostream>
 #include <iterator>

@@ -1,13 +1,13 @@
 #include "mci/Estimators.hpp"
-#include "mci/MCISimpleAccumulator.hpp"
 #include "mci/MCIBlockAccumulator.hpp"
 #include "mci/MCIFullAccumulator.hpp"
+#include "mci/MCISimpleAccumulator.hpp"
 
+#include <algorithm>
 #include <cassert>
 #include <cmath>
-#include <random>
 #include <iostream>
-#include <algorithm>
+#include <random>
 #include <string>
 #include <tuple>
 
@@ -201,7 +201,7 @@ int main(){
 
     if (verbose) {
         cout << "Reference Average: " << endl << "avgND =";
-        for (int i=0; i<nd; ++i) { cout << " " << refAvg[i]; }
+        for (double avg : refAvg) { cout << " " << avg; }
         cout << endl << endl;
     }
 
@@ -271,12 +271,12 @@ int main(){
     auto * fullAccuSkip2 = new MCIFullAccumulator(obsfun, 2);
 
     vector<pair< MCIAccumulatorInterface *, string > > accuList;
-    accuList.push_back( pair< MCIAccumulatorInterface *, string >(simpleAccu, "simpleAccu") );
-    accuList.push_back( pair< MCIAccumulatorInterface *, string >(blockAccu, "blockAccu") );
-    accuList.push_back( pair< MCIAccumulatorInterface *, string >(fullAccu, "fullAccu") );
-    accuList.push_back( pair< MCIAccumulatorInterface *, string >(simpleAccuSkip2, "simpleAccuSkip2") );
-    accuList.push_back( pair< MCIAccumulatorInterface *, string >(blockAccuSkip2, "blockAccuSkip2") );
-    accuList.push_back( pair< MCIAccumulatorInterface *, string >(fullAccuSkip2, "fullAccuSkip2") );
+    accuList.emplace_back(simpleAccu, "simpleAccu" );
+    accuList.emplace_back(blockAccu, "blockAccu" );
+    accuList.emplace_back(fullAccu, "fullAccu" );
+    accuList.emplace_back(simpleAccuSkip2, "simpleAccuSkip2" );
+    accuList.emplace_back(blockAccuSkip2, "blockAccuSkip2" );
+    accuList.emplace_back(fullAccuSkip2, "fullAccuSkip2" );
 
     for (auto & accuTup : accuList) {
         if (verbose) { cout << endl << "Checking accumulator " << accuTup.second << " ..." << endl; }

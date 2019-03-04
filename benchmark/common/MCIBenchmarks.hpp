@@ -1,7 +1,7 @@
 #include <cmath>
 #include <iostream>
-#include <tuple>
 #include <stdexcept>
+#include <tuple>
 
 #include "Timer.hpp"
 #include "mci/Estimators.hpp"

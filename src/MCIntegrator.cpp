@@ -1,11 +1,12 @@
 #include "mci/MCIntegrator.hpp"
 
 #include "mci/Estimators.hpp"
-#include "mci/MCISimpleAccumulator.hpp"
 #include "mci/MCIBlockAccumulator.hpp"
 #include "mci/MCIFullAccumulator.hpp"
+#include "mci/MCISimpleAccumulator.hpp"
 
 #include <algorithm>
+#include <functional>
 #include <iostream>
 #include <limits>
 #include <random>
@@ -39,22 +40,8 @@ void MCI::integrate(const int Nmc, double * average, double * error, const bool 
     // estimate average and standard deviation
     int obsidx = 0; // observable index offset
     for (auto & cont : _obsc) {
-        const double * const data = cont.accu->getData();
-        const int nstore = cont.accu->getNStore();
-        const int nobs = cont.accu->getNObs();
-
-        if (nstore == 1) { // no error computable
-            std::copy(data, data+nobs, average+obsidx);
-            std::fill(error+obsidx, error+obsidx+nobs, 0.);
-        }
-        else if ( _flagpdf && cont.flag_error &&
-             (cont.accu->getNAccu() == nstore) ) { // this rule is a (decent) placeholder
-            mci::CorrelatedEstimator(nstore, nobs, data, average+obsidx, error+obsidx);
-        }
-        else { // either we sampled uncorrelated, observable doesn't need a (correct) error or we have blocked data already
-            mci::UncorrelatedEstimator(nstore, nobs, data, average+obsidx, error+obsidx);
-        }
-        obsidx += nobs;
+        cont.estim(average+obsidx, error+obsidx);
+        obsidx += cont.accu->getNObs();
     }
 
     // if we sampled uniformly, scale results by volume
@@ -125,19 +112,19 @@ void MCI::initialDecorrelation()
         auto * newestimate = new double[_nobsdim];
         double newerrestim[_nobsdim];
         while ( flag_loop ) {
-            flag_loop = false;
-            this->sample(MIN_NMC, true);
-            mci::CorrelatedEstimator(MIN_NMC, _nobsdim, _datax, newestimate, newerrestim);
+        flag_loop = false;
+        this->sample(MIN_NMC, true);
+        mci::CorrelatedEstimator(MIN_NMC, _nobsdim, _datax, newestimate, newerrestim);
 
-            for (int i=0; i<_nobsdim; ++i) {
-                if ( fabs( oldestimate[i] - newestimate[i] ) > 2*sqrt( olderrestim[i]*olderrestim[i] + newerrestim[i]*newerrestim[i] ) ) {
-                    flag_loop=true; // if any difference is too large, continue the loop
-                    break; // break the inner for loop
-                }
-            }
-            double * const foo=oldestimate;
-            oldestimate=newestimate;
-            newestimate=foo;
+        for (int i=0; i<_nobsdim; ++i) {
+        if ( fabs( oldestimate[i] - newestimate[i] ) > 2*sqrt( olderrestim[i]*olderrestim[i] + newerrestim[i]*newerrestim[i] ) ) {
+        flag_loop=true; // if any difference is too large, continue the loop
+        break; // break the inner for loop
+        }
+        }
+        double * const foo=oldestimate;
+        oldestimate=newestimate;
+        newestimate=foo;
         }
 
         //memory deallocation
@@ -167,7 +154,6 @@ void MCI::sample(const int npoints, const bool flagobs)
             cback->callBackFunction(_xold, true);
         }
     }
-
 
     // initialize the pdf at x
     computeOldSamplingFunction();
@@ -448,19 +434,40 @@ void MCI::clearObservables()
 }
 
 
-void MCI::addObservable(MCIObservableFunctionInterface * obs, const bool flag_error, const int nskip, const int blocksize)
+void MCI::addObservable(MCIObservableFunctionInterface * obs, int blocksize, int nskip, const bool flag_equil, const bool flag_correlated)
 {
+    // sanity
+    blocksize = std::max(0, blocksize);
+    nskip = std::max(1, nskip);
+    if (flag_equil && blocksize==0) {
+        throw std::invalid_argument("[MCI::addObservable] Requested automatic observable equilibration requires blocksize > 0.");
+    }
+    if (flag_equil && blocksize==0) {
+        throw std::invalid_argument("[MCI::addObservable] Requested correlated error estimation requires blocksize > 0.");
+    }
+
+    // we need to select these two
     MCIAccumulatorInterface * accu;
-    if (!flag_error) {
+    std::function< void(int /*nstore*/, int /*nobs*/, const double * /*data*/, double * /*avg*/, double * /*error*/) > estim;
+
+    if (blocksize == 0) {
         accu = new MCISimpleAccumulator(obs, nskip);
+        // data is already the average, so this estimator just copies the average and fills error with 0
+        estim = [](int nstore /*unused*/, int nobs, const double * data, double * avg, double * err) {
+                    std::copy(data, data+nobs, avg);
+                    std::fill(err, err+nobs, 0.);
+                };
+    } else {
+        if (blocksize == 1) {
+            accu = new MCIFullAccumulator(obs, nskip);
+        } else {
+            accu = new MCIBlockAccumulator(obs, nskip, blocksize);
+        }
+        estim = flag_correlated ? mci::CorrelatedEstimator : mci::UncorrelatedEstimator ;
     }
-    else if (blocksize > 1) {
-        accu = new MCIBlockAccumulator(obs, nskip, blocksize);
-    }
-    else {
-        accu = new MCIFullAccumulator(obs, nskip);
-    }
-    _obsc.push_back( MCIObservableContainer(accu, flag_error) );
+
+    // append to vector of containers
+    _obsc.emplace_back(accu, estim, flag_equil );
     _nobsdim+=accu->getNObs();
 }
 

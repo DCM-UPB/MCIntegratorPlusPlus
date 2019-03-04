@@ -1,11 +1,11 @@
 #ifndef MCI_MCINTEGRATOR_HPP
 #define MCI_MCINTEGRATOR_HPP
 
+#include "mci/MCIAccumulatorInterface.hpp"
 #include "mci/MCICallBackOnAcceptanceInterface.hpp"
+#include "mci/MCIObservableContainer.hpp"
 #include "mci/MCIObservableFunctionInterface.hpp"
 #include "mci/MCISamplingFunctionInterface.hpp"
-#include "mci/MCIAccumulatorInterface.hpp"
-#include "mci/MCIObservableContainer.hpp"
 
 #include <fstream>
 #include <random>
@@ -115,9 +115,15 @@ public:
     void setNdecorrelationSteps(int nsteps /* -1 == auto, 0 == disabled */){_NdecorrelationSteps=nsteps;}
 
 
-    void addObservable(MCIObservableFunctionInterface * obs /* MCI creates a container incl. accumulator for obs */,
-                       bool flag_error = true /* need error on avg? */,
-                       int nskip = 1 /* evaluate every n-th step */, int blocksize = 1 /* use fixed block size (if > 1)*/);
+    void addObservable(MCIObservableFunctionInterface * obs /* MCI creates a container with accumulator and estimator for this obs */,
+                       int blocksize, /* if > 1, use fixed block size and assume uncorrelated samples, if <= 0, use no blocks and no error calculation */
+                       int nskip, /* evaluate observable only every n-th step NOTE: now a block consists of $blocksize non-skipped samples */
+                       bool flag_equil, /* observable wants to be equilibrated when using automatic initial decorrelation (blocksize must be > 0) */
+                       bool flag_correlated /* should block averages be treated as correlated samples? (blocksize must be > 0) */
+                       );
+    void addObservable(MCIObservableFunctionInterface * obs, int blocksize = 1, int nskip = 1) {
+        addObservable(obs, blocksize, nskip, blocksize>0, blocksize==1); // safe&easy defaults, appropriate for most cases
+    }
     void clearObservables(); // clear
 
     void addSamplingFunction(MCISamplingFunctionInterface * mcisf);
