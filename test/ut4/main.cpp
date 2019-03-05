@@ -31,7 +31,7 @@ int main(){
     double error;
 
     // configure a fixed amount steps to use in pre-sampling
-    mci->setNfindMRT2steps(10); // 10 iterations
+    mci->setNfindMRT2Iterations(10); // 10 iterations
     mci->setNdecorrelationSteps(1000);
 
     // this integral will give a wrong answer! This is because the starting point is very bad and initialDecorrelation is skipped (as well as the MRT2step automatic setting)

@@ -5,7 +5,7 @@
 #include <iostream>
 #include <numeric>
 
-double calcErrDelta(const int mode, const double * err /* length 9 */)
+double calcErrDelta(const int mode, const double err[9])
 {   // for Francesco's plateau finding algorithm
     const int im = 4; // index of middle element
     switch(mode)
@@ -31,7 +31,7 @@ double calcErrDelta(const int mode, const double * err /* length 9 */)
 
 namespace mci
 {
-    void OneDimUncorrelatedEstimator(const int n, const double * x, double & average, double & error)
+    void OneDimUncorrelatedEstimator(const int n, const double x[], double & average, double & error)
     {
         using namespace std;
 
@@ -56,7 +56,7 @@ namespace mci
     }
 
 
-    void OneDimBlockEstimator(const int n, const double * x, const int nblocks, double & average, double & error)
+    void OneDimBlockEstimator(const int n, const double x[], const int nblocks, double & average, double & error)
     {
         using namespace std;
 
@@ -78,7 +78,7 @@ namespace mci
     }
 
 
-    void OneDimCorrelatedEstimator(const int n, const double * x, double & average, double & error)
+    void OneDimCorrelatedEstimator(const int n, const double x[], double & average, double & error)
     {
         const int MIN_BLOCKS=6, MAX_BLOCKS=50;
         const int MAX_PLATEAU_AVERAGE=4;
@@ -124,8 +124,8 @@ namespace mci
     }
 
 
-    void MultiDimUncorrelatedEstimator(const int n, const int ndim, const double * x, double * average, double * error)
-    {   // we create an explicit multidimensional implementation, for better efficiency in memory access
+    void MultiDimUncorrelatedEstimator(const int n, const int ndim, const double x[], double average[], double error[])
+    {   // we create an explicit multidimensional implementation, for better efficiency
         using namespace std;
 
         const double SMALLEST_ERROR=1.e-300;
@@ -159,8 +159,8 @@ namespace mci
     }
 
 
-    void MultiDimBlockEstimator(const int n, const int ndim, const double * x, const int nblocks, double * average, double * error)
-    {   // we create an explicit multidimensional implementation, for better efficiency in memory access
+    void MultiDimBlockEstimator(const int n, const int ndim, const double x[], const int nblocks, double average[], double error[])
+    {   // we create an explicit multidimensional implementation, for better efficiency
         using namespace std;
 
         if ( n < nblocks) {
@@ -192,8 +192,8 @@ namespace mci
     }
 
 
-    void MultiDimCorrelatedEstimator(const int n, const int ndim, const double * x, double * average, double * error)
-    {   // we create an explicit multidimensional implementation, for better efficiency in memory access
+    void MultiDimCorrelatedEstimator(const int n, const int ndim, const double x[], double average[], double error[])
+    {   // we create an explicit multidimensional implementation, for better efficiency
         const int MIN_BLOCKS=6, MAX_BLOCKS=50;
         const int MAX_PLATEAU_AVERAGE=4;
 
@@ -254,7 +254,7 @@ namespace mci
 
 
     // wrappers for any dim
-    void UncorrelatedEstimator(const int n, const int ndim, const double * x, double * average, double * error)
+    void UncorrelatedEstimator(const int n, const int ndim, const double x[], double average[], double error[])
     {
         if (ndim>1) {
             MultiDimUncorrelatedEstimator(n, ndim, x, average, error);
@@ -263,7 +263,7 @@ namespace mci
         }
     }
 
-    void BlockEstimator(const int n, const int ndim, const double * x, const int nblocks, double * average, double * error)
+    void BlockEstimator(const int n, const int ndim, const double x[], const int nblocks, double average[], double error[])
     {
         if (ndim>1) {
             MultiDimBlockEstimator(n, ndim, x, nblocks, average, error);
@@ -272,7 +272,7 @@ namespace mci
         }
     }
 
-    void CorrelatedEstimator(const int n, const int ndim, const double * x, double * average, double * error)
+    void CorrelatedEstimator(const int n, const int ndim, const double x[], double average[], double error[])
     {
         if (ndim>1) {
             MultiDimCorrelatedEstimator(n, ndim, x, average, error);

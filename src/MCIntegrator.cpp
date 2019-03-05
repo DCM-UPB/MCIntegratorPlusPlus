@@ -9,14 +9,12 @@
 #include <functional>
 #include <iostream>
 #include <limits>
-#include <random>
 #include <stdexcept>
-#include <vector>
 
 
 //   --- Integrate
 
-void MCI::integrate(const int Nmc, double * average, double * error, const bool doFindMRT2step, const bool doDecorrelation)
+void MCI::integrate(const int Nmc, double average[], double error[], const bool doFindMRT2step, const bool doDecorrelation)
 {
     if ( _flagpdf ) {
         //find the optimal mrt2 step
@@ -192,7 +190,7 @@ void MCI::findMRT2Step()
     int cons_count = 0;  //number of consecutive loops without need of changing mrt2step
     int counter = 0;  //counter of loops
     double fact;
-    while ( ( _NfindMRT2steps < 0 && cons_count < MIN_CONS ) || counter < _NfindMRT2steps ) {
+    while ( ( _NfindMRT2Iterations < 0 && cons_count < MIN_CONS ) || counter < _NfindMRT2Iterations ) {
         //do MIN_STAT M(RT)^2 steps
         this->sample(MIN_STAT, nullptr);
 
@@ -224,7 +222,7 @@ void MCI::findMRT2Step()
         }
         counter++;
 
-        if ( _NfindMRT2steps < 0 && counter >= MAX_NUM_ATTEMPTS ) {
+        if ( _NfindMRT2Iterations < 0 && counter >= MAX_NUM_ATTEMPTS ) {
             std::cout << "Warning [MCI::findMRT2Step]: Max number of attempts reached without convergence." << std::endl;
             break;
         }
@@ -252,7 +250,7 @@ bool MCI::doStepMRT2()
         //update the sampling function values pdfx
         this->updateSamplingFunction();
         //if there are some call back functions, invoke them
-        for (MCICallBackOnAcceptanceInterface * cback : _cback){
+        for (auto & cback : _cback){
             cback->callBackFunction(_xold, _flagMC);
         }
     } else {
@@ -274,7 +272,7 @@ void MCI::updateVolume()
 }
 
 
-void MCI::applyPBC(double * v)
+void MCI::applyPBC(double v[])
 {
     for (int i=0; i<_ndim; ++i) {
         while ( v[i] < _lbound[i] ) {
@@ -356,19 +354,19 @@ void MCI::computeNewSamplingFunction()
 //   --- Setters
 
 
-void MCI::storeObservablesOnFile(const char * filepath, const int freq)
+void MCI::storeObservablesOnFile(const std::string &filepath, const int freq)
 {
-    _pathobsfile.assign(filepath);
+    _pathobsfile = filepath;
     _freqobsfile = freq;
-    _flagobsfile=true;
+    _flagobsfile = true;
 }
 
 
-void MCI::storeWalkerPositionsOnFile(const char * filepath, const int freq)
+void MCI::storeWalkerPositionsOnFile(const std::string &filepath, const int freq)
 {
-    _pathwlkfile.assign(filepath);
+    _pathwlkfile = filepath;
     _freqwlkfile = freq;
-    _flagwlkfile=true;
+    _flagwlkfile = true;
 }
 
 
@@ -402,13 +400,12 @@ void MCI::addObservable(MCIObservableFunctionInterface * obs, int blocksize, int
 
     // we need to select these two
     MCIAccumulatorInterface * accu;
-    std::function< void(int /*nstore*/, int /*nobs*/, const
-                        double * /*data*/, double * /*avg*/, double * /*error*/) > estim;
+    std::function< void(int /*nstore*/, int /*nobs*/, const double [] /*data*/, double [] /*avg*/, double [] /*error*/) > estim;
 
     if (blocksize == 0) {
         accu = new MCISimpleAccumulator(obs, nskip);
         // data is already the average, so this estimator just copies the average and fills error with 0
-        estim = [](int nstore /*unused*/, int nobs, const double * data, double * avg, double * err) {
+        estim = [](int /*unused*/, int nobs, const double data[], double avg[], double err[]) {
                     std::copy(data, data+nobs, avg);
                     std::fill(err, err+nobs, 0.);
                 };
@@ -446,13 +443,13 @@ void MCI::setTargetAcceptanceRate(const double targetaccrate)
 }
 
 
-void MCI::setMRT2Step(const double * mrt2step)
+void MCI::setMRT2Step(const double mrt2step[])
 {
     std::copy(mrt2step, mrt2step+_ndim, _mrt2step);
 }
 
 
-void MCI::setX(const double * x)
+void MCI::setX(const double x[])
 {
     std::copy(x, x+_ndim, _xold);
     applyPBC(_xold);
@@ -468,7 +465,7 @@ void MCI::setIRange(const double lbound, const double ubound)
     applyPBC(_xold);
 }
 
-void MCI::setIRange(const double * lbound, const double * ubound)
+void MCI::setIRange(const double lbound[], const double ubound[])
 {
     // Set irange and apply PBC to the initial walker position _x
     std::copy(lbound, lbound+_ndim, _lbound);
@@ -509,7 +506,7 @@ MCI::MCI(const int ndim)
     std::fill(_mrt2step, _mrt2step+_ndim, INITIAL_STEP);
 
     // other controls, defaulting to auto behavior
-    _NfindMRT2steps = -1;
+    _NfindMRT2Iterations = -1;
     _NdecorrelationSteps = -1;
 
     // probability density function

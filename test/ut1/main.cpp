@@ -22,7 +22,7 @@ void reportAvgErr1D(const string &label, double avg, double err)
     cout << "     avg = " << avg << "     error = " << err << endl << endl;
 }
 
-void reportAvgErrND(const string &label, int ndim, double * avg, double * err)
+void reportAvgErrND(const string &label, int ndim, double avg[], double err[])
 {
     cout << "- " << label << endl;
     for (int i=0; i<ndim; ++i) {
@@ -31,7 +31,7 @@ void reportAvgErrND(const string &label, int ndim, double * avg, double * err)
     cout << endl;
 }
 
-void arrayAvgND(int N1, int N2, const double * in /*N1*N2*/, double * out /*N2*/)
+void arrayAvgND(int N1, int N2, const double in[] /*N1*N2*/, double out[] /*N2*/)
 {   // calculate average of length N2
     std::fill(out, out+N2, 0.);
     for (int i=0; i<N1; ++i) {
@@ -42,7 +42,7 @@ void arrayAvgND(int N1, int N2, const double * in /*N1*N2*/, double * out /*N2*/
     for (int i=0; i<N2; ++i) { out[i] /= N1; }
 }
 
-void assertArraysEqual(int ndim, const double * arr1, const double * arr2, double tol = 0.)
+void assertArraysEqual(int ndim, const double arr1[], const double arr2[], double tol = 0.)
 {
     if (tol > 0.) {
         for (int i=0; i<ndim; ++i) { assert( fabs(arr1[i] - arr2[i]) < tol ); }
@@ -101,7 +101,7 @@ void assertAccuFinalized(MCIAccumulatorInterface * accu, int Nmc)
 }
 
 
-void accumulateData(MCIAccumulatorInterface * accu, int Nmc, int ndim, const double * datax, const bool * datacc)
+void accumulateData(MCIAccumulatorInterface * accu, int Nmc, int ndim, const double datax[], const bool datacc[])
 {   // simulated MC observable accumulation
     for (int i=0; i<Nmc; ++i) {
         accu->accumulate(datax+i*ndim, datacc[i]);
@@ -109,7 +109,7 @@ void accumulateData(MCIAccumulatorInterface * accu, int Nmc, int ndim, const dou
     accu->finalize();
 }
 
-void checkAccumulator(MCIAccumulatorInterface * accu, int Nmc, int ndim, const double * datax, const bool * datacc,
+void checkAccumulator(MCIAccumulatorInterface * accu, int Nmc, int ndim, const double datax[], const bool datacc[],
                       double tol /* tolerance for avg */, bool verbose = false /* to enable printout */)
 {
     // we expect walker-dim == obs-dim

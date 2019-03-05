@@ -10,7 +10,7 @@ class Constval: public MCIObservableFunctionInterface
 public:
     explicit Constval(const int ndim): MCIObservableFunctionInterface(ndim, 1) {}
 
-    void observableFunction(const double *  /*in*/, double * out) override
+    void observableFunction(const double /*in*/[], double out[]) override
     {
         out[0] = 1.3;
     }
@@ -21,7 +21,7 @@ class Polynom: public MCIObservableFunctionInterface
 public:
     explicit Polynom(const int ndim): MCIObservableFunctionInterface(ndim, 1) {}
 
-    void observableFunction(const double * in, double * out) override
+    void observableFunction(const double in[], double out[]) override
     {
         out[0]=0.;
         for (int i=0; i<this->getNDim(); ++i)
@@ -36,7 +36,7 @@ class X2: public MCIObservableFunctionInterface
 public:
     explicit X2(const int ndim): MCIObservableFunctionInterface(ndim,1) {}
 
-    void observableFunction(const double * in, double * out) override
+    void observableFunction(const double in[], double out[]) override
     {
         out[0]=0.;
         for (int i=0; i<this->getNDim(); ++i)
@@ -51,7 +51,7 @@ class Gauss: public MCISamplingFunctionInterface
 public:
     explicit Gauss(const int ndim): MCISamplingFunctionInterface(ndim,1) {}
 
-    void samplingFunction(const double * in, double * out) override
+    void samplingFunction(const double in[], double out[]) override
     {
         out[0]=0.;
         for (int i=0; i<this->getNDim(); ++i)
@@ -60,7 +60,7 @@ public:
             }
     }
 
-    double getAcceptance(const double * protoold, const double * protonew) override
+    double getAcceptance(const double protoold[], const double protonew[]) override
     {
         return exp(-(protonew[0]-protoold[0]));
     }

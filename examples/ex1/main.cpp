@@ -12,7 +12,7 @@ class Parabola: public MCIObservableFunctionInterface{
 public:
     explicit Parabola(const int ndim): MCIObservableFunctionInterface(ndim, 1) {}
 
-    void observableFunction(const double * in, double * out) override{
+    void observableFunction(const double in[], double out[]) override{
         out[0] = 4.*in[0] - in[0]*in[0];
     }
 };
@@ -21,7 +21,7 @@ class NormalizedParabola: public MCIObservableFunctionInterface{
 public:
     explicit NormalizedParabola(const int ndim): MCIObservableFunctionInterface(ndim, 1) {}
 
-    void observableFunction(const double * in, double * out) override{
+    void observableFunction(const double in[], double out[]) override{
         out[0] = (4. - in[0]) * 5.;
         if (std::signbit(in[0])) { out[0] = -out[0];}
     }
@@ -35,11 +35,11 @@ class NormalizedLine: public MCISamplingFunctionInterface{
 public:
     explicit NormalizedLine(const int ndim): MCISamplingFunctionInterface(ndim, 1) {}
 
-    void samplingFunction(const double * in, double * protovalue) override{
+    void samplingFunction(const double in[], double protovalue[]) override{
         protovalue[0] = 0.2 * fabs(in[0]);
     }
 
-    double getAcceptance(const double * protoold, const double * protonew) override{
+    double getAcceptance(const double protoold[], const double protonew[]) override{
         return protonew[0] / protoold[0];
     }
 };
@@ -60,7 +60,6 @@ int main() {
     cout << "We start by setting the MCI:" << endl;
 
 
-
     // declare a 1-dimensional integrator
     const int ndim = 1;
     MCI mci(ndim);
@@ -68,12 +67,10 @@ int main() {
     cout << "ndim = " << mci.getNDim() << endl;
 
 
-
     // set the integration range to [-1:3]
     mci.setIRange(-1, 3);
 
     cout << "irange = [ " << mci.getLBound(0) << " ; " << mci.getUBound(0) << " ]" << endl;
-
 
 
     // initial walker position
@@ -84,14 +81,12 @@ int main() {
     cout << "initial walker position = " << mci.getX(0) << endl;
 
 
-
     // initial MRT2 step
     double step[ndim];
     step[0] = 0.5;
     mci.setMRT2Step(step);
 
     cout << "MRT2 step = " << mci.getMRT2Step(0) << endl;
-
 
 
     // target acceptance rate
@@ -101,14 +96,10 @@ int main() {
     cout << endl << endl;
 
 
-
-
-
     // first way of integrating
     cout << "We first compute the integral without setting a sampling function." << endl;
     cout << "    f(x) = (4x - x^2) " << endl;
     cout << "    g(x) = - " << endl << endl;
-
 
 
     // observable
@@ -116,12 +107,10 @@ int main() {
     mci.addObservable(obs);
 
     cout << "Number of observables set = " << mci.getNObs() << endl;
-
-
+    cout << "Dimension of observables set = " << mci.getNObsDim() << endl;
 
     // sampling function
     cout << "Number of sampling function set = " << mci.getNSampF() << endl;
-
 
 
     // integrate
@@ -135,15 +124,10 @@ int main() {
 
 
 
-
-
-
     // second way of integrating
     cout << "Now we compute the integral using a sampling function." << endl;
     cout << "    f(x) = 5*sign(x)*(4-x) " << endl;
     cout << "    g(x) = |x|/5 " << endl << endl;
-
-
 
 
     // observable
@@ -153,7 +137,7 @@ int main() {
     mci.addObservable(obs);
 
     cout << "Number of observables set = " << mci.getNObs() << endl;
-
+    cout << "Dimension of observables set = " << mci.getNObsDim() << endl;
 
 
     // sampling function
@@ -161,7 +145,6 @@ int main() {
     mci.addSamplingFunction(sf);
 
     cout << "Number of sampling function set = " << mci.getNSampF() << endl;
-
 
 
     // integrate

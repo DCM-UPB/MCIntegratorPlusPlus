@@ -8,13 +8,13 @@ class MCIAccumulatorInterface
 {
 protected:
     MCIObservableFunctionInterface * const _obs; // pointer to the related observable function
+    const double * const _obs_values; // direct pointer to observables current values (for slightly faster access)
     const int _nobs; // number of values returned by the observable function
 
     const int _nskip; // evaluate observable only on every nskip-th step
     int _nsteps; // total number of sampling steps (expected number of calls to accumulateObservables)
 
     int _stepidx; // running step index
-    int _accuidx; // counting number of non-skipped accumulations
     int _skipidx; // to determine when to skip accumulation
     bool _flag_eval; // observable evaluation is needed before next accumulation
     bool _flag_final; // was finalized called (without throwing error) ?
@@ -47,6 +47,11 @@ public:
     bool isClean(){ return (_stepidx == 0); }
     bool isFinalized(){ return _flag_final; }
 
+    // get data
+    const double * getData(){ return _data; } // direct read-only access to internal data pointer
+    const double * getObsValues(){ return _obs->getValues(); } // read-only pointer to last calculated observable data
+    double getObsValue(int i){ return _obs->getValue(i); } // element-wise access to last values
+
     // TO BE IMPLEMENTED BY CHILD
     virtual int getNStore() = 0; // get number of allocated data elements with _nobs length each
 
@@ -58,13 +63,10 @@ public:
     void allocate(int nsteps); // will deallocate an existing allocation
 
     // externally call this on every MC step
-    void accumulate(const double * in, bool flagacc); // will throw if not allocated (enough)
+    void accumulate(const double in[], bool flagacc); // will throw if not allocated (enough)
 
     // finalize (e.g. normalize) stored data
     void finalize(); // will throw if called prematurely, but does nothing if deallocated or used repeatedly
-
-    // get data
-    const double * getData(){ return _data; } // direct read-only access to internal data pointer
 
     // reset for new accumulation
     void reset();

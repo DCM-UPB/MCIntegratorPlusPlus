@@ -1,6 +1,6 @@
 #include <iomanip>
 #include <iostream>
-#include <string> 
+#include <string>
 
 #include "mci/MCIntegrator.hpp"
 
@@ -24,7 +24,7 @@ int main () {
 
     // benchmark settings
     const int NMC[5] = {10000000, 1000000, 100000, 10000, 1000};
-    const int nruns[5] = {3, 30, 300, 3000, 30000};
+    const int nruns[5] = {5, 50, 500, 5000, 50000};
 
     auto * pdf = new ThreeDimGaussianPDF();
     auto * obs1 = new XND(3);
@@ -42,7 +42,7 @@ int main () {
     double avg[mci.getNObsDim()],err[mci.getNObsDim()];
     const double mrt2step[3] = {1.85, 1.85, 1.85};
     mci.setMRT2Step(mrt2step);
-    mci.integrate(5000, avg, err, false, false); // decorrelate
+    mci.integrate(5000, avg, err, true, true); // decorrelate
 
     cout << "=========================================================================================" << endl << endl;
     cout << "Benchmark results (time per sample):" << endl;

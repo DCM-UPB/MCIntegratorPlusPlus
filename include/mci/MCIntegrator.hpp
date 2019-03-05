@@ -30,7 +30,7 @@ protected:
     double * _xnew;  //walker proposed position
     double * _mrt2step;  // M(RT)^2 random step
 
-    int _NfindMRT2steps; // how many MRT2 step adjustment iterations to do before integrating
+    int _NfindMRT2Iterations; // how many MRT2 step adjustment iterations to do before integrating
     int _NdecorrelationSteps; // how many decorrelation steps to do before integrating
 
     double _targetaccrate;  // desired acceptance ratio
@@ -71,7 +71,7 @@ protected:
     void resetAccRejCounters();
 
     void updateVolume();
-    void applyPBC(double * v);
+    void applyPBC(double v[]);
     void computeNewX();
     void updateX();
     bool doStepMRT2();  //use this if there is a pdf, returns whether step was accepted or not
@@ -96,15 +96,15 @@ public:
 
     // keep walkers within these bounds during integration (defaults to full range of double floats)
     void setIRange(double lbound, double ubound); // set the same range on all dimensions
-    void setIRange(const double * lbound, const double * ubound);
+    void setIRange(const double lbound[], const double ubound[]);
 
-    void setX(const double * x);
+    void setX(const double x[]);
     void newRandomX();  // use if you want to take a new random _xold
 
-    void setMRT2Step(const double * mrt2step);
+    void setMRT2Step(const double mrt2step[]);
     void setTargetAcceptanceRate(double targetaccrate); // acceptance rate target used in findMRT2Step
     // how many MRT2 step adjustment iterations to do
-    void setNfindMRT2steps(int niterations /* -1 == auto, 0 == disabled */){_NfindMRT2steps=niterations;}
+    void setNfindMRT2Iterations(int niterations /* -1 == auto, 0 == disabled */){_NfindMRT2Iterations=niterations;}
     // how many decorrelation steps to do
     void setNdecorrelationSteps(int nsteps /* -1 == auto, 0 == disabled */){_NdecorrelationSteps=nsteps;}
 
@@ -126,8 +126,8 @@ public:
     void addCallBackOnAcceptance(MCICallBackOnAcceptanceInterface * cback);
     void clearCallBackOnAcceptance();
 
-    void storeObservablesOnFile(const char * filepath, int freq);
-    void storeWalkerPositionsOnFile(const char * filepath, int freq);
+    void storeObservablesOnFile(const std::string &filepath, int freq);
+    void storeWalkerPositionsOnFile(const std::string &filepath, int freq);
 
     // --- Getters
     int getNDim(){ return _ndim; }
@@ -135,12 +135,13 @@ public:
     double getUBound(int i){ return _ubound[i]; }
 
     double getX(int i){ return _xold[i];}
+    const double * getX(){ return _xold; }
     double getMRT2Step(int i){ return _mrt2step[i]; }
-    int getNfindMRT2steps(){ return _NfindMRT2steps; }
+    const double * getMRT2Step(){ return _mrt2step; }
+    int getNfindMRT2Iterations(){ return _NfindMRT2Iterations; }
     int getNdecorrelationSteps(){ return _NdecorrelationSteps; }
 
     MCIObservableFunctionInterface * getObservable(int i){ return _obscont.getObservableFunction(i); }
-
     int getNObs(){ return _obscont.getNObs(); }
     int getNObsDim(){ return _obscont.getNObsDim(); }
 
@@ -156,7 +157,7 @@ public:
     // --- Integrate
 
     // Actual integrate implemention. With flags to skip the configured step adjustment/decorrelation.
-    void integrate(int Nmc, double * average, double * error, bool doFindMRT2step = true, bool doDecorrelation = true);
+    void integrate(int Nmc, double average[], double error[], bool doFindMRT2step = true, bool doDecorrelation = true);
 };
 
 #endif

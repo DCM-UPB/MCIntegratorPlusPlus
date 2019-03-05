@@ -13,7 +13,7 @@ class Parabola: public MCIObservableFunctionInterface{
 public:
     explicit Parabola(const int ndim): MCIObservableFunctionInterface(ndim, 1) {}
 
-    void observableFunction(const double * in, double * out) override{
+    void observableFunction(const double in[], double out[]) override{
         out[0] = 4.*in[0] - in[0]*in[0];
     }
 };
@@ -22,7 +22,7 @@ class NormalizedParabola: public MCIObservableFunctionInterface{
 public:
     explicit NormalizedParabola(const int ndim): MCIObservableFunctionInterface(ndim, 1) {}
 
-    void observableFunction(const double * in, double * out) override{
+    void observableFunction(const double in[], double out[]) override{
         out[0] = (4. - in[0]) * 5.;
         if (std::signbit(in[0])) { out[0] = -out[0];}
     }
@@ -36,11 +36,11 @@ class NormalizedLine: public MCISamplingFunctionInterface{
 public:
     explicit NormalizedLine(const int ndim): MCISamplingFunctionInterface(ndim, 1) {}
 
-    void samplingFunction(const double * in, double * protovalue) override{
+    void samplingFunction(const double in[], double protovalue[]) override{
         protovalue[0] = 0.2 * fabs(in[0]);
     }
 
-    double getAcceptance(const double * protoold, const double * protonew) override{
+    double getAcceptance(const double protoold[], const double protonew[]) override{
         return protonew[0] / protoold[0];
     }
 };
@@ -106,6 +106,7 @@ int main() {
 
     if (myrank == 0) {
         cout << "Number of observables set = " << mci.getNObs() << endl;
+        cout << "Dimension of observables set = " << mci.getNObsDim() << endl;
         // sampling function
         cout << "Number of sampling function set = " << mci.getNSampF() << endl;
     }
@@ -117,7 +118,7 @@ int main() {
 
     // ! set fixed amount of findMRT2 and decorrelation steps    !
     // ! this is very important for efficient parallel execution !
-    mci.setNfindMRT2steps(50);
+    mci.setNfindMRT2Iterations(50);
     mci.setNdecorrelationSteps(5000);
 
     MPIMCI::integrate(&mci, Nmc, average, error);
@@ -138,15 +139,15 @@ int main() {
     mci.clearObservables();  // we first remove the old observable
     mci.addObservable(obs);
 
-    if (myrank == 0) { cout << "Number of observables set = " << mci.getNObs() << endl;}
-
-
     // sampling function
     MCISamplingFunctionInterface * sf = new NormalizedLine(ndim);
     mci.addSamplingFunction(sf);
 
-    if (myrank == 0) { cout << "Number of sampling function set = " << mci.getNSampF() << endl;}
-
+    if (myrank == 0) {
+        cout << "Number of observables set = " << mci.getNObs() << endl;
+        cout << "Dimension of observables set = " << mci.getNObsDim() << endl;
+        cout << "Number of sampling function set = " << mci.getNSampF() << endl;
+    }
 
     // integrate
     MPIMCI::integrate(&mci, Nmc, average, error);

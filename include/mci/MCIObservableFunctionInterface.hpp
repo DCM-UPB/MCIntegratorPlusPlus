@@ -25,8 +25,9 @@ public:
     int getNObs(){return _nobs;}
     int getNDim(){return _ndim;}
     double getValue(int i){ return _obs[i]; }
+    const double * getValues(){ return _obs; }
 
-    void computeValues(const double * in)
+    void computeValues(const double in[])
     {
         observableFunction(in,_obs);
     }
@@ -36,7 +37,7 @@ public:
     // --- METHOD THAT MUST BE IMPLEMENTED
 
     // Compute the observable and store it inside out
-    virtual void observableFunction(const double * in, double * out) = 0;
+    virtual void observableFunction(const double in[], double out[]) = 0;
     //                               ^input = walker positions  ^resulting observables
 };
 

@@ -13,7 +13,7 @@
 
 using namespace std;
 
-void run_single_benchmark(const string &label, const double * datax,
+void run_single_benchmark(const string &label, const double datax[],
                           const int estimatorType /*1 uncorr-1d, 2 block-1d, 3 corr-1d, 4 uncorr-nd, 5 block-nd, 6 corr-nd */,
                           const int NMC, const int ndim, const int nruns)
 {

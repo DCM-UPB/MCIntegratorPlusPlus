@@ -26,7 +26,7 @@ protected:
         return ( rand()*(1.0 / RAND_MAX) <= threshold );
     }
 
-    double _calcWFVal(const double * position)
+    double _calcWFVal(const double position[])
     {   // product of 1s orbitals in 1D
         double wfval = 0.;
         for (int i=0; i<_ndim; ++i) {
@@ -35,7 +35,7 @@ protected:
         return exp(-wfval);
     }
 
-    bool _generatePosition(const double * oldPosition, double * newPosition)
+    bool _generatePosition(const double oldPosition[], double newPosition[])
     {
         double oldWFVal = _calcWFVal(oldPosition);
 
@@ -55,7 +55,7 @@ public:
     TestWalk1s(int NMC, int ndim, double stepSize = 0.1):
         _acc(0), _rej(0), _NMC(NMC), _ndim(ndim), _stepSize(stepSize) {}
 
-    void generateWalk(double * datax /* NMC*ndim shape */, bool * datacc = nullptr /* if passed (NMC length), remember which steps where new ones */)
+    void generateWalk(double datax[] /*NMC*ndim shape*/, bool datacc[] = nullptr /*if passed (NMC length), remember which steps where new ones*/)
     {
         _acc = 0;
         _rej = 0;
@@ -83,12 +83,12 @@ public:
     ThreeDimGaussianPDF(): MCISamplingFunctionInterface(3, 1){}
     ~ThreeDimGaussianPDF() override= default;
 
-    void samplingFunction(const double *in, double * protovalues) override{
+    void samplingFunction(const double in[], double protovalues[]) override{
         protovalues[0] = (in[0]*in[0]) + (in[1]*in[1]) + (in[2]*in[2]);
     }
 
 
-    double getAcceptance(const double * protoold, const double * protonew) override{
+    double getAcceptance(const double protoold[], const double protonew[]) override{
         return exp(-protonew[0]+protoold[0]);
     }
 };
@@ -98,7 +98,7 @@ public:
     XSquared(): MCIObservableFunctionInterface(3, 1){}
     ~XSquared() override= default;
 
-    void observableFunction(const double * in, double * out) override{
+    void observableFunction(const double in[], double out[]) override{
         out[0] = in[0] * in[0];
     }
 };
@@ -109,7 +109,7 @@ public:
     XYZSquared(): MCIObservableFunctionInterface(3, 3){}
     ~XYZSquared() override= default;
 
-    void observableFunction(const double * in, double * out) override{
+    void observableFunction(const double in[], double out[]) override{
         out[0] = in[0] * in[0];
         out[1] = in[1] * in[1];
         out[2] = in[2] * in[2];
@@ -121,7 +121,7 @@ public:
     explicit XND(int nd): MCIObservableFunctionInterface(nd, nd){}
     ~XND() override= default;
 
-    void observableFunction(const double * in, double * out) override{
+    void observableFunction(const double in[], double out[]) override{
         std::copy(in, in+_ndim, out);
     }
 };
