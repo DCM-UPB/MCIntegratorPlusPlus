@@ -15,11 +15,11 @@ void MCIObservableContainer::addObservable(MCIAccumulatorInterface * accumulator
                               }
                               estimator(accumulator->getNStore(), accumulator->getNObs(), accumulator->getData(), average, error);
                           } );
-    _flags_equil.emplace_back(needsEquil);
+    _flags_equil.push_back(needsEquil);
 }
 
 
-void MCIObservableContainer::allocateObservables(const int Nmc)
+void MCIObservableContainer::allocate(const int Nmc)
 {   // allocate observable accumulators for Nmc steps
     for (auto & accu : _accus) {
         accu->allocate(Nmc);
@@ -27,7 +27,7 @@ void MCIObservableContainer::allocateObservables(const int Nmc)
 }
 
 
-void MCIObservableContainer::accumulateObservables(const double * x, const bool flagacc)
+void MCIObservableContainer::accumulate(const double * x, const bool flagacc)
 {   // let the accumulators process the step
     for (auto & accu : _accus) {
         accu->accumulate(x, flagacc);
@@ -35,7 +35,7 @@ void MCIObservableContainer::accumulateObservables(const double * x, const bool 
 }
 
 
-void MCIObservableContainer::printObservableValues(std::ofstream &file)
+void MCIObservableContainer::printObsValues(std::ofstream &file)
 {
     for (auto & accu : _accus) {
         MCIObservableFunctionInterface * const obs = accu->getObservableFunction(); // acquire ptr to obsfun
@@ -47,7 +47,7 @@ void MCIObservableContainer::printObservableValues(std::ofstream &file)
 }
 
 
-void MCIObservableContainer::finalizeObservables()
+void MCIObservableContainer::finalize()
 {   // apply normalization, if necessary
     for (auto & accu : _accus) {
         accu->finalize();
@@ -55,7 +55,7 @@ void MCIObservableContainer::finalizeObservables()
 }
 
 
-void MCIObservableContainer::estimateObservables(double * average, double * error)
+void MCIObservableContainer::estimate(double * average, double * error)
 {
     int iobs = 0;
     int offset = 0;
@@ -67,21 +67,21 @@ void MCIObservableContainer::estimateObservables(double * average, double * erro
 }
 
 
-void MCIObservableContainer::resetObservables()
+void MCIObservableContainer::reset()
 {   // reset without deallocation
     for (auto & accu : _accus) {
         accu->reset();
     }
 }
 
-void MCIObservableContainer::deallocateObservables()
+void MCIObservableContainer::deallocate()
 {   // reset & free memory
     for (auto & accu : _accus) {
         accu->deallocate();
     }
 }
 
-void MCIObservableContainer::clearObservables()
+void MCIObservableContainer::clear()
 {
     for (auto & accu : _accus) {
         delete accu;

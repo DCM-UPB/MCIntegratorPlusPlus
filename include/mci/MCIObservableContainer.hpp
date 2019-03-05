@@ -24,13 +24,14 @@ private:
 
 public:
     explicit MCIObservableContainer() = default;
-    ~MCIObservableContainer(){ this->clearObservables(); }
+    ~MCIObservableContainer(){ this->clear(); }
 
     // simple getters
     int getNObs(){ return _accus.size(); }
     int getNObsDim(){ return _nobsdim; }
 
     MCIObservableFunctionInterface * getObservableFunction(int i){ return _accus[i]->getObservableFunction(); }
+    bool getFlagEquil(int i){return _flags_equil[i];}
 
     // operational methods
     // add accumulator&estimator for an observable
@@ -38,14 +39,14 @@ public:
                         const std::function< void (int /*nstored*/, int /*nobs*/, const double * /*data*/, double * /*avg*/, double * /*error*/) > &estimator,
                         bool needsEquil);
 
-    void allocateObservables(int Nmc); // allocate data memory
-    void accumulateObservables(const double * x, bool flagacc); // process accumulation for position x (which is new if flagacc)
-    void printObservableValues(std::ofstream &file); // write last observables values to filestream
-    void finalizeObservables(); // used after sampling to apply all necessary data normalization
-    void estimateObservables(double * average, double * error); // eval estimators on finalized data and return average/error
-    void resetObservables(); // obtain clean state, but keep allocation
-    void deallocateObservables(); // free data memory
-    void clearObservables(); // clear everything
+    void allocate(int Nmc); // allocate data memory
+    void accumulate(const double * x, bool flagacc); // process accumulation for position x (which is new if flagacc)
+    void printObsValues(std::ofstream &file); // write last observables values to filestream
+    void finalize(); // used after sampling to apply all necessary data normalization
+    void estimate(double * average, double * error); // eval estimators on finalized data and return average/error
+    void reset(); // obtain clean state, but keep allocation
+    void deallocate(); // free data memory
+    void clear(); // clear everything
 };
 
 

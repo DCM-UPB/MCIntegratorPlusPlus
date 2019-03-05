@@ -26,7 +26,7 @@ void MCI::integrate(const int Nmc, double * average, double * error, const bool 
     }
 
     // allocation of the accumulators where the data will be stored
-    _obscont.allocateObservables(Nmc);
+    _obscont.allocate(Nmc);
 
     //sample the observables
     if (_flagobsfile) { _obsfile.open(_pathobsfile); }
@@ -38,7 +38,7 @@ void MCI::integrate(const int Nmc, double * average, double * error, const bool 
     if (_flagwlkfile) { _wlkfile.close(); }
 
     // estimate average and standard deviation
-    _obscont.estimateObservables(average, error);
+    _obscont.estimate(average, error);
 
     // if we sampled uniformly, scale results by volume
     if (!_flagpdf) {
@@ -49,7 +49,7 @@ void MCI::integrate(const int Nmc, double * average, double * error, const bool 
     }
 
     // deallocate
-    _obscont.deallocateObservables();
+    _obscont.deallocate();
 }
 
 
@@ -60,7 +60,7 @@ void MCI::integrate(const int Nmc, double * average, double * error, const bool 
 void MCI::storeObservables()
 {
     if ( _ridx%_freqobsfile == 0 ) {
-        _obscont.printObservableValues(_obsfile);
+        _obscont.printObsValues(_obsfile);
         _obsfile << std::endl;
     }
 }
@@ -78,58 +78,6 @@ void MCI::storeWalkerPositions()
 }
 
 
-void MCI::initialDecorrelation()
-{
-    if (_NdecorrelationSteps < 0) {
-        // placeholder
-        const int NMC_DECORR=1000;
-        this->sample(NMC_DECORR, nullptr);
-
-        /* // auto decorrelation retired for the moment
-        //constants
-        const int MIN_NMC=100;
-        //allocate the data array that will be used
-        const int ndatax_tot = MIN_NMC*_nobsdim;
-        datax = new double[ndatax_tot];
-        //do a first estimate of the observables
-        this->sample(MIN_NMC, true);
-        auto * oldestimate = new double[_nobsdim];
-        double olderrestim[_nobsdim];
-        mci::CorrelatedEstimator(MIN_NMC, _nobsdim, _datax, oldestimate, olderrestim);
-
-        //start a loop which will stop when the observables are stabilized
-        bool flag_loop=true;
-        auto * newestimate = new double[_nobsdim];
-        double newerrestim[_nobsdim];
-        while ( flag_loop ) {
-        flag_loop = false;
-        this->sample(MIN_NMC, true);
-        mci::CorrelatedEstimator(MIN_NMC, _nobsdim, _datax, newestimate, newerrestim);
-
-        for (int i=0; i<_nobsdim; ++i) {
-        if ( fabs( oldestimate[i] - newestimate[i] ) > 2*sqrt( olderrestim[i]*olderrestim[i] + newerrestim[i]*newerrestim[i] ) ) {
-        flag_loop=true; // if any difference is too large, continue the loop
-        break; // break the inner for loop
-        }
-        }
-        double * const foo=oldestimate;
-        oldestimate=newestimate;
-        newestimate=foo;
-        }
-
-        //memory deallocation
-        delete [] newestimate;
-        delete [] oldestimate;
-        delete [] _datax;
-        _datax = nullptr;
-        */
-    }
-    else if (_NdecorrelationSteps > 0) {
-        this->sample(_NdecorrelationSteps, nullptr);
-    }
-}
-
-
 void MCI::sample(const int npoints, MCIObservableContainer * container)
 {
     const bool flagobs = (container != nullptr); // should we sample observables ?
@@ -137,8 +85,8 @@ void MCI::sample(const int npoints, MCIObservableContainer * container)
     // reset acceptance and rejection
     this->resetAccRejCounters();
 
-    // reset observable data
-    if (flagobs) { container->resetObservables(); }
+    // reset observable data (to be sure)
+    if (flagobs) { container->reset(); }
 
     // first call of the call-back functions
     if (_flagpdf) {
@@ -163,7 +111,7 @@ void MCI::sample(const int npoints, MCIObservableContainer * container)
         }
 
         if (flagobs) {
-            container->accumulateObservables(_xold, flagacc); // accumulate observables
+            container->accumulate(_xold, flagacc); // accumulate observables
             if (_flagMC && _flagobsfile) { this->storeObservables(); } // store obs on file
         }
 
@@ -171,7 +119,63 @@ void MCI::sample(const int npoints, MCIObservableContainer * container)
     }
 
     // finalize data
-    if (flagobs) { container->finalizeObservables(); }
+    if (flagobs) { container->finalize(); }
+}
+
+
+void MCI::initialDecorrelation()
+{
+    if (_NdecorrelationSteps < 0) {
+        // automatic equilibration of contained observables with flag_equil = true
+
+        //create the temporary observable container to be used
+        MCIObservableContainer obs_equil;
+        for (int i=0; i<_obscont.getNObs(); ++i) {
+            if (_obscont.getFlagEquil(i)) {
+                obs_equil.addObservable(new MCIFullAccumulator(_obscont.getObservableFunction(i), 1), mci::CorrelatedEstimator, true);
+            }
+        }
+        const int MIN_NMC=100;
+        const int nobsdim = obs_equil.getNObsDim();
+        // allocate memory for observables
+        obs_equil.allocate(MIN_NMC);
+
+        //do a first estimate of the observables
+        this->sample(MIN_NMC, &obs_equil);
+        auto * oldestimate = new double[nobsdim];
+        auto * olderrestim = new double[nobsdim];
+        obs_equil.estimate(oldestimate, olderrestim);
+
+        //start a loop which will stop when the observables are stabilized
+        bool flag_loop=true;
+        auto * newestimate = new double[nobsdim];
+        auto * newerrestim = new double[nobsdim];
+        while ( flag_loop ) {
+            flag_loop = false;
+            this->sample(MIN_NMC, &obs_equil);
+            obs_equil.estimate(newestimate, newerrestim);
+
+            for (int i=0; i<nobsdim; ++i) {
+                if ( fabs( oldestimate[i] - newestimate[i] ) > 2*sqrt( olderrestim[i]*olderrestim[i] + newerrestim[i]*newerrestim[i] ) ) {
+                    flag_loop=true; // if any difference is too large, continue the loop
+                    break; // break the inner for loop
+                }
+            }
+            // swap array pointers
+            std::swap(oldestimate, newestimate);
+            std::swap(olderrestim, newerrestim);
+        }
+
+        //memory deallocation
+        delete [] newerrestim;
+        delete [] newestimate;
+        delete [] olderrestim;
+        delete [] oldestimate;
+        obs_equil.clear();
+    }
+    else if (_NdecorrelationSteps > 0) {
+        this->sample(_NdecorrelationSteps, nullptr);
+    }
 }
 
 
@@ -285,9 +289,7 @@ void MCI::applyPBC(double * v)
 
 void MCI::updateX()
 {
-    double * const foo = _xold;
-    _xold = _xnew;
-    _xnew = foo;
+    std::swap(_xold, _xnew);
 }
 
 
@@ -382,7 +384,7 @@ void MCI::addCallBackOnAcceptance(MCICallBackOnAcceptanceInterface * cback){
 
 void MCI::clearObservables()
 {
-    _obscont.clearObservables();
+    _obscont.clear();
 }
 
 
