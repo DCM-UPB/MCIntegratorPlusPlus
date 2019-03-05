@@ -27,10 +27,10 @@ void MCIObservableContainer::allocate(const int Nmc)
 }
 
 
-void MCIObservableContainer::accumulate(const double x[], const bool flagacc)
+void MCIObservableContainer::accumulate(const double x[], const bool flagacc, const bool flags_xchanged[])
 {
     for (auto & accu : _accus) {
-        accu->accumulate(x, flagacc);
+        accu->accumulate(x, flagacc, flags_xchanged);
     }
 }
 

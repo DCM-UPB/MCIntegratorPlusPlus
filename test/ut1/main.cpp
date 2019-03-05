@@ -103,8 +103,10 @@ void assertAccuFinalized(MCIAccumulatorInterface * accu, int Nmc)
 
 void accumulateData(MCIAccumulatorInterface * accu, int Nmc, int ndim, const double datax[], const bool datacc[])
 {   // simulated MC observable accumulation
+    bool flags_xchanged[ndim];
+    std::fill(flags_xchanged, flags_xchanged+ndim, true);
     for (int i=0; i<Nmc; ++i) {
-        accu->accumulate(datax+i*ndim, datacc[i]);
+        accu->accumulate(datax+i*ndim, datacc[i], flags_xchanged);
     }
     accu->finalize();
 }
@@ -113,7 +115,8 @@ void checkAccumulator(MCIAccumulatorInterface * accu, int Nmc, int ndim, const d
                       double tol /* tolerance for avg */, bool verbose = false /* to enable printout */)
 {
     // we expect walker-dim == obs-dim
-    assert(ndim==accu->getNObs());
+    assert(accu->getNObs() == ndim);
+    assert(accu->getNDim() == ndim);
 
     // verify that the accumulator is uninitialized
     assertAccuDeallocated(accu);

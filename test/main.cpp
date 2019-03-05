@@ -172,10 +172,12 @@ int main(){
 
     nd = 1;
     MCI mci_1dgauss(1);
-    Gauss gauss(nd);
-    mci_1dgauss.addSamplingFunction(&gauss);
-    mci_1dgauss.addObservable(&x2);
-    mci_1dgauss.addObservable(&constval);
+    Gauss gauss_1D(nd);
+    Constval constval_1D(nd);
+    X2 x2_1D(nd);
+    mci_1dgauss.addSamplingFunction(&gauss_1D);
+    mci_1dgauss.addObservable(&x2_1D);
+    mci_1dgauss.addObservable(&constval_1D);
     mci_1dgauss.storeObservablesOnFile("observables.txt", 100);
     mci_1dgauss.storeWalkerPositionsOnFile("walker.txt", 100);
     N=10000;

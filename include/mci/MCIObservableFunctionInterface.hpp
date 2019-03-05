@@ -29,16 +29,24 @@ public:
 
     void computeValues(const double in[])
     {
-        observableFunction(in,_obs);
+        observableFunction(in, _obs);
+    }
+
+    void computeValues(const double in[], const bool flags_xchanged[] /*flag_i true if x_i changed*/)
+    {
+        observableFunction(in, flags_xchanged, _obs);
     }
 
 
-
     // --- METHOD THAT MUST BE IMPLEMENTED
-
-    // Compute the observable and store it inside out
+    // Compute the observable and store it in out
     virtual void observableFunction(const double in[], double out[]) = 0;
     //                               ^input = walker positions  ^resulting observables
+
+    // --- OPTIONALLY ALSO OVERWRITE THIS
+    // Compute the observable, given knowledge of what changed
+    virtual void observableFunction(const double in[], const bool /*flags*/[], double out[]){ observableFunction(in, out); }
+    //                               ^input = walker positions   ^which input is new   ^resulting observables
 };
 
 

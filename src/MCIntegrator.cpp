@@ -96,20 +96,24 @@ void MCI::sample(const int npoints, MCIObservableContainer * container)
     // initialize the pdf at x
     computeOldSamplingFunction();
 
-    //start the main loop for sampling
+    //run the main loop for sampling
+    bool flags_xchanged[_ndim]; // will remember which x elements changed
     for (_ridx=0; _ridx<npoints; ++_ridx) {
+        std::fill(flags_xchanged, flags_xchanged+_ndim, false); // reset flags
+
         bool flagacc;
         if (_flagpdf) { // use sampling function
-            flagacc = this->doStepMRT2();
+            flagacc = this->doStepMRT2(flags_xchanged);
         }
         else {
             this->newRandomX();
             ++_acc; // "accept" move
             flagacc = true;
+            std::fill(flags_xchanged, flags_xchanged+_ndim, true);
         }
 
         if (flagobs) {
-            container->accumulate(_xold, flagacc); // accumulate observables
+            container->accumulate(_xold, flagacc, flags_xchanged); // accumulate observables
             if (_flagMC && _flagobsfile) { this->storeObservables(); } // store obs on file
         }
 
@@ -230,7 +234,7 @@ void MCI::findMRT2Step()
 }
 
 
-bool MCI::doStepMRT2()
+bool MCI::doStepMRT2(bool * flags_xchanged)
 {
     // propose a new position x
     this->computeNewX();
@@ -243,6 +247,7 @@ bool MCI::doStepMRT2()
 
     //update some values according to the acceptance of the mrt2 step
     if ( flagacc ) {
+        std::fill(flags_xchanged, flags_xchanged+_ndim, true); // currently we do all-particle steps
         //accepted
         _acc++;
         //update the walker position x

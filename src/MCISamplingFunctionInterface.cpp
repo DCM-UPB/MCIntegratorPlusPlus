@@ -19,18 +19,16 @@ MCISamplingFunctionInterface::~MCISamplingFunctionInterface()
 
 void MCISamplingFunctionInterface::setNProto(const int nproto)
 {
-    _nproto=nproto;
     delete[] _protoold;
     delete[] _protonew;
     _protonew = new double[_nproto];
     _protoold = new double[_nproto];
     std::fill(_protonew, _protonew+_nproto, 0.);
     std::fill(_protoold, _protoold+_nproto, 0.);
+    _nproto=nproto;
 }
 
 void MCISamplingFunctionInterface::newToOld()
 {   // pointer swap
-    double * const foo = _protonew;
-    _protonew=_protoold;
-    _protoold=foo;
+    std::swap(_protonew, _protoold);
 }

@@ -40,7 +40,7 @@ public:
                         bool needsEquil);
 
     void allocate(int Nmc); // allocate data memory
-    void accumulate(const double x[], bool flagacc); // process accumulation for position x (which is new if flagacc)
+    void accumulate(const double x[], bool flagacc, const bool flags_xchanged[]); // process accumulation for position x
     void printObsValues(std::ofstream &file); // write last observables values to filestream
     void finalize(); // used after sampling to apply all necessary data normalization
     void estimate(double average[], double error[]); // eval estimators on finalized data and return average/error

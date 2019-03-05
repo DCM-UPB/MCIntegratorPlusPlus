@@ -74,7 +74,8 @@ protected:
     void applyPBC(double v[]);
     void computeNewX();
     void updateX();
-    bool doStepMRT2();  //use this if there is a pdf, returns whether step was accepted or not
+    //use this if there is a pdf, returns whether step was accepted or not
+    bool doStepMRT2(bool * flags_xchanged /* tells which x are changed */);
 
     // these are used before sampling
     void findMRT2Step();
