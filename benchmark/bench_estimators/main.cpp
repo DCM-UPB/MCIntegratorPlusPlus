@@ -9,9 +9,10 @@
 #include "mci/Estimators.hpp"
 
 #include "../../test/common/TestMCIFunctions.hpp"
-#include "MCIBenchmarks.hpp"
+#include "../common/MCIBenchmarks.hpp"
 
 using namespace std;
+using namespace mci;
 
 void run_single_benchmark(const string &label, const double datax[],
                           const int estimatorType /*1 uncorr-1d, 2 block-1d, 3 corr-1d, 4 uncorr-nd, 5 block-nd, 6 corr-nd */,

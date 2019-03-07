@@ -5,10 +5,12 @@
 #include <iostream>
 #include <random>
 
-class Constval: public MCIObservableFunctionInterface
+using namespace mci;
+
+class Constval: public ObservableFunctionInterface
 {
 public:
-    explicit Constval(const int ndim): MCIObservableFunctionInterface(ndim, 1) {}
+    explicit Constval(const int ndim): ObservableFunctionInterface(ndim, 1) {}
 
     void observableFunction(const double /*in*/[], double out[]) override
     {
@@ -16,10 +18,10 @@ public:
     }
 };
 
-class Polynom: public MCIObservableFunctionInterface
+class Polynom: public ObservableFunctionInterface
 {
 public:
-    explicit Polynom(const int ndim): MCIObservableFunctionInterface(ndim, 1) {}
+    explicit Polynom(const int ndim): ObservableFunctionInterface(ndim, 1) {}
 
     void observableFunction(const double in[], double out[]) override
     {
@@ -31,10 +33,10 @@ public:
     }
 };
 
-class X2: public MCIObservableFunctionInterface
+class X2: public ObservableFunctionInterface
 {
 public:
-    explicit X2(const int ndim): MCIObservableFunctionInterface(ndim,1) {}
+    explicit X2(const int ndim): ObservableFunctionInterface(ndim,1) {}
 
     void observableFunction(const double in[], double out[]) override
     {
@@ -46,10 +48,10 @@ public:
     }
 };
 
-class Gauss: public MCISamplingFunctionInterface
+class Gauss: public SamplingFunctionInterface
 {
 public:
-    explicit Gauss(const int ndim): MCISamplingFunctionInterface(ndim,1) {}
+    explicit Gauss(const int ndim): SamplingFunctionInterface(ndim,1) {}
 
     void samplingFunction(const double in[], double out[]) override
     {

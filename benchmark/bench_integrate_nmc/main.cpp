@@ -5,9 +5,10 @@
 #include "mci/MCIntegrator.hpp"
 
 #include "../../test/common/TestMCIFunctions.hpp"
-#include "MCIBenchmarks.hpp"
+#include "../common/MCIBenchmarks.hpp"
 
 using namespace std;
+using namespace mci;
 
 void run_single_benchmark(const string &label, MCI * mci, const int nruns, const int NMC) {
     pair<double, double> result;

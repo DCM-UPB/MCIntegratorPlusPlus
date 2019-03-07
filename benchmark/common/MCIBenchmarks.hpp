@@ -25,7 +25,7 @@ inline std::pair<double, double> sample_benchmark(const std::function< double ()
     return std::pair<double, double>(mean, err);
 }
 
-inline double benchmark_MCIntegrate(MCI * mci, const int NMC) {
+inline double benchmark_MCIntegrate(mci::MCI * mci, const int NMC) {
     Timer timer(1.);
     double average[mci->getNObsDim()];
     double error[mci->getNObsDim()];
@@ -37,7 +37,7 @@ inline double benchmark_MCIntegrate(MCI * mci, const int NMC) {
     return timer.elapsed();
 }
 
-inline std::pair<double, double> sample_benchmark_MCIntegrate(MCI * mci, const int nruns, const int NMC) {
+inline std::pair<double, double> sample_benchmark_MCIntegrate(mci::MCI * mci, const int nruns, const int NMC) {
     return sample_benchmark([=] { return benchmark_MCIntegrate(mci, NMC); }, nruns);
 }
 

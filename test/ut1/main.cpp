@@ -1,7 +1,7 @@
 #include "mci/Estimators.hpp"
-#include "mci/MCIBlockAccumulator.hpp"
-#include "mci/MCIFullAccumulator.hpp"
-#include "mci/MCISimpleAccumulator.hpp"
+#include "mci/BlockAccumulator.hpp"
+#include "mci/FullAccumulator.hpp"
+#include "mci/SimpleAccumulator.hpp"
 
 #include <algorithm>
 #include <cassert>
@@ -15,6 +15,7 @@
 
 
 using namespace std;
+using namespace mci;
 
 void reportAvgErr1D(const string &label, double avg, double err)
 {
@@ -52,7 +53,7 @@ void assertArraysEqual(int ndim, const double arr1[], const double arr2[], doubl
 }
 
 
-void assertAccuAveragesEqual(MCIAccumulatorInterface * accu1, MCIAccumulatorInterface * accu2, double tol = 0.)
+void assertAccuAveragesEqual(AccumulatorInterface * accu1, AccumulatorInterface * accu2, double tol = 0.)
 {   // check that averages of contained data are equal within tol
     const int nobs = accu1->getNObs();
     assert(nobs == accu2->getNObs());
@@ -63,7 +64,7 @@ void assertAccuAveragesEqual(MCIAccumulatorInterface * accu1, MCIAccumulatorInte
     assertArraysEqual(nobs, avg1, avg2, tol);
 }
 
-void assertAccuResetted(MCIAccumulatorInterface * accu)
+void assertAccuResetted(AccumulatorInterface * accu)
 {   // check that accu is in clean reset state (allocated/deallocated doesn't matter)
     assert(accu->getStepIndex() == 0);
     assert(accu->isClean());
@@ -71,7 +72,7 @@ void assertAccuResetted(MCIAccumulatorInterface * accu)
     for (int i=0; i<accu->getNData(); ++i) { assert(accu->getData()[i] == 0.); } 
 }
 
-void assertAccuDeallocated(MCIAccumulatorInterface * accu)
+void assertAccuDeallocated(AccumulatorInterface * accu)
 {   // check that the accu is in proper deallocated state
     assert(!accu->isAllocated());
     assert(accu->getNSteps() == 0);
@@ -82,7 +83,7 @@ void assertAccuDeallocated(MCIAccumulatorInterface * accu)
     assertAccuResetted(accu);
 }
 
-void assertAccuAllocated(MCIAccumulatorInterface * accu, int Nmc)
+void assertAccuAllocated(AccumulatorInterface * accu, int Nmc)
 {   // check that the accu is in allocated state (not necessarily reset state)
     assert(accu->isAllocated());
     assert(accu->getNSteps() == Nmc);
@@ -92,7 +93,7 @@ void assertAccuAllocated(MCIAccumulatorInterface * accu, int Nmc)
     assert(accu->getNData() == accu->getNStore() * accu->getNObs());
 }
 
-void assertAccuFinalized(MCIAccumulatorInterface * accu, int Nmc)
+void assertAccuFinalized(AccumulatorInterface * accu, int Nmc)
 {   // check that the accu is properly finalized
     assert(accu->isAllocated());
     assert(!accu->isClean());
@@ -101,7 +102,7 @@ void assertAccuFinalized(MCIAccumulatorInterface * accu, int Nmc)
 }
 
 
-void accumulateData(MCIAccumulatorInterface * accu, int Nmc, int ndim, const double datax[], const bool datacc[])
+void accumulateData(AccumulatorInterface * accu, int Nmc, int ndim, const double datax[], const bool datacc[])
 {   // simulated MC observable accumulation
     bool flags_xchanged[ndim];
     std::fill(flags_xchanged, flags_xchanged+ndim, true);
@@ -111,7 +112,7 @@ void accumulateData(MCIAccumulatorInterface * accu, int Nmc, int ndim, const dou
     accu->finalize();
 }
 
-void checkAccumulator(MCIAccumulatorInterface * accu, int Nmc, int ndim, const double datax[], const bool datacc[],
+void checkAccumulator(AccumulatorInterface * accu, int Nmc, int ndim, const double datax[], const bool datacc[],
                       double tol /* tolerance for avg */, bool verbose = false /* to enable printout */)
 {
     // we expect walker-dim == obs-dim
@@ -266,14 +267,14 @@ int main(){
     // --- check accumulators ---
     if (verbose) { cout << endl << "Now using accumulator classes to store data:" << endl << endl; }
     auto * obsfun = new XND(nd); // n-dimensional position observable
-    auto * simpleAccu = new MCISimpleAccumulator(obsfun, 1);
-    auto * simpleAccuSkip2 = new MCISimpleAccumulator(obsfun, 2);
-    auto * blockAccu = new MCIBlockAccumulator(obsfun, 1, 10);
-    auto * blockAccuSkip2 = new MCIBlockAccumulator(obsfun, 2, 5);
-    auto * fullAccu = new MCIFullAccumulator(obsfun, 1);
-    auto * fullAccuSkip2 = new MCIFullAccumulator(obsfun, 2);
+    auto * simpleAccu = new SimpleAccumulator(obsfun, 1);
+    auto * simpleAccuSkip2 = new SimpleAccumulator(obsfun, 2);
+    auto * blockAccu = new BlockAccumulator(obsfun, 1, 10);
+    auto * blockAccuSkip2 = new BlockAccumulator(obsfun, 2, 5);
+    auto * fullAccu = new FullAccumulator(obsfun, 1);
+    auto * fullAccuSkip2 = new FullAccumulator(obsfun, 2);
 
-    vector<pair< MCIAccumulatorInterface *, string > > accuList;
+    vector<pair< AccumulatorInterface *, string > > accuList;
     accuList.emplace_back(simpleAccu, "simpleAccu" );
     accuList.emplace_back(blockAccu, "blockAccu" );
     accuList.emplace_back(fullAccu, "fullAccu" );

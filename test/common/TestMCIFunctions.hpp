@@ -1,5 +1,5 @@
-#include "mci/MCIObservableFunctionInterface.hpp"
-#include "mci/MCISamplingFunctionInterface.hpp"
+#include "mci/ObservableFunctionInterface.hpp"
+#include "mci/SamplingFunctionInterface.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -78,9 +78,9 @@ public:
 };
 
 
-class ThreeDimGaussianPDF: public MCISamplingFunctionInterface{
+class ThreeDimGaussianPDF: public mci::SamplingFunctionInterface{
 public:
-    ThreeDimGaussianPDF(): MCISamplingFunctionInterface(3, 1){}
+    ThreeDimGaussianPDF(): mci::SamplingFunctionInterface(3, 1){}
     ~ThreeDimGaussianPDF() override= default;
 
     void samplingFunction(const double in[], double protovalues[]) override{
@@ -93,9 +93,9 @@ public:
     }
 };
 
-class XSquared: public MCIObservableFunctionInterface{
+class XSquared: public mci::ObservableFunctionInterface{
 public:
-    XSquared(): MCIObservableFunctionInterface(3, 1){}
+    XSquared(): mci::ObservableFunctionInterface(3, 1){}
     ~XSquared() override= default;
 
     void observableFunction(const double in[], double out[]) override{
@@ -104,9 +104,9 @@ public:
 };
 
 
-class XYZSquared: public MCIObservableFunctionInterface{
+class XYZSquared: public mci::ObservableFunctionInterface{
 public:
-    XYZSquared(): MCIObservableFunctionInterface(3, 3){}
+    XYZSquared(): mci::ObservableFunctionInterface(3, 3){}
     ~XYZSquared() override= default;
 
     void observableFunction(const double in[], double out[]) override{
@@ -116,9 +116,9 @@ public:
     }
 };
 
-class XND: public MCIObservableFunctionInterface{
+class XND: public mci::ObservableFunctionInterface{
 public:
-    explicit XND(int nd): MCIObservableFunctionInterface(nd, nd){}
+    explicit XND(int nd): mci::ObservableFunctionInterface(nd, nd){}
     ~XND() override= default;
 
     void observableFunction(const double in[], double out[]) override{

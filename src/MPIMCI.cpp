@@ -10,6 +10,8 @@
 
 namespace MPIMCI
 {
+    using namespace mci;
+
     int myrank()
     {
         int myrank;
@@ -107,6 +109,7 @@ namespace MPIMCI
 
         MPI_Finalize();
     }
+
 } // namespace MPIMCI
 
 #endif

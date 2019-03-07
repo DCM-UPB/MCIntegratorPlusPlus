@@ -19,10 +19,10 @@ namespace MPIMCI
     int init();
 
     // set different random seeds per thread from a file
-    void setSeed(MCI * mci, const std::string &filename, int offset = 0); // with offset you can control how many seeds to skip initially
+    void setSeed(mci::MCI * mci, const std::string &filename, int offset = 0); // with offset you can control how many seeds to skip initially
 
     // integrate in parallel and accumulate results
-    void integrate(MCI * mci, int Nmc, double average[], double error[], bool doFindMRT2Step = true, bool doDecorrelation = true);
+    void integrate(mci::MCI * mci, int Nmc, double average[], double error[], bool doFindMRT2Step = true, bool doDecorrelation = true);
 
     // finalize MPI
     void finalize();

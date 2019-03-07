@@ -1,5 +1,5 @@
 #include "mci/MCIntegrator.hpp"
-#include "mci/MCISamplingFunctionInterface.hpp"
+#include "mci/SamplingFunctionInterface.hpp"
 
 #include <cassert>
 #include <cmath>
@@ -8,7 +8,7 @@
 #include "../common/TestMCIFunctions.hpp"
 
 using namespace std;
-
+using namespace mci;
 
 int main(){
     const int NMC = 10000;

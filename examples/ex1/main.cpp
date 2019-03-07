@@ -6,20 +6,19 @@
 #include "mci/MCIntegrator.hpp"
 
 
-
 // Observable functions
-class Parabola: public MCIObservableFunctionInterface{
+class Parabola: public mci::ObservableFunctionInterface{
 public:
-    explicit Parabola(const int ndim): MCIObservableFunctionInterface(ndim, 1) {}
+    explicit Parabola(const int ndim): mci::ObservableFunctionInterface(ndim, 1) {}
 
     void observableFunction(const double in[], double out[]) override{
         out[0] = 4.*in[0] - in[0]*in[0];
     }
 };
 
-class NormalizedParabola: public MCIObservableFunctionInterface{
+class NormalizedParabola: public mci::ObservableFunctionInterface{
 public:
-    explicit NormalizedParabola(const int ndim): MCIObservableFunctionInterface(ndim, 1) {}
+    explicit NormalizedParabola(const int ndim): mci::ObservableFunctionInterface(ndim, 1) {}
 
     void observableFunction(const double in[], double out[]) override{
         out[0] = (4. - in[0]) * 5.;
@@ -31,9 +30,9 @@ public:
 
 // Sampling function
 // the 48 is for normalization (even if not strictly necessary)
-class NormalizedLine: public MCISamplingFunctionInterface{
+class NormalizedLine: public mci::SamplingFunctionInterface{
 public:
-    explicit NormalizedLine(const int ndim): MCISamplingFunctionInterface(ndim, 1) {}
+    explicit NormalizedLine(const int ndim): mci::SamplingFunctionInterface(ndim, 1) {}
 
     void samplingFunction(const double in[], double protovalue[]) override{
         protovalue[0] = 0.2 * fabs(in[0]);
@@ -48,7 +47,7 @@ public:
 
 int main() {
     using namespace std;
-
+    using namespace mci; // everything in MCI lib is namespaced
 
     // intro
     cout << "We want to compute the integral" << endl;
@@ -103,7 +102,7 @@ int main() {
 
 
     // observable
-    MCIObservableFunctionInterface * obs = new Parabola(ndim);
+    ObservableFunctionInterface * obs = new Parabola(ndim);
     mci.addObservable(obs);
 
     cout << "Number of observables set = " << mci.getNObs() << endl;
@@ -141,7 +140,7 @@ int main() {
 
 
     // sampling function
-    MCISamplingFunctionInterface * sf = new NormalizedLine(ndim);
+    SamplingFunctionInterface * sf = new NormalizedLine(ndim);
     mci.addSamplingFunction(sf);
 
     cout << "Number of sampling function set = " << mci.getNSampF() << endl;
