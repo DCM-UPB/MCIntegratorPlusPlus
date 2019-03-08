@@ -46,6 +46,11 @@ public:
 // Sampling function
 // the 48 is for normalization (even if not strictly necessary)
 class NormalizedLine: public mci::SamplingFunctionInterface{
+protected:
+    // same as above
+    mci::SamplingFunctionInterface * _clone() const override {
+        return new NormalizedLine();
+    }
 public:
     explicit NormalizedLine(): mci::SamplingFunctionInterface(1, 1) {}
 
@@ -114,8 +119,8 @@ int main() {
     }
 
     // observable
-    ObservableFunctionInterface * obs = new Parabola();
-    mci.addObservable(*obs);
+    Parabola obs;
+    mci.addObservable(obs);
 
     if (myrank == 0) {
         cout << "Number of observables set = " << mci.getNObs() << endl;
@@ -134,7 +139,7 @@ int main() {
     mci.setNfindMRT2Iterations(50);
     mci.setNdecorrelationSteps(5000);
 
-    MPIMCI::integrate(&mci, Nmc, average, error);
+    MPIMCI::integrate(mci, Nmc, average, error);
 
     if (myrank == 0) {
         cout << "The integral gives as result = " << average[0] << "   +-   " << error[0] << endl;
@@ -147,13 +152,12 @@ int main() {
     }
 
     // observable
-    delete obs;
-    obs = new NormalizedParabola();
+    NormalizedParabola obs2;
     mci.clearObservables();  // we first remove the old observable
-    mci.addObservable(*obs);
+    mci.addObservable(obs2);
 
     // sampling function
-    SamplingFunctionInterface * sf = new NormalizedLine();
+    NormalizedLine sf;
     mci.addSamplingFunction(sf);
 
     if (myrank == 0) {
@@ -163,7 +167,7 @@ int main() {
     }
 
     // integrate
-    MPIMCI::integrate(&mci, Nmc, average, error);
+    MPIMCI::integrate(mci, Nmc, average, error);
 
     if (myrank == 0) {
         cout << "The integral gives as result = " << average[0] << "   +-   " << error[0] << endl;
@@ -174,10 +178,6 @@ int main() {
         cout << "Using a sampling function in this case gives worse performance. In fact, the error bar is larger." << endl;
         cout << "This implies that the variance of the re-factored f(x) written for introducing a sampling function, is larger than the original f(x)." << endl;
     }
-
-    // deallocate per-thread allocations
-    delete sf;
-    delete obs;
 
     // finalize MPI
     MPIMCI::finalize();

@@ -25,20 +25,20 @@ inline std::pair<double, double> sample_benchmark(const std::function< double ()
     return std::pair<double, double>(mean, err);
 }
 
-inline double benchmark_MCIntegrate(mci::MCI * mci, const int NMC) {
+inline double benchmark_MCIntegrate(mci::MCI &mci, const int NMC) {
     Timer timer(1.);
-    double average[mci->getNObsDim()];
-    double error[mci->getNObsDim()];
-    std::fill(average, average+mci->getNObsDim(), 0.);
-    std::fill(error, error+mci->getNObsDim(), 0.);
+    double average[mci.getNObsDim()];
+    double error[mci.getNObsDim()];
+    std::fill(average, average+mci.getNObsDim(), 0.);
+    std::fill(error, error+mci.getNObsDim(), 0.);
 
     timer.reset();
-    mci->integrate(NMC, average, error, false, false);
+    mci.integrate(NMC, average, error, false, false);
     return timer.elapsed();
 }
 
-inline std::pair<double, double> sample_benchmark_MCIntegrate(mci::MCI * mci, const int nruns, const int NMC) {
-    return sample_benchmark([=] { return benchmark_MCIntegrate(mci, NMC); }, nruns);
+inline std::pair<double, double> sample_benchmark_MCIntegrate(mci::MCI & mci, const int nruns, const int NMC) {
+    return sample_benchmark([&] { return benchmark_MCIntegrate(mci, NMC); }, nruns);
 }
 
 
@@ -94,5 +94,5 @@ inline double benchmark_estimators(const double datax[],
 
 
 inline std::pair<double, double> sample_benchmark_estimators(const double datax[], const int estimatorType, const int NMC, const int ndim, const int nruns) {
-    return sample_benchmark([=] { return benchmark_estimators(datax, estimatorType, NMC, ndim); }, nruns);
+    return sample_benchmark([&] { return benchmark_estimators(datax, estimatorType, NMC, ndim); }, nruns);
 }

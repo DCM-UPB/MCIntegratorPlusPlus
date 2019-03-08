@@ -14,15 +14,15 @@ int main(){
     const int NMC = 10000;
     const double CORRECT_RESULT = 0.5;
 
-    auto * pdf = new ThreeDimGaussianPDF();
-    auto * obs1d = new XSquared();
-    auto * obs3d = new XYZSquared();
+    ThreeDimGaussianPDF pdf;
+    XSquared obs1d;
+    XYZSquared obs3d;
 
     MCI mci(3);
     mci.setSeed(5649871);
     mci.addSamplingFunction(pdf);
-    mci.addObservable(*obs1d);
-    mci.addObservable(*obs3d);
+    mci.addObservable(obs1d);
+    mci.addObservable(obs3d);
 
     // the integral should provide 0.5 as answer!
 
@@ -58,10 +58,6 @@ int main(){
     }
     //std::cout << std::endl;
 
-
-    delete pdf;
-    delete obs1d;
-    delete obs3d;
 
     return 0;
 }

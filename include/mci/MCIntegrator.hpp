@@ -2,7 +2,7 @@
 #define MCI_MCINTEGRATOR_HPP
 
 #include "mci/AccumulatorInterface.hpp"
-#include "mci/CallBackOnAcceptanceInterface.hpp"
+#include "mci/CallBackOnMoveInterface.hpp"
 #include "mci/ObservableContainer.hpp"
 #include "mci/ObservableFunctionInterface.hpp"
 #include "mci/SamplingFunctionInterface.hpp"
@@ -11,6 +11,7 @@
 #include <random>
 #include <string>
 #include <vector>
+#include <memory>
 
 namespace mci
 {
@@ -34,16 +35,15 @@ namespace mci
 
         int _NfindMRT2Iterations; // how many MRT2 step adjustment iterations to do before integrating
         int _NdecorrelationSteps; // how many decorrelation steps to do before integrating
-
         double _targetaccrate;  // desired acceptance ratio
 
         // main object vectors/containers
-        std::vector<SamplingFunctionInterface *> _pdf; //vector of sampling functions
+        std::vector< std::unique_ptr<SamplingFunctionInterface> > _pdfs; //vector of sampling functions
         bool _flagpdf;  // did the user provide a sampling function?
 
-        ObservableContainer _obscont; // vector of observable containers (stored by value!)
+        ObservableContainer _obscont; // observable container
 
-        std::vector<CallBackOnAcceptanceInterface *> _cback;  // Vector of acceptance callback functions
+        std::vector< std::unique_ptr<CallBackOnMoveInterface> > _cbacks;  // Vector of acceptance callback functions
 
         // internal flags & counters
         int _acc, _rej;  // internal counters
@@ -67,7 +67,7 @@ namespace mci
         void computeNewSamplingFunction(); //compute the new sampling function with new coordinates
         void computeOldSamplingFunction(); //compute the new sampling function with the old coordinates
         // and it stores it in the old sampling
-        void updateSamplingFunction(); //copy the new sampling function into the old one
+        void updateSamplingFunction(); // swap old and new sampling function values
         double computeAcceptance() const; //compute the acceptance
 
         void resetAccRejCounters();
@@ -123,11 +123,11 @@ namespace mci
         }
         void clearObservables(); // clear
 
-        void addSamplingFunction(SamplingFunctionInterface * mcisf);
+        void addSamplingFunction(const SamplingFunctionInterface &mcisf);
         void clearSamplingFunctions();
 
-        void addCallBackOnAcceptance(CallBackOnAcceptanceInterface * cback);
-        void clearCallBackOnAcceptance();
+        void addCallBackOnMove(const CallBackOnMoveInterface &cback);
+        void clearCallBackOnMove();
 
         void storeObservablesOnFile(const std::string &filepath, int freq);
         void storeWalkerPositionsOnFile(const std::string &filepath, int freq);
@@ -148,11 +148,11 @@ namespace mci
         int getNObs() const { return _obscont.getNObs(); }
         int getNObsDim() const { return _obscont.getNObsDim(); }
 
-        const SamplingFunctionInterface & getSamplingFunction(int i) const { return *_pdf[i]; }
-        int getNSampF() const { return _pdf.size(); }
+        const SamplingFunctionInterface & getSamplingFunction(int i) const { return *_pdfs[i]; }
+        int getNSampF() const { return _pdfs.size(); }
 
-        const CallBackOnAcceptanceInterface & getCallBackOnAcceptance(int i) const { return *_cback[i]; }
-        int getNCallBacks() const { return _cback.size(); }
+        const CallBackOnMoveInterface & getCallBackOnMove(int i) const { return *_cbacks[i]; }
+        int getNCallBacks() const { return _cbacks.size(); }
 
         double getTargetAcceptanceRate() const { return _targetaccrate; }
         double getAcceptanceRate() const { return (_acc>0) ? static_cast<double>(_acc)/(static_cast<double>(_acc)+_rej) : 0.; }

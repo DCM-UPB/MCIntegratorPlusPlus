@@ -11,7 +11,7 @@ namespace mci
     //
     // Derive from this and implement one or both observableFunction() methods (see below).
     // You also need to provide a protected _clone method returning a raw pointer of
-    // type ObservableFunctionInterface, for example:
+    // type ObservableFunctionInterface, pointing to an object of your type MyObservable, e.g.:
     //
     // class MyObservable: public ObservableFunctionInterface {
     // protected:

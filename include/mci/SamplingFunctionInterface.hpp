@@ -1,9 +1,30 @@
 #ifndef MCI_SAMPLINGFUNCTIONINTERFACE_HPP
 #define MCI_SAMPLINGFUNCTIONINTERFACE_HPP
 
+#include "mci/Clonable.hpp"
+
 namespace mci
 {
-    class SamplingFunctionInterface
+    // Base class for MC sampling functions (probability distribution functions)
+    //
+    // Derive from this and implement the virtual samplingFunction(...) and getAcceptance (..) methods.
+    // You also need to provide a protected _clone method returning a raw pointer of
+    // type SamplingFunctionInterface, pointing to an object of your type MyPDF, e.g.:
+    //
+    // class MyPDF: public SamplingFunctionInterface {
+    // protected:
+    //     SamplingFunctionInterface * _clone() const override {
+    //         return new MyPDF(...); // create a cloned version here
+    //     }
+    // public:
+    //     void samplingFunction(...) overwrite;
+    //     double getAcceptance(...) const overwrite;
+    //     ...
+    // };
+    //
+    // Your class will have a public clone() method returning std::unique_ptr<SamplingFunctionInterface> .
+    // If you want/need it, also create a non-overriding clone() method returning a pointer of type MyPDF.
+    class SamplingFunctionInterface: public Clonable<SamplingFunctionInterface>
     {
     protected:
         const int _ndim; //dimension of the input array (walker position)

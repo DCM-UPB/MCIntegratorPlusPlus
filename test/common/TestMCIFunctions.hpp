@@ -82,6 +82,10 @@ public:
 // --- SAMPLING FUNCTIONS
 
 class ThreeDimGaussianPDF: public mci::SamplingFunctionInterface{
+protected:
+    mci::SamplingFunctionInterface * _clone() const override {
+        return new ThreeDimGaussianPDF();
+    }
 public:
     ThreeDimGaussianPDF(): mci::SamplingFunctionInterface(3, 1){}
     ~ThreeDimGaussianPDF() override= default;
@@ -98,6 +102,10 @@ public:
 
 class Gauss: public mci::SamplingFunctionInterface
 {
+protected:
+    mci::SamplingFunctionInterface * _clone() const override {
+        return new Gauss(_ndim);
+    }
 public:
     explicit Gauss(const int ndim): mci::SamplingFunctionInterface(ndim,1) {}
 

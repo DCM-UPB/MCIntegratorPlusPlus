@@ -26,6 +26,7 @@ public:
 
 class NormalizedParabola: public mci::ObservableFunctionInterface{
 protected:
+    // same as above
     mci::ObservableFunctionInterface * _clone() const override {
         return new NormalizedParabola();
     }
@@ -43,6 +44,10 @@ public:
 // Sampling function
 // the 48 is for normalization (even if not strictly necessary)
 class NormalizedLine: public mci::SamplingFunctionInterface{
+protected:
+    mci::SamplingFunctionInterface * _clone() const override {
+        return new NormalizedLine();
+    }
 public:
     explicit NormalizedLine(): mci::SamplingFunctionInterface(1, 1) {}
 
@@ -114,8 +119,8 @@ int main() {
 
 
     // observable
-    ObservableFunctionInterface * obs = new Parabola();
-    mci.addObservable(*obs);
+    Parabola obs;
+    mci.addObservable(obs);
 
     cout << "Number of observables set = " << mci.getNObs() << endl;
     cout << "Dimension of observables set = " << mci.getNObsDim() << endl;
@@ -142,17 +147,16 @@ int main() {
 
 
     // observable
-    delete obs;
-    obs = new NormalizedParabola();
+    NormalizedParabola obs2;
     mci.clearObservables();  // we first remove the old observable
-    mci.addObservable(*obs);
+    mci.addObservable(obs2);
 
     cout << "Number of observables set = " << mci.getNObs() << endl;
     cout << "Dimension of observables set = " << mci.getNObsDim() << endl;
 
 
     // sampling function
-    SamplingFunctionInterface * sf = new NormalizedLine();
+    NormalizedLine sf;
     mci.addSamplingFunction(sf);
 
     cout << "Number of sampling function set = " << mci.getNSampF() << endl;
@@ -169,13 +173,6 @@ int main() {
     // final comments
     cout << "Using a sampling function in this case gives worse performance. In fact, the error bar is larger." << endl;
     cout << "This implies that the variance of the re-factored f(x) written for introducing a sampling function, is larger than the original f(x)." << endl;
-
-
-
-    // deallocate
-
-    delete sf;
-    delete obs;
 
 
     // end

@@ -16,7 +16,7 @@ int main(){
     uniform_real_distribution<double> rand_num(0.0,1.0);
 
     int N = 1000;
-    auto * x = new double[N];
+    double x[N];
     for (int i=0; i<N; ++i){
         x[i] = 3.5 + rand_num(rand_gen);
     }
@@ -36,15 +36,13 @@ int main(){
     cout << "- CorrelatedEstimator()" << endl;
     cout << "     average = " << avg1D << "     error = " << err1D << endl << endl;
 
-    delete[] x;
-
 
 
     cout << endl << "Multidimensional version of Estimators" << endl << endl;
 
 
     int nd=2;
-    auto * data = new double[N*nd];
+    double data[N*nd];
     for (int i=0; i<N; ++i){
         data[i*2] = 2.5 + rand_num(rand_gen);
         data[i*2+1] = -5.5 + rand_num(rand_gen);
@@ -67,10 +65,9 @@ int main(){
     cout << "     average1 = " << avg2D[0] << "     error1 = " << err2D[0] << endl;
     cout << "     average2 = " << avg2D[1] << "     error2 = " << err2D[1] << endl << endl;
 
-    delete[] data;
+
 
     cout << endl << "Monte Carlo integrator" << endl << endl;
-
 
     nd = 3;
     MCI mci(nd);
@@ -116,7 +113,7 @@ int main(){
     Gauss gauss_1D(nd);
     Constval constval_1D(nd);
     X2 x2_1D(nd);
-    mci_1dgauss.addSamplingFunction(&gauss_1D);
+    mci_1dgauss.addSamplingFunction(gauss_1D);
     mci_1dgauss.addObservable(x2_1D);
     mci_1dgauss.addObservable(constval_1D);
     mci_1dgauss.storeObservablesOnFile("observables.txt", 100);

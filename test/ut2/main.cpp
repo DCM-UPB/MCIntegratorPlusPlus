@@ -14,13 +14,13 @@ int main(){
     const int NMC = 10000;
     const double CORRECT_RESULT = 0.5;
 
-    auto * pdf = new ThreeDimGaussianPDF();
-    auto * obs = new XSquared();
+    ThreeDimGaussianPDF pdf;
+    XSquared obs;
 
     MCI mci(3);
     mci.setSeed(5649871);
     mci.addSamplingFunction(pdf);
-    mci.addObservable(*obs);
+    mci.addObservable(obs);
 
     // the integral should provide 0.5 as answer!
 
@@ -47,10 +47,6 @@ int main(){
     //std::cout << "average " << average << ", error " << error << ", CORRECT_RESULT" << CORRECT_RESULT << std::endl;
     assert( fabs(average-CORRECT_RESULT) < 2.*error );
 
-
-
-    delete pdf;
-    delete obs;
 
     return 0;
 }

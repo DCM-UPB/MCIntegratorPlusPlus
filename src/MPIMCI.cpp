@@ -39,7 +39,7 @@ namespace MPIMCI
     }
 
 
-    void setSeed(MCI * mci, const std::string &filename, const int offset)
+    void setSeed(MCI &mci, const std::string &filename, const int offset)
     {
         int myrank = MPIMCI::myrank();
         int nranks = MPIMCI::size();
@@ -65,11 +65,11 @@ namespace MPIMCI
         }
 
         MPI_Scatter(seeds, 1, MPI_UNSIGNED_LONG, &myseed, 1, MPI_UNSIGNED_LONG, 0, MPI_COMM_WORLD);
-        mci->setSeed(myseed);
+        mci.setSeed(myseed);
     }
 
 
-    void integrate(MCI * mci, int Nmc, double average[], double error[], const bool doFindMRT2Step, const bool doDecorrelation)
+    void integrate(MCI &mci, const int Nmc, double average[], double error[], const bool doFindMRT2Step, const bool doDecorrelation)
     {
         // make sure the user has MPI in the correct state
         int isinit, isfinal;
@@ -81,12 +81,12 @@ namespace MPIMCI
         int nranks = size();
 
         // the results are stored in myAverage/Error and then reduced into the same average/error for all processes
-        double myAverage[mci->getNObsDim()];
-        double myError[mci->getNObsDim()];
+        double myAverage[mci.getNObsDim()];
+        double myError[mci.getNObsDim()];
 
-        mci->integrate(Nmc, myAverage, myError, doFindMRT2Step, doDecorrelation);
+        mci.integrate(Nmc, myAverage, myError, doFindMRT2Step, doDecorrelation);
 
-        for (int i=0; i<mci->getNObsDim(); ++i) {
+        for (int i=0; i<mci.getNObsDim(); ++i) {
             MPI_Allreduce(&myAverage[i], &average[i], 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
 
             myError[i] *= myError[i];

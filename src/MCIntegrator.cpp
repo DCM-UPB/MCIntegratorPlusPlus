@@ -89,7 +89,7 @@ namespace mci
 
         // first call of the call-back functions
         if (_flagpdf) {
-            for (auto & cback : _cback){
+            for (auto & cback : _cbacks){
                 cback->callBackFunction(_xold, true);
             }
         }
@@ -257,7 +257,7 @@ namespace mci
             //update the sampling function values pdfx
             this->updateSamplingFunction();
             //if there are some call back functions, invoke them
-            for (auto & cback : _cback){
+            for (auto & cback : _cbacks){
                 cback->callBackFunction(_xold, _flagMC);
             }
         } else {
@@ -325,7 +325,7 @@ namespace mci
 
     void MCI::updateSamplingFunction()
     {
-        for (auto & sf : _pdf) {
+        for (auto & sf : _pdfs) {
             sf->newToOld();
         }
     }
@@ -334,7 +334,7 @@ namespace mci
     double MCI::computeAcceptance() const
     {
         double acceptance=1.;
-        for (auto & sf : _pdf) {
+        for (auto & sf : _pdfs) {
             acceptance*=sf->getAcceptance();
         }
         return acceptance;
@@ -343,7 +343,7 @@ namespace mci
 
     void MCI::computeOldSamplingFunction()
     {
-        for (auto & sf : _pdf) {
+        for (auto & sf : _pdfs) {
             sf->computeNewSamplingFunction(_xold);
             sf->newToOld();
         }
@@ -352,7 +352,7 @@ namespace mci
 
     void MCI::computeNewSamplingFunction()
     {
-        for (auto & sf : _pdf) {
+        for (auto & sf : _pdfs) {
             sf->computeNewSamplingFunction(_xnew);
         }
     }
@@ -377,13 +377,13 @@ namespace mci
     }
 
 
-    void MCI::clearCallBackOnAcceptance(){
-        _cback.clear();
+    void MCI::clearCallBackOnMove(){
+        _cbacks.clear();
     }
 
 
-    void MCI::addCallBackOnAcceptance(CallBackOnAcceptanceInterface * cback){
-        _cback.push_back(cback);
+    void MCI::addCallBackOnMove(const CallBackOnMoveInterface &cback){
+        _cbacks.emplace_back( std::unique_ptr<CallBackOnMoveInterface>(cback.clone()) ); // we add unique clone
     }
 
 
@@ -432,14 +432,14 @@ namespace mci
 
     void MCI::clearSamplingFunctions()
     {
-        _pdf.clear();
+        _pdfs.clear();
         _flagpdf = false;
     }
 
 
-    void MCI::addSamplingFunction(SamplingFunctionInterface * mcisf)
+    void MCI::addSamplingFunction(const SamplingFunctionInterface &mcisf)
     {
-        _pdf.push_back(mcisf);
+        _pdfs.emplace_back( std::unique_ptr<SamplingFunctionInterface>(mcisf.clone()) ); // we add unique clone
         _flagpdf = true;
     }
 
@@ -536,11 +536,6 @@ namespace mci
 
     MCI::~MCI()
     {
-        // clear vectors
-        this->clearSamplingFunctions();
-        this->clearObservables();
-        this->clearCallBackOnAcceptance();
-
         // _mrt2step
         delete [] _mrt2step;
 
