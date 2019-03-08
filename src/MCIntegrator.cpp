@@ -1,7 +1,7 @@
 #include "mci/MCIntegrator.hpp"
 
-#include "mci/Estimators.hpp"
 #include "mci/BlockAccumulator.hpp"
+#include "mci/Estimators.hpp"
 #include "mci/FullAccumulator.hpp"
 #include "mci/SimpleAccumulator.hpp"
 
@@ -135,7 +135,8 @@ namespace mci
             ObservableContainer obs_equil;
             for (int i=0; i<_obscont.getNObs(); ++i) {
                 if (_obscont.getFlagEquil(i)) {
-                    obs_equil.addObservable(new FullAccumulator(_obscont.getObservableFunction(i), 1), mci::CorrelatedEstimator, true);
+                    obs_equil.addObservable(std::unique_ptr<AccumulatorInterface>( new FullAccumulator(*_obscont.getObservableFunction(i).clone(), 1) ),
+                                            mci::CorrelatedEstimator, true);
                 }
             }
             const int MIN_NMC=100;
@@ -278,7 +279,7 @@ namespace mci
     }
 
 
-    void MCI::applyPBC(double v[])
+    void MCI::applyPBC(double v[]) const
     {
         for (int i=0; i<_ndim; ++i) {
             while ( v[i] < _lbound[i] ) {
@@ -330,7 +331,7 @@ namespace mci
     }
 
 
-    double MCI::computeAcceptance()
+    double MCI::computeAcceptance() const
     {
         double acceptance=1.;
         for (auto & sf : _pdf) {
@@ -392,7 +393,7 @@ namespace mci
     }
 
 
-    void MCI::addObservable(ObservableFunctionInterface * obs, int blocksize, int nskip, const bool flag_equil, const bool flag_correlated)
+    void MCI::addObservable(const ObservableFunctionInterface &obs, int blocksize, int nskip, const bool flag_equil, const bool flag_correlated)
     {
         // sanity
         blocksize = std::max(0, blocksize);
@@ -405,11 +406,11 @@ namespace mci
         }
 
         // we need to select these two
-        AccumulatorInterface * accu;
+        std::unique_ptr<AccumulatorInterface> accu;
         std::function< void(int /*nstore*/, int /*nobs*/, const double [] /*data*/, double [] /*avg*/, double [] /*error*/) > estim;
 
         if (blocksize == 0) {
-            accu = new SimpleAccumulator(obs, nskip);
+            accu = std::unique_ptr<AccumulatorInterface>( new SimpleAccumulator(obs, nskip) );
             // data is already the average, so this estimator just copies the average and fills error with 0
             estim = [](int /*unused*/, int nobs, const double data[], double avg[], double err[]) {
                         std::copy(data, data+nobs, avg);
@@ -417,15 +418,15 @@ namespace mci
                     };
         } else {
             if (blocksize == 1) {
-                accu = new FullAccumulator(obs, nskip);
+                accu = std::unique_ptr<AccumulatorInterface>( new FullAccumulator(obs, nskip) );
             } else {
-                accu = new BlockAccumulator(obs, nskip, blocksize);
+                accu = std::unique_ptr<AccumulatorInterface>( new BlockAccumulator(obs, nskip, blocksize) );
             }
             estim = flag_correlated ? mci::CorrelatedEstimator : mci::UncorrelatedEstimator ;
         }
 
         // append to container
-        _obscont.addObservable(accu, estim, flag_equil);
+        _obscont.addObservable(std::move(accu), estim, flag_equil);
     }
 
 
@@ -552,4 +553,4 @@ namespace mci
         delete [] _lbound;
     }
 
-}
+}  // namespace mci

@@ -8,6 +8,9 @@ namespace mci
 
     void BlockAccumulator::_allocate()
     {
+        if (this->getNAccu() < _blocksize) {
+            throw std::invalid_argument("[BlockAccumulator::allocate] Requested number of accumulations is smaller than the requested block size.");
+        }
         if (this->getNAccu() % _blocksize != 0) {
             throw std::invalid_argument("[BlockAccumulator::allocate] Requested number of accumulations is not a multiple of the requested block size.");
         }
@@ -20,7 +23,7 @@ namespace mci
     void BlockAccumulator::_accumulate()
     {
         for (int i=0; i<_nobs; ++i) {
-            _data[_storeidx + i] += _obs->getValue(i);
+            _data[_storeidx + i] += _obs_values[i];
         }
 
         if (++_bidx == _blocksize) {
@@ -56,4 +59,4 @@ namespace mci
         _nblocks = 0;
     }
 
-}
+}  // namespace mci

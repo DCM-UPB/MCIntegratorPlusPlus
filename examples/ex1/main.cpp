@@ -8,17 +8,29 @@
 
 // Observable functions
 class Parabola: public mci::ObservableFunctionInterface{
+protected:
+    // Observables need to be copyable, so we need to provide this
+    // protected method. In return, there will be a public method
+    // clone() returning a std::unique_ptr<ObservableFunctionInterface> .
+    mci::ObservableFunctionInterface * _clone() const override {
+        return new Parabola();
+    }
 public:
-    explicit Parabola(const int ndim): mci::ObservableFunctionInterface(ndim, 1) {}
+    Parabola(): mci::ObservableFunctionInterface(1 /*1D input*/, 1 /*1D output*/) {}
 
+    // here we calculate the observable function
     void observableFunction(const double in[], double out[]) override{
         out[0] = 4.*in[0] - in[0]*in[0];
     }
 };
 
 class NormalizedParabola: public mci::ObservableFunctionInterface{
+protected:
+    mci::ObservableFunctionInterface * _clone() const override {
+        return new NormalizedParabola();
+    }
 public:
-    explicit NormalizedParabola(const int ndim): mci::ObservableFunctionInterface(ndim, 1) {}
+    explicit NormalizedParabola(): mci::ObservableFunctionInterface(1, 1) {}
 
     void observableFunction(const double in[], double out[]) override{
         out[0] = (4. - in[0]) * 5.;
@@ -32,13 +44,13 @@ public:
 // the 48 is for normalization (even if not strictly necessary)
 class NormalizedLine: public mci::SamplingFunctionInterface{
 public:
-    explicit NormalizedLine(const int ndim): mci::SamplingFunctionInterface(ndim, 1) {}
+    explicit NormalizedLine(): mci::SamplingFunctionInterface(1, 1) {}
 
     void samplingFunction(const double in[], double protovalue[]) override{
         protovalue[0] = 0.2 * fabs(in[0]);
     }
 
-    double getAcceptance(const double protoold[], const double protonew[]) override{
+    double getAcceptance(const double protoold[], const double protonew[]) const override{ // don't forget the const!
         return protonew[0] / protoold[0];
     }
 };
@@ -102,8 +114,8 @@ int main() {
 
 
     // observable
-    ObservableFunctionInterface * obs = new Parabola(ndim);
-    mci.addObservable(obs);
+    ObservableFunctionInterface * obs = new Parabola();
+    mci.addObservable(*obs);
 
     cout << "Number of observables set = " << mci.getNObs() << endl;
     cout << "Dimension of observables set = " << mci.getNObsDim() << endl;
@@ -131,16 +143,16 @@ int main() {
 
     // observable
     delete obs;
-    obs = new NormalizedParabola(ndim);
+    obs = new NormalizedParabola();
     mci.clearObservables();  // we first remove the old observable
-    mci.addObservable(obs);
+    mci.addObservable(*obs);
 
     cout << "Number of observables set = " << mci.getNObs() << endl;
     cout << "Dimension of observables set = " << mci.getNObsDim() << endl;
 
 
     // sampling function
-    SamplingFunctionInterface * sf = new NormalizedLine(ndim);
+    SamplingFunctionInterface * sf = new NormalizedLine();
     mci.addSamplingFunction(sf);
 
     cout << "Number of sampling function set = " << mci.getNSampF() << endl;

@@ -28,7 +28,7 @@ namespace mci
         void _deallocate() override;
 
     public:
-        BlockAccumulator(ObservableFunctionInterface * obs, int nskip, int blocksize):
+        BlockAccumulator(const ObservableFunctionInterface &obs, int nskip, int blocksize):
             AccumulatorInterface(obs, nskip), _blocksize(blocksize), _nblocks(0), _bidx(0), _storeidx(0)
         {
             if (_blocksize < 1) { throw std::invalid_argument("[BlockAccumulator] Requested blocksize was < 1 ."); }
@@ -36,9 +36,9 @@ namespace mci
 
         ~BlockAccumulator() override { this->_deallocate(); }
 
-        int getBlockSize() { return _blocksize; }
-        int getNStore() override { return _nblocks; }
+        int getBlockSize() const { return _blocksize; }
+        int getNStore() const override { return _nblocks; }
     };
-}
+}  // namespace mci
 
 #endif

@@ -20,16 +20,16 @@ namespace mci
         void _deallocate() override;
 
     public:
-        SimpleAccumulator(ObservableFunctionInterface * obs, int nskip):
+        SimpleAccumulator(const ObservableFunctionInterface &obs, int nskip):
             AccumulatorInterface(obs, nskip), _flag_alloc(false)
         {}
 
         ~SimpleAccumulator() override { this->_deallocate(); }
 
-        int getNStore() override {
+        int getNStore() const override {
             return _flag_alloc ? 1 : 0; // we don't store old values
         }
     };
-}
+}  // namespace mci
 
 #endif

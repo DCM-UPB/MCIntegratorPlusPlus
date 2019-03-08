@@ -16,7 +16,7 @@ namespace mci
     void SimpleAccumulator::_accumulate()
     {
         for (int i=0; i<_nobs; ++i) {
-            _data[i] += _obs->getValue(i);
+            _data[i] += _obs_values[i];
         }
     }
 
@@ -43,4 +43,4 @@ namespace mci
         _flag_alloc = false;
     }
 
-}
+}  // namespace mci

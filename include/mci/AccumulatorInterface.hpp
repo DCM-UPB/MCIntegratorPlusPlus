@@ -11,23 +11,22 @@ namespace mci
     class AccumulatorInterface
     {
     protected:
-        //const std::unique_ptr<ObservableFunctionInterface> _obs; // pointer to the related observable function (we must own it uniquely, to avoid misuse)
-        ObservableFunctionInterface * const _obs;
+        const std::unique_ptr<ObservableFunctionInterface> _obs; // pointer to the related observable function (we own it uniquely, to avoid misuse)
+        //ObservableFunctionInterface * const _obs;
         const int _nobs; // number of values returned by the observable function
         const int _xndim; // dimension of walker positions/flags that get passed on accumulate
+
+        const double * const _obs_values; // observable's last values
+        bool * const _flags_xchanged; // remembers which x have changed since last obs evaluation
+
         const int _nskip; // evaluate observable only on every nskip-th step
-
         int _nsteps; // total number of sampling steps (expected number of calls to accumulateObservables)
-
         int _stepidx; // running step index
         int _skipidx; // to determine when to skip accumulation
         bool _flag_eval; // observable evaluation is needed before next accumulation
         bool _flag_final; // was finalized called (without throwing error) ?
 
-        //std::unique_ptr<bool> _flags_xchanged; // remembers which x have changed since last obs evaluation
-        bool * _flags_xchanged;
-        //std::unique_ptr<double> _data; // childs use this to store data
-        double * _data;
+        double * _data; // childs use this to store data
 
         // TO BE IMPLEMENTED BY CHILD
         virtual void _allocate() = 0; // allocate _data for a MC run of nsteps length ( expect deallocated state )
@@ -37,32 +36,32 @@ namespace mci
         virtual void _deallocate() = 0; // delete _data allocation ( reset will be called already )
 
     public:
-        AccumulatorInterface(ObservableFunctionInterface * obs, int nskip);
-        virtual ~AccumulatorInterface() = default;
+        AccumulatorInterface(const ObservableFunctionInterface &obs, int nskip);
+        virtual ~AccumulatorInterface();
 
-        ObservableFunctionInterface * getObservableFunction(){ return _obs; }
+        const ObservableFunctionInterface & getObservableFunction() const { return *_obs; } // acquire raw read-only ref
 
         // Getters
-        int getNObs(){ return _nobs; } // dimension of observable
-        int getNDim(){ return _xndim; } // dimension of walkers
+        int getNObs() const { return _nobs; } // dimension of observable
+        int getNDim() const { return _xndim; } // dimension of walkers
 
-        int getNSkip(){ return _nskip; }
-        int getNSteps(){ return _nsteps; }
-        int getNAccu(){ return (_nsteps>0) ? 1 + (_nsteps-1)/_nskip : 0; } // actual number of steps to accumulate
-        int getNData(){ return this->getNStore()*_nobs; } // total length of allocated data
+        int getNSkip() const { return _nskip; }
+        int getNSteps() const { return _nsteps; }
+        int getNAccu() const { return (_nsteps>0) ? 1 + (_nsteps-1)/_nskip : 0; } // actual number of steps to accumulate
+        int getNData() const { return this->getNStore()*_nobs; } // total length of allocated data
 
-        int getStepIndex(){ return _stepidx; }
-        bool isAllocated(){ return (_nsteps>0); }
-        bool isClean(){ return (_stepidx == 0); }
-        bool isFinalized(){ return _flag_final; }
+        int getStepIndex() const { return _stepidx; }
+        bool isAllocated() const { return (_nsteps>0); }
+        bool isClean() const { return (_stepidx == 0); }
+        bool isFinalized() const { return _flag_final; }
 
         // get data
-        const double * getData(){ return _data; } // direct read-only access to internal data pointer
-        const double * getObsValues(){ return _obs->getValues(); } // read-only pointer to last calculated observable data
-        double getObsValue(int i){ return _obs->getValue(i); } // element-wise access to last values
+        const double * getData() const { return _data; } // direct read-only access to internal data pointer
+        const double * getObsValues() const { return _obs_values; } // read-only pointer to last calculated observable data
+        double getObsValue(int i) const { return _obs_values[i]; } // element-wise access to last values
 
         // TO BE IMPLEMENTED BY CHILD
-        virtual int getNStore() = 0; // get number of allocated data elements with _nobs length each
+        virtual int getNStore() const = 0; // get number of allocated data elements with _nobs length each
 
 
         // methods to call externally, in the following pattern:
@@ -83,6 +82,6 @@ namespace mci
         // deallocate memory
         void deallocate();
     };
-}
+}  // namespace mci
 
 #endif

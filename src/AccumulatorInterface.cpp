@@ -5,25 +5,27 @@
 namespace mci
 {
 
-    AccumulatorInterface::AccumulatorInterface(ObservableFunctionInterface * obs, const int nskip):
-        _obs(obs), _nobs(obs->getNObs()), _xndim(obs->getNDim()), _nskip(nskip),
-        _nsteps(0), _stepidx(0), _skipidx(0), _flag_eval(true), _flag_final(false),
-        _flags_xchanged(nullptr), _data(nullptr)
+    AccumulatorInterface::AccumulatorInterface(const ObservableFunctionInterface &obs, const int nskip):
+        _obs(obs.clone()), _nobs(_obs->getNObs()), _xndim(_obs->getNDim()), _obs_values(_obs->getValues()),
+        _flags_xchanged(new bool[_xndim]), _nskip(nskip), _nsteps(0), _stepidx(0), _skipidx(0),
+        _flag_eval(true), _flag_final(false), _data(nullptr)
     {
         if (nskip < 1) { throw std::invalid_argument("[AccumulatorInterface] Provided number of steps per evaluation was < 1 ."); }
+    }
+
+    AccumulatorInterface::~AccumulatorInterface()
+    {
+        delete [] _flags_xchanged;
     }
 
 
     void AccumulatorInterface::allocate(const int nsteps)
     {
-        this->deallocate(); // for safety
+        this->deallocate(); // for safety, also calls reset
 
         if (nsteps < 1) { throw std::invalid_argument("[AccumulatorInterface::allocate] Provided number of MC steps was < 1 ."); }
 
         _nsteps = nsteps;
-        _flags_xchanged = new bool[_xndim]; // allocate x-change flags
-        std::fill(_flags_xchanged, _flags_xchanged+_xndim, true); // on the first step we need to evaluate fully
-
         this->_allocate(); // call child allocate
     }
 
@@ -35,7 +37,7 @@ namespace mci
         if (flagacc) { // there was a change (so we need to evaluate obs on next skipidx==0)
             _flag_eval = true;
             for (int i=0; i<_xndim; ++i) {
-                if (flags_xchanged[i]) _flags_xchanged[i] = true;
+                if (flags_xchanged[i]) { _flags_xchanged[i] = true; }
             }
         }
 
@@ -72,6 +74,7 @@ namespace mci
         _skipidx = 0;
         _flag_eval = true;
         _flag_final = false;
+        std::fill(_flags_xchanged, _flags_xchanged+_xndim, true); // on the first step we need to evaluate fully
     }
 
 
@@ -80,9 +83,7 @@ namespace mci
         this->reset(); // achieve clean state
         this->_deallocate(); // call child deallocate
 
-        delete [] _flags_xchanged;
-        _flags_xchanged = nullptr;
         _nsteps = 0;
     }
 
-}
+}  // namespace mci

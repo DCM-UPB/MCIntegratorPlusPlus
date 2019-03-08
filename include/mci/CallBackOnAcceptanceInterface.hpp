@@ -13,7 +13,7 @@ namespace mci
         virtual ~CallBackOnAcceptanceInterface()= default;
 
         // Getters
-        int getNDim(){return _ndim;}
+        int getNDim() const {return _ndim;}
 
 
         // --- METHODS THAT MUST BE IMPLEMENTED
@@ -22,6 +22,6 @@ namespace mci
         virtual void callBackFunction(const double in[], bool flag_observation) = 0;
         //                                   ^walker position
     };
-}
+}  // namespace mci
 
 #endif

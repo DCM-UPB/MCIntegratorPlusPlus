@@ -11,24 +11,22 @@ namespace mci
         double * _protonew; //array containing the new proto sampling functions
         double * _protoold; //array containing the old proto sampling functions
 
+        // Setters
+        void setNProto(int nproto); // you may freely choose the amount of values you need
+
     public:
         SamplingFunctionInterface(int ndim, int nproto);
 
         virtual ~SamplingFunctionInterface();
 
-        // Setters
-        void setNProto(int nproto);
-
         // Getters
-        int getNDim(){ return _ndim;}
-        int getNProto(){ return _nproto;}
+        int getNDim() const { return _ndim;}
+        int getNProto() const { return _nproto;}
 
-        // Utilities
+        // Main operational methods
         void newToOld(); // swap old and new protovalues
-
         void computeNewSamplingFunction(const double in[]) { samplingFunction(in, _protonew); }
-
-        double getAcceptance() { return getAcceptance(_protoold, _protonew); }
+        double getAcceptance() const { return getAcceptance(_protoold, _protonew); }
 
 
         // --- METHODS THAT MUST BE IMPLEMENTED
@@ -37,8 +35,8 @@ namespace mci
         //                                      ^walker position  ^resulting proto-values
 
         // Acceptance function, that uses the new and old values of the proto sampling function
-        virtual double getAcceptance(const double protoold[], const double protonew[]) = 0;
+        virtual double getAcceptance(const double protoold[], const double protonew[]) const = 0;
     };
-}
+}  // namespace mci
 
 #endif

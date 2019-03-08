@@ -5,70 +5,9 @@
 #include <iostream>
 #include <random>
 
+#include "common/TestMCIFunctions.hpp"
+
 using namespace mci;
-
-class Constval: public ObservableFunctionInterface
-{
-public:
-    explicit Constval(const int ndim): ObservableFunctionInterface(ndim, 1) {}
-
-    void observableFunction(const double /*in*/[], double out[]) override
-    {
-        out[0] = 1.3;
-    }
-};
-
-class Polynom: public ObservableFunctionInterface
-{
-public:
-    explicit Polynom(const int ndim): ObservableFunctionInterface(ndim, 1) {}
-
-    void observableFunction(const double in[], double out[]) override
-    {
-        out[0]=0.;
-        for (int i=0; i<this->getNDim(); ++i)
-            {
-                out[0] += in[i];
-            }
-    }
-};
-
-class X2: public ObservableFunctionInterface
-{
-public:
-    explicit X2(const int ndim): ObservableFunctionInterface(ndim,1) {}
-
-    void observableFunction(const double in[], double out[]) override
-    {
-        out[0]=0.;
-        for (int i=0; i<this->getNDim(); ++i)
-            {
-                out[0] += in[i]*in[i];
-            }
-    }
-};
-
-class Gauss: public SamplingFunctionInterface
-{
-public:
-    explicit Gauss(const int ndim): SamplingFunctionInterface(ndim,1) {}
-
-    void samplingFunction(const double in[], double out[]) override
-    {
-        out[0]=0.;
-        for (int i=0; i<this->getNDim(); ++i)
-            {
-                out[0] += (in[i])*(in[i]);
-            }
-    }
-
-    double getAcceptance(const double protoold[], const double protonew[]) override
-    {
-        return exp(-(protonew[0]-protoold[0]));
-    }
-};
-
-
 
 int main(){
     using namespace std;
@@ -152,8 +91,8 @@ int main(){
 
     Constval constval(nd);
     Polynom polynom(nd);
-    mci.addObservable(&constval);
-    mci.addObservable(&polynom);
+    mci.addObservable(constval);
+    mci.addObservable(polynom);
 
     N=10000;
     mci.integrate(N,avg2D,err2D);
@@ -166,7 +105,7 @@ int main(){
     MCI mci_1d(1);
     mci_1d.setIRange(-1., 1.);
     X2 x2(nd);
-    mci_1d.addObservable(&x2);
+    mci_1d.addObservable(x2);
     N=10000;
     mci_1d.integrate(N,&avg1D,&err1D);
     cout << "Integral of x^2 between -1 and +1 (expected 2./3.): " << endl;
@@ -178,8 +117,8 @@ int main(){
     Constval constval_1D(nd);
     X2 x2_1D(nd);
     mci_1dgauss.addSamplingFunction(&gauss_1D);
-    mci_1dgauss.addObservable(&x2_1D);
-    mci_1dgauss.addObservable(&constval_1D);
+    mci_1dgauss.addObservable(x2_1D);
+    mci_1dgauss.addObservable(constval_1D);
     mci_1dgauss.storeObservablesOnFile("observables.txt", 100);
     mci_1dgauss.storeWalkerPositionsOnFile("walker.txt", 100);
     N=10000;

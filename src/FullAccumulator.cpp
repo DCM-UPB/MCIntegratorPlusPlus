@@ -15,7 +15,7 @@ namespace mci
 
     void FullAccumulator::_accumulate()
     {
-        std::copy(_obs->getValues(), _obs->getValues()+_nobs, _data+_storeidx);
+        std::copy(_obs_values, _obs_values+_nobs, _data+_storeidx);
         _storeidx += _nobs;
     }
 
@@ -34,4 +34,4 @@ namespace mci
         _nstore = 0;
     }
 
-}
+}  // namespace mci

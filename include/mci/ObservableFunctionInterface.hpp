@@ -1,50 +1,49 @@
 #ifndef MCI_OBSERVABLEFUNCTIONINTERFACE_HPP
 #define MCI_OBSERVABLEFUNCTIONINTERFACE_HPP
 
+#include "mci/Clonable.hpp"
+
 #include <algorithm>
-#include <memory>
-
-/*
-// please derive from this clonable interface
-template<typename DerivedObservable>
-struct ObservableFunctionInterface
-{
-virtual ~ObservableFunctionInterface() = default;
-
-std::unique_ptr<DerivedObservable> clone()
-{
-return std::unique_ptr<DerivedObservable>(cloneImpl());
-}
-protected:
-virtual DerivedObservable * cloneImpl() const = 0;
-};
-*/
-
+#include <vector>
 namespace mci
 {
-    class ObservableFunctionInterface
+    // Base class for MC observables
+    //
+    // Derive from this and implement one or both observableFunction() methods (see below).
+    // You also need to provide a protected _clone method returning a raw pointer of
+    // type ObservableFunctionInterface, for example:
+    //
+    // class MyObservable: public ObservableFunctionInterface {
+    // protected:
+    //     ObservableFunctionInterface * _clone() const override {
+    //         return new MyObservable(...); // create a cloned version here
+    //     }
+    // public:
+    //     void observableFunction(...) overwrite;
+    //     ...
+    // };
+    //
+    // Your class will have a public clone() method returning std::unique_ptr<ObservableFunctionInterface> .
+    // If you want/need it, also create a non-overriding clone() method returning a pointer of type MyObservable.
+    class ObservableFunctionInterface: public Clonable<ObservableFunctionInterface>
     {
     protected:
         const int _ndim;  //dimension of the input array (walker poistion)
         const int _nobs;  //number of values provided by the observable
-        double * _obs; //array that stores the last observables computed
-
+        double * const _obs; //array that stores the last observables computed
 
     public:
-        ObservableFunctionInterface(int ndim, int nobs): _ndim(ndim), _nobs(nobs)
+        ObservableFunctionInterface(int ndim, int nobs): _ndim(ndim), _nobs(nobs), _obs(new double[nobs])
         {
-            _obs = new double[nobs];
             std::fill(_obs, _obs+nobs, 0.);
         }
-        virtual ~ObservableFunctionInterface()
-        {
-            delete[] _obs;
-        }
 
-        int getNObs(){return _nobs;}
-        int getNDim(){return _ndim;}
-        double getValue(int i){ return _obs[i]; }
-        const double * getValues(){ return _obs; }
+        ~ObservableFunctionInterface() override{ delete [] _obs; }
+
+        int getNObs() const { return _nobs; }
+        int getNDim() const { return _ndim; }
+        double getValue(int i) const { return _obs[i]; }
+        const double * getValues() const { return _obs; }
 
         void computeValues(const double in[])
         {
@@ -67,7 +66,7 @@ namespace mci
         virtual void observableFunction(const double in[], const bool /*flags*/[], double out[]){ observableFunction(in, out); }
         //                               ^input = walker positions   ^which input is new   ^resulting observables
     };
-}
+}  // namespace mci
 
 
 #endif

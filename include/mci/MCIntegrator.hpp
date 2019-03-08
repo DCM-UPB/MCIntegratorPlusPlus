@@ -68,12 +68,12 @@ namespace mci
         void computeOldSamplingFunction(); //compute the new sampling function with the old coordinates
         // and it stores it in the old sampling
         void updateSamplingFunction(); //copy the new sampling function into the old one
-        double computeAcceptance(); //compute the acceptance
+        double computeAcceptance() const; //compute the acceptance
 
         void resetAccRejCounters();
 
         void updateVolume();
-        void applyPBC(double v[]);
+        void applyPBC(double v[]) const;
         void computeNewX();
         void updateX();
         //use this if there is a pdf, returns whether step was accepted or not
@@ -112,13 +112,13 @@ namespace mci
         void setNdecorrelationSteps(int nsteps /* -1 == auto, 0 == disabled */){_NdecorrelationSteps=nsteps;}
 
 
-        void addObservable(ObservableFunctionInterface * obs /* MCI adds accumulator and estimator for this obs, with following options: */,
+        void addObservable(const ObservableFunctionInterface & obs /* MCI adds accumulator and estimator for this obs, with following options: */,
                            int blocksize, /* if > 1, use fixed block size and assume uncorrelated samples, if <= 0, use no blocks and no error calculation */
                            int nskip, /* evaluate observable only every n-th step NOTE: now a block consists of $blocksize non-skipped samples */
                            bool flag_equil, /* observable wants to be equilibrated when using automatic initial decorrelation (blocksize must be > 0) */
                            bool flag_correlated /* should block averages be treated as correlated samples? (blocksize must be > 0) */
                            );
-        void addObservable(ObservableFunctionInterface * obs, int blocksize = 1, int nskip = 1) {
+        void addObservable(const ObservableFunctionInterface & obs, int blocksize = 1, int nskip = 1) {
             addObservable(obs, blocksize, nskip, blocksize>0, blocksize==1); // safe&easy defaults, appropriate for most cases
         }
         void clearObservables(); // clear
@@ -133,35 +133,35 @@ namespace mci
         void storeWalkerPositionsOnFile(const std::string &filepath, int freq);
 
         // --- Getters
-        int getNDim(){ return _ndim; }
-        double getLBound(int i){ return _lbound[i]; }
-        double getUBound(int i){ return _ubound[i]; }
+        int getNDim() const { return _ndim; }
+        double getLBound(int i) const { return _lbound[i]; }
+        double getUBound(int i) const { return _ubound[i]; }
 
-        double getX(int i){ return _xold[i];}
-        const double * getX(){ return _xold; }
-        double getMRT2Step(int i){ return _mrt2step[i]; }
-        const double * getMRT2Step(){ return _mrt2step; }
-        int getNfindMRT2Iterations(){ return _NfindMRT2Iterations; }
-        int getNdecorrelationSteps(){ return _NdecorrelationSteps; }
+        double getX(int i) const { return _xold[i];}
+        const double * getX() const { return _xold; }
+        double getMRT2Step(int i) const { return _mrt2step[i]; }
+        const double * getMRT2Step() const { return _mrt2step; }
+        int getNfindMRT2Iterations() const { return _NfindMRT2Iterations; }
+        int getNdecorrelationSteps() const { return _NdecorrelationSteps; }
 
-        ObservableFunctionInterface * getObservable(int i){ return _obscont.getObservableFunction(i); }
-        int getNObs(){ return _obscont.getNObs(); }
-        int getNObsDim(){ return _obscont.getNObsDim(); }
+        const ObservableFunctionInterface & getObservable(int i) const { return _obscont.getObservableFunction(i); }
+        int getNObs() const { return _obscont.getNObs(); }
+        int getNObsDim() const { return _obscont.getNObsDim(); }
 
-        SamplingFunctionInterface * getSamplingFunction(int i){ return _pdf[i]; }
-        int getNSampF(){ return _pdf.size(); }
+        const SamplingFunctionInterface & getSamplingFunction(int i) const { return *_pdf[i]; }
+        int getNSampF() const { return _pdf.size(); }
 
-        CallBackOnAcceptanceInterface * getCallBackOnAcceptance(int i){ return _cback[i]; }
-        int getNCallBacks(){ return _cback.size(); }
+        const CallBackOnAcceptanceInterface & getCallBackOnAcceptance(int i) const { return *_cback[i]; }
+        int getNCallBacks() const { return _cback.size(); }
 
-        double getTargetAcceptanceRate(){ return _targetaccrate; }
-        double getAcceptanceRate(){ return (_acc>0) ? static_cast<double>(_acc)/(static_cast<double>(_acc)+_rej) : 0.; }
+        double getTargetAcceptanceRate() const { return _targetaccrate; }
+        double getAcceptanceRate() const { return (_acc>0) ? static_cast<double>(_acc)/(static_cast<double>(_acc)+_rej) : 0.; }
 
         // --- Integrate
 
         // Actual integrate implemention. With flags to skip the configured step adjustment/decorrelation.
         void integrate(int Nmc, double average[], double error[], bool doFindMRT2step = true, bool doDecorrelation = true);
     };
-}
+}  // namespace mci
 
 #endif

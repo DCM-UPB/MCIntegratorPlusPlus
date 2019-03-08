@@ -36,4 +36,4 @@ namespace mci
         std::swap(_protonew, _protoold);
     }
 
-}
+}  // namespace mci

@@ -26,14 +26,14 @@ namespace mci
         void _deallocate() override;
 
     public:
-        FullAccumulator(ObservableFunctionInterface * obs, int nskip):
+        FullAccumulator(const ObservableFunctionInterface &obs, int nskip):
             AccumulatorInterface(obs, nskip), _nstore(0), _storeidx(0)
         {}
 
         ~FullAccumulator() override { this->_deallocate(); }
 
-        int getNStore() override { return _nstore; }
+        int getNStore() const override { return _nstore; }
     };
-}
+}  // namespace mci
 
 #endif

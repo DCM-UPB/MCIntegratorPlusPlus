@@ -6,6 +6,7 @@
 
 #include <fstream>
 #include <functional>
+#include <memory>
 #include <vector>
 
 namespace mci
@@ -16,7 +17,7 @@ namespace mci
         int _nobsdim {0}; // stores total dimension of contained observables
 
         // Accumulators
-        std::vector< AccumulatorInterface * > _accus;
+        std::vector< std::unique_ptr<AccumulatorInterface> > _accus;
 
         // Estimator functions used to obtain result of MC integration
         std::vector< std::function< void (double [] /*avg*/, double [] /*error*/) > > _estims; // corresponding accumulators are already bound
@@ -26,30 +27,30 @@ namespace mci
 
     public:
         explicit ObservableContainer() = default;
-        ~ObservableContainer(){ this->clear(); }
+        ~ObservableContainer() = default;
 
         // simple getters
-        int getNObs(){ return _accus.size(); }
-        int getNObsDim(){ return _nobsdim; }
+        int getNObs() const { return _accus.size(); }
+        int getNObsDim() const { return _nobsdim; }
 
-        ObservableFunctionInterface * getObservableFunction(int i){ return _accus[i]->getObservableFunction(); }
-        bool getFlagEquil(int i){return (_flags_equil[i]>0);}
+        const ObservableFunctionInterface & getObservableFunction(int i) const { return _accus[i]->getObservableFunction(); }
+        bool getFlagEquil(int i) const {return (_flags_equil[i]>0);}
 
         // operational methods
         // add accumulator&estimator for an observable
-        void addObservable(AccumulatorInterface * accumulator,
+        void addObservable(std::unique_ptr<AccumulatorInterface> accumulator, // we acquire ownerhsip
                            const std::function< void (int /*nstored*/, int /*nobs*/, const double [] /*data*/, double [] /*avg*/, double [] /*error*/) > &estimator,
                            bool needsEquil);
 
         void allocate(int Nmc); // allocate data memory
         void accumulate(const double x[], bool flagacc, const bool flags_xchanged[]); // process accumulation for position x
-        void printObsValues(std::ofstream &file); // write last observables values to filestream
+        void printObsValues(std::ofstream &file) const; // write last observables values to filestream
         void finalize(); // used after sampling to apply all necessary data normalization
-        void estimate(double average[], double error[]); // eval estimators on finalized data and return average/error
+        void estimate(double average[], double error[]) const; // eval estimators on finalized data and return average/error
         void reset(); // obtain clean state, but keep allocation
         void deallocate(); // free data memory
         void clear(); // clear everything
     };
-}
+}  // namespace mci
 
 #endif

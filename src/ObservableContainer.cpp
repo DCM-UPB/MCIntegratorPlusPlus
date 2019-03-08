@@ -5,19 +5,19 @@
 namespace mci
 {
 
-    void ObservableContainer::addObservable(AccumulatorInterface * accumulator,
+    void ObservableContainer::addObservable(std::unique_ptr<AccumulatorInterface> accumulator,
                                             const std::function< void (int, int, const double [], double [], double []) > &estimator,
                                             bool needsEquil)
     {
-        _accus.emplace_back(accumulator);
-        _nobsdim+=accumulator->getNObs();
-
-        _estims.emplace_back( [accumulator, estimator](double average[], double error[]) { // lambda functional
-                                  if(!accumulator->isFinalized()) {
+        _estims.emplace_back( [accu=accumulator.get(), estimator](double average[], double error[]) { // lambda functional
+                                  if(!accu->isFinalized()) {
                                       throw std::runtime_error("[ObservableContainer.estim] Estimator was called, but accumulator is not finalized.");
                                   }
-                                  estimator(accumulator->getNStore(), accumulator->getNObs(), accumulator->getData(), average, error);
+                                  estimator(accu->getNStore(), accu->getNObs(), accu->getData(), average, error);
                               } );
+        _nobsdim+=accumulator->getNObs();
+        _accus.emplace_back(std::move(accumulator)); // now accumulator is owned by _accus vector
+
         _flags_equil.emplace_back(needsEquil ? 1 : 0);
     }
 
@@ -38,12 +38,11 @@ namespace mci
     }
 
 
-    void ObservableContainer::printObsValues(std::ofstream &file)
+    void ObservableContainer::printObsValues(std::ofstream &file) const
     {
         for (auto & accu : _accus) {
-            ObservableFunctionInterface * const obs = accu->getObservableFunction(); // acquire ptr to obsfun
-            for (int j=0; j<obs->getNObs(); ++j) {
-                file << " " << obs->getValue(j);
+            for (int j=0; j<accu->getNObs(); ++j) {
+                file << " " << accu->getObsValue(j);
             }
         }
         file << " ";
@@ -58,7 +57,7 @@ namespace mci
     }
 
 
-    void ObservableContainer::estimate(double average[], double error[])
+    void ObservableContainer::estimate(double average[], double error[]) const
     {
         int iobs = 0;
         int offset = 0;
@@ -86,9 +85,9 @@ namespace mci
 
     void ObservableContainer::clear()
     {
-        for (auto & accu : _accus) {
-            delete accu;
-        }
+        //for (auto & accu : _accus) {
+        //    delete accu;
+        //}
         _accus.clear();
         _nobsdim=0;
 
@@ -96,4 +95,4 @@ namespace mci
         _flags_equil.clear();
     }
 
-}
+}  // namespace mci
