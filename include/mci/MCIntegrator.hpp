@@ -83,8 +83,10 @@ namespace mci
         void findMRT2Step();
         void initialDecorrelation();
 
+        // sample without taking data
+        void sample(int npoints);
         // fill data with samples
-        void sample(int npoints, ObservableContainer * container = nullptr);
+        void sample(int npoints, ObservableContainer &container);
 
         // store to file
         void storeObservables();

@@ -1,6 +1,8 @@
 #ifndef MCI_CALLBACKONMOVEINTERFACE_HPP
 #define MCI_CALLBACKONMOVEINTERFACE_HPP
 
+#include "mci/Clonable.hpp"
+
 namespace mci
 {
     // Base class for adding callbacks to MCI. When added to MCI, they will be invoked on every walker move.

@@ -281,4 +281,11 @@ namespace mci
         }
     }
 
+
+    // Noop Estimator
+    void NoopEstimator(int , int nobs, const double data[], double avg[], double err[]) {
+        std::copy(data, data+nobs, avg);
+        std::fill(err, err+nobs, 0.);
+    }
+
 }  // namespace mci

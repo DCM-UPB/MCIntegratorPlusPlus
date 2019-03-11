@@ -1,9 +1,10 @@
 #include "mci/MCIntegrator.hpp"
 
 #include "mci/BlockAccumulator.hpp"
-#include "mci/Estimators.hpp"
 #include "mci/FullAccumulator.hpp"
 #include "mci/SimpleAccumulator.hpp"
+#include "mci/Estimators.hpp"
+#include "mci/Factories.hpp"
 
 #include <algorithm>
 #include <functional>
@@ -31,7 +32,7 @@ namespace mci
         if (_flagobsfile) { _obsfile.open(_pathobsfile); }
         if (_flagwlkfile) { _wlkfile.open(_pathwlkfile); }
         _flagMC = true;
-        this->sample(Nmc, &_obscont); // let sample accumulate data
+        this->sample(Nmc, _obscont); // let sample accumulate data
         _flagMC = false;
         if (_flagobsfile) { _obsfile.close(); }
         if (_flagwlkfile) { _wlkfile.close(); }
@@ -77,15 +78,39 @@ namespace mci
     }
 
 
-    void MCI::sample(const int npoints, ObservableContainer * container)
+    void MCI::sample(const int npoints) // sample without taking observables
     {
-        const bool flagobs = (container != nullptr); // should we sample observables ?
+        // reset acceptance and rejection
+        this->resetAccRejCounters();
 
+        // first call of the call-back functions
+        if (_flagpdf) {
+            for (auto & cback : _cbacks){
+                cback->callBackFunction(_xold, true);
+            }
+        }
+
+        // initialize the pdf at x
+        computeOldSamplingFunction();
+
+        for (_ridx=0; _ridx<npoints; ++_ridx) {
+            if (_flagpdf) { // use sampling function
+                this->doStepMRT2(nullptr);
+            }
+            else {
+                this->newRandomX();
+                ++_acc; // "accept" move
+            }
+        }
+    }
+
+    void MCI::sample(const int npoints, ObservableContainer &container)
+    {
         // reset acceptance and rejection
         this->resetAccRejCounters();
 
         // reset observable data (to be sure)
-        if (flagobs) { container->reset(); }
+        container.reset();
 
         // first call of the call-back functions
         if (_flagpdf) {
@@ -98,7 +123,8 @@ namespace mci
         computeOldSamplingFunction();
 
         //run the main loop for sampling
-        bool flags_xchanged[_ndim]; // will remember which x elements changed
+        bool flags_xchanged[_ndim];
+        //bool flags_xchanged[_ndim*container->getNObs()]; // will remember which x elements changed
         for (_ridx=0; _ridx<npoints; ++_ridx) {
             std::fill(flags_xchanged, flags_xchanged+_ndim, false); // reset flags
 
@@ -113,16 +139,13 @@ namespace mci
                 std::fill(flags_xchanged, flags_xchanged+_ndim, true);
             }
 
-            if (flagobs) {
-                container->accumulate(_xold, flagacc, flags_xchanged); // accumulate observables
-                if (_flagMC && _flagobsfile) { this->storeObservables(); } // store obs on file
-            }
-
+            container.accumulate(_xold, flagacc, flags_xchanged); // accumulate observables
+            if (_flagMC && _flagobsfile) { this->storeObservables(); } // store obs on file
             if (_flagMC && _flagwlkfile) { this->storeWalkerPositions(); } // store walkers on file
         }
 
         // finalize data
-        if (flagobs) { container->finalize(); }
+        container.finalize();
     }
 
 
@@ -145,7 +168,7 @@ namespace mci
             obs_equil.allocate(MIN_NMC);
 
             //do a first estimate of the observables
-            this->sample(MIN_NMC, &obs_equil);
+            this->sample(MIN_NMC, obs_equil);
             auto * oldestimate = new double[nobsdim];
             auto * olderrestim = new double[nobsdim];
             obs_equil.estimate(oldestimate, olderrestim);
@@ -156,7 +179,7 @@ namespace mci
             auto * newerrestim = new double[nobsdim];
             while ( flag_loop ) {
                 flag_loop = false;
-                this->sample(MIN_NMC, &obs_equil);
+                this->sample(MIN_NMC, obs_equil);
                 obs_equil.estimate(newestimate, newerrestim);
 
                 for (int i=0; i<nobsdim; ++i) {
@@ -178,7 +201,7 @@ namespace mci
             obs_equil.clear();
         }
         else if (_NdecorrelationSteps > 0) {
-            this->sample(_NdecorrelationSteps, nullptr);
+            this->sample(_NdecorrelationSteps);
         }
     }
 
@@ -198,7 +221,7 @@ namespace mci
         double fact;
         while ( ( _NfindMRT2Iterations < 0 && cons_count < MIN_CONS ) || counter < _NfindMRT2Iterations ) {
             //do MIN_STAT M(RT)^2 steps
-            this->sample(MIN_STAT, nullptr);
+            this->sample(MIN_STAT);
 
             //increase or decrease mrt2step depending on the acceptance rate
             double rate = this->getAcceptanceRate();
@@ -235,8 +258,8 @@ namespace mci
         }
     }
 
-
     bool MCI::doStepMRT2(bool * flags_xchanged)
+    //bool MCI::doStepMRT2(const int nobs, bool * flags_xchanged)
     {
         // propose a new position x
         this->computeNewX();
@@ -249,7 +272,8 @@ namespace mci
 
         //update some values according to the acceptance of the mrt2 step
         if ( flagacc ) {
-            std::fill(flags_xchanged, flags_xchanged+_ndim, true); // currently we do all-particle steps
+            if (flags_xchanged != nullptr) std::fill(flags_xchanged, flags_xchanged+_ndim, true);
+            //std::fill(flags_xchanged, flags_xchanged+_ndim*nobs, true); // currently we do all-particle steps
             //accepted
             _acc++;
             //update the walker position x
@@ -383,6 +407,9 @@ namespace mci
 
 
     void MCI::addCallBackOnMove(const CallBackOnMoveInterface &cback){
+        if (cback.getNDim() != _ndim) {
+            throw std::invalid_argument("[MCI::addObservable] Passed callback function's number of inputs is not equal to MCI's number of walkers.");
+        }
         _cbacks.emplace_back( std::unique_ptr<CallBackOnMoveInterface>(cback.clone()) ); // we add unique clone
     }
 
@@ -396,37 +423,18 @@ namespace mci
     void MCI::addObservable(const ObservableFunctionInterface &obs, int blocksize, int nskip, const bool flag_equil, const bool flag_correlated)
     {
         // sanity
+        if (obs.getNDim() != _ndim) {
+            throw std::invalid_argument("[MCI::addObservable] Passed observable function's number of inputs is not equal to MCI's number of walkers.");
+        }
         blocksize = std::max(0, blocksize);
         nskip = std::max(1, nskip);
+        const bool flag_error = (blocksize > 0); // will we calculate errors?
         if (flag_equil && blocksize==0) {
             throw std::invalid_argument("[MCI::addObservable] Requested automatic observable equilibration requires blocksize > 0.");
         }
-        if (flag_equil && blocksize==0) {
-            throw std::invalid_argument("[MCI::addObservable] Requested correlated error estimation requires blocksize > 0.");
-        }
 
-        // we need to select these two
-        std::unique_ptr<AccumulatorInterface> accu;
-        std::function< void(int /*nstore*/, int /*nobs*/, const double [] /*data*/, double [] /*avg*/, double [] /*error*/) > estim;
-
-        if (blocksize == 0) {
-            accu = std::unique_ptr<AccumulatorInterface>( new SimpleAccumulator(obs, nskip) );
-            // data is already the average, so this estimator just copies the average and fills error with 0
-            estim = [](int /*unused*/, int nobs, const double data[], double avg[], double err[]) {
-                        std::copy(data, data+nobs, avg);
-                        std::fill(err, err+nobs, 0.);
-                    };
-        } else {
-            if (blocksize == 1) {
-                accu = std::unique_ptr<AccumulatorInterface>( new FullAccumulator(obs, nskip) );
-            } else {
-                accu = std::unique_ptr<AccumulatorInterface>( new BlockAccumulator(obs, nskip, blocksize) );
-            }
-            estim = flag_correlated ? mci::CorrelatedEstimator : mci::UncorrelatedEstimator ;
-        }
-
-        // append to container
-        _obscont.addObservable(std::move(accu), estim, flag_equil);
+        // add accumulator&estimator from factory functions
+        _obscont.addObservable(createAccumulator(obs, blocksize, nskip), createEstimator(flag_correlated, flag_error), flag_equil);
     }
 
 
@@ -439,6 +447,9 @@ namespace mci
 
     void MCI::addSamplingFunction(const SamplingFunctionInterface &mcisf)
     {
+        if (mcisf.getNDim() != _ndim) {
+            throw std::invalid_argument("[MCI::addObservable] Passed sampling function's number of inputs is not equal to MCI's number of walkers.");
+        }
         _pdfs.emplace_back( std::unique_ptr<SamplingFunctionInterface>(mcisf.clone()) ); // we add unique clone
         _flagpdf = true;
     }
