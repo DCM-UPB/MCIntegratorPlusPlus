@@ -30,10 +30,10 @@ namespace mci
     }
 
 
-    void ObservableContainer::accumulate(const double x[], const bool flagacc, const bool flags_xchanged[])
+    void ObservableContainer::accumulate(const double x[], const int nchanged, const int changedIdx[])
     {
         for (auto & accu : _accus) {
-            accu->accumulate(x, flagacc, flags_xchanged);
+            accu->accumulate(x, nchanged, changedIdx);
         }
     }
 

@@ -57,98 +57,6 @@ namespace mci
     //   --- Internal methods
 
 
-    void MCI::storeObservables()
-    {
-        if ( _ridx%_freqobsfile == 0 ) {
-            _obscont.printObsValues(_obsfile);
-            _obsfile << std::endl;
-        }
-    }
-
-
-    void MCI::storeWalkerPositions()
-    {
-        if ( _ridx%_freqwlkfile == 0 ) {
-            _wlkfile << _ridx;
-            for (int j=0; j<_ndim; ++j) {
-                _wlkfile << "   " << _xold[j] ;
-            }
-            _wlkfile << std::endl;
-        }
-    }
-
-
-    void MCI::sample(const int npoints) // sample without taking observables
-    {
-        // reset acceptance and rejection
-        this->resetAccRejCounters();
-
-        // first call of the call-back functions
-        if (_flagpdf) {
-            for (auto & cback : _cbacks){
-                cback->callBackFunction(_xold, true);
-            }
-        }
-
-        // initialize the pdf at x
-        computeOldSamplingFunction();
-
-        for (_ridx=0; _ridx<npoints; ++_ridx) {
-            if (_flagpdf) { // use sampling function
-                this->doStepMRT2(nullptr);
-            }
-            else {
-                this->newRandomX();
-                ++_acc; // "accept" move
-            }
-        }
-    }
-
-    void MCI::sample(const int npoints, ObservableContainer &container)
-    {
-        // reset acceptance and rejection
-        this->resetAccRejCounters();
-
-        // reset observable data (to be sure)
-        container.reset();
-
-        // first call of the call-back functions
-        if (_flagpdf) {
-            for (auto & cback : _cbacks){
-                cback->callBackFunction(_xold, true);
-            }
-        }
-
-        // initialize the pdf at x
-        computeOldSamplingFunction();
-
-        //run the main loop for sampling
-        bool flags_xchanged[_ndim];
-        //bool flags_xchanged[_ndim*container->getNObs()]; // will remember which x elements changed
-        for (_ridx=0; _ridx<npoints; ++_ridx) {
-            std::fill(flags_xchanged, flags_xchanged+_ndim, false); // reset flags
-
-            bool flagacc;
-            if (_flagpdf) { // use sampling function
-                flagacc = this->doStepMRT2(flags_xchanged);
-            }
-            else {
-                this->newRandomX();
-                ++_acc; // "accept" move
-                flagacc = true;
-                std::fill(flags_xchanged, flags_xchanged+_ndim, true);
-            }
-
-            container.accumulate(_xold, flagacc, flags_xchanged); // accumulate observables
-            if (_flagMC && _flagobsfile) { this->storeObservables(); } // store obs on file
-            if (_flagMC && _flagwlkfile) { this->storeWalkerPositions(); } // store walkers on file
-        }
-
-        // finalize data
-        container.finalize();
-    }
-
-
     void MCI::initialDecorrelation()
     {
         if (_NdecorrelationSteps < 0) {
@@ -258,8 +166,100 @@ namespace mci
         }
     }
 
-    bool MCI::doStepMRT2(bool * flags_xchanged)
-    //bool MCI::doStepMRT2(const int nobs, bool * flags_xchanged)
+    // sampling
+
+    void MCI::sample(const int npoints) // sample without taking observables
+    {
+        // reset acceptance and rejection
+        this->resetAccRejCounters();
+
+        // first call of the call-back functions
+        if (_flagpdf) {
+            for (auto & cback : _cbacks){
+                cback->callBackFunction(_xold, true);
+            }
+        }
+
+        // initialize the pdf at x
+        computeOldSamplingFunction();
+
+        for (_ridx=0; _ridx<npoints; ++_ridx) {
+            if (_flagpdf) { // use sampling function
+                this->doStepMRT2();
+            }
+            else {
+                this->newRandomX();
+                ++_acc; // "accept" move
+            }
+        }
+    }
+
+    void MCI::sample(const int npoints, ObservableContainer &container)
+    {
+        // reset acceptance and rejection
+        this->resetAccRejCounters();
+
+        // reset observable data (to be sure)
+        container.reset();
+
+        // first call of the call-back functions
+        if (_flagpdf) {
+            for (auto & cback : _cbacks){
+                cback->callBackFunction(_xold, true);
+            }
+        }
+
+        // initialize the pdf at x
+        computeOldSamplingFunction();
+
+        //run the main loop for sampling
+        int changedIdx[_ndim];
+        std::iota(changedIdx, changedIdx+_ndim, 0); // init with 0...ndim-1
+
+        for (_ridx=0; _ridx<npoints; ++_ridx) {
+            int nchanged = 0;
+
+            if (_flagpdf) { // use sampling function
+                nchanged = this->doStepMRT2();
+            }
+            else {
+                this->newRandomX();
+                ++_acc; // "accept" move
+                nchanged = _ndim;
+            }
+
+            container.accumulate(_xold, nchanged, changedIdx); // accumulate observables
+            if (_flagMC && _flagobsfile) { this->storeObservables(); } // store obs on file
+            if (_flagMC && _flagwlkfile) { this->storeWalkerPositions(); } // store walkers on file
+        }
+
+        // finalize data
+        container.finalize();
+    }
+
+    void MCI::storeObservables()
+    {
+        if ( _ridx%_freqobsfile == 0 ) {
+            _obscont.printObsValues(_obsfile);
+            _obsfile << std::endl;
+        }
+    }
+
+
+    void MCI::storeWalkerPositions()
+    {
+        if ( _ridx%_freqwlkfile == 0 ) {
+            _wlkfile << _ridx;
+            for (int j=0; j<_ndim; ++j) {
+                _wlkfile << "   " << _xold[j] ;
+            }
+            _wlkfile << std::endl;
+        }
+    }
+
+    // Walking
+
+    int MCI::doStepMRT2(int * /*changeIdx, unused*/)
     {
         // propose a new position x
         this->computeNewX();
@@ -268,12 +268,10 @@ namespace mci
         this->computeNewSamplingFunction();
 
         //determine if the proposed x is accepted or not
-        const bool flagacc = ( _rd(_rgen) <= this->computeAcceptance() );
+        const int nchanged = ( _rd(_rgen) <= this->computeAcceptance() ) ? _ndim : 0; // currently we do all-particle steps
 
         //update some values according to the acceptance of the mrt2 step
-        if ( flagacc ) {
-            if (flags_xchanged != nullptr) std::fill(flags_xchanged, flags_xchanged+_ndim, true);
-            //std::fill(flags_xchanged, flags_xchanged+_ndim*nobs, true); // currently we do all-particle steps
+        if ( nchanged > 0 ) {
             //accepted
             _acc++;
             //update the walker position x
@@ -289,32 +287,8 @@ namespace mci
             _rej++;
         }
 
-        return flagacc;
+        return nchanged;
     }
-
-
-    void MCI::updateVolume()
-    {
-        // Set the integration volume
-        _vol=1.;
-        for (int i=0; i<_ndim; ++i) {
-            _vol = _vol*( _ubound[i] - _lbound[i] );
-        }
-    }
-
-
-    void MCI::applyPBC(double v[]) const
-    {
-        for (int i=0; i<_ndim; ++i) {
-            while ( v[i] < _lbound[i] ) {
-                v[i] += _ubound[i] - _lbound[i];
-            }
-            while ( v[i] > _ubound[i] ) {
-                v[i] -= _ubound[i] - _lbound[i];
-            }
-        }
-    }
-
 
     void MCI::updateX()
     {
@@ -473,6 +447,33 @@ namespace mci
         applyPBC(_xold);
     }
 
+    void MCI::setSeed(const uint_fast64_t seed) // fastest unsigned integer which is at least 64 bit (as expected by rgen)
+    {
+        _rgen.seed(seed);
+    }
+
+    // Domain
+    void MCI::updateVolume()
+    {
+        // Set the integration volume
+        _vol=1.;
+        for (int i=0; i<_ndim; ++i) {
+            _vol = _vol*( _ubound[i] - _lbound[i] );
+        }
+    }
+
+    void MCI::applyPBC(double v[]) const
+    {
+        for (int i=0; i<_ndim; ++i) {
+            while ( v[i] < _lbound[i] ) {
+                v[i] += _ubound[i] - _lbound[i];
+            }
+            while ( v[i] > _ubound[i] ) {
+                v[i] -= _ubound[i] - _lbound[i];
+            }
+        }
+    }
+
     void MCI::setIRange(const double lbound, const double ubound)
     {
         // Set irange and apply PBC to the initial walker position _x
@@ -491,11 +492,6 @@ namespace mci
         updateVolume();
 
         applyPBC(_xold);
-    }
-
-    void MCI::setSeed(const uint_fast64_t seed) // fastest unsigned integer which is at least 64 bit (as expected by rgen)
-    {
-        _rgen.seed(seed);
     }
 
 

@@ -28,43 +28,31 @@ namespace mci
     class ObservableFunctionInterface: public Clonable<ObservableFunctionInterface>
     {
     protected:
-        const int _ndim;  //dimension of the input array (walker poistion)
+        const int _ndim;  //dimension of the input array (walker position)
         const int _nobs;  //number of values provided by the observable
-        double * const _obs; //array that stores the last observables computed
 
     public:
-        ObservableFunctionInterface(int ndim, int nobs): _ndim(ndim), _nobs(nobs), _obs(new double[nobs])
-        {
-            std::fill(_obs, _obs+nobs, 0.);
-        }
+        ObservableFunctionInterface(int ndim, int nobs): _ndim(ndim), _nobs(nobs) {}
 
-        ~ObservableFunctionInterface() override{ delete [] _obs; }
-
+        // getters
         int getNObs() const { return _nobs; }
         int getNDim() const { return _ndim; }
-        double getValue(int i) const { return _obs[i]; }
-        const double * getValues() const { return _obs; }
-
-        void computeValues(const double in[])
-        {
-            observableFunction(in, _obs);
-        }
-
-        void computeValues(const double in[], const bool flags_xchanged[] /*flag_i true if x_i changed*/)
-        {
-            observableFunction(in, flags_xchanged, _obs);
-        }
-
 
         // --- METHOD THAT MUST BE IMPLEMENTED
-        // Compute the observable and store it in out
+        // Compute all observable elements and store them in out.
         virtual void observableFunction(const double in[], double out[]) = 0;
         //                               ^input = walker positions  ^resulting observables
 
         // --- OPTIONALLY ALSO OVERWRITE THIS
-        // Compute the observable, given knowledge of what changed
-        virtual void observableFunction(const double in[], const bool /*flags*/[], double out[]){ observableFunction(in, out); }
-        //                               ^input = walker positions   ^which input is new   ^resulting observables
+        // Compute the observable, given ndim flags indicating which inputs have changed since last observable calculation.
+        // This means you don't need to store the previous walker position to decide how to efficiently calculate
+        // the new observable, unless you really need the old positions in your calculation. The last observable values are
+        // passed via the out array, so again you can use these values without storing internal "old" values, unless you explictly
+        // need to do so.
+        // You may use the nchanged argument to decide whether a full recalculation or flag-based recalculation is more efficient.
+        // If full recalculation is almost always more efficient in your case, simply don't overwrite this method.
+        virtual void observableFunction(const double in[], const int /*nchanged*/, const bool[]/*flags[ndim]*/, double out[]){ observableFunction(in, out); }
+        //                               ^input = walker positions  ^how many inputs changed  ^which indices are new   ^resulting observables (passed containing old obs, so you can make use of those)
     };
 }  // namespace mci
 

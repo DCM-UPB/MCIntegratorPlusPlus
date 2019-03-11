@@ -76,8 +76,8 @@ namespace mci
         void applyPBC(double v[]) const;
         void computeNewX();
         void updateX();
-        //use this if there is a pdf, returns whether step was accepted or not
-        bool doStepMRT2(bool * flags_xchanged /* tells which x are changed */);
+        //use this if there is a pdf, returns how many x were changed (0 if not accepted)
+        int doStepMRT2(int * changedIdx = nullptr /*unused, because all-particle steps*/); // returns number of changed positions, i.e. 0 or ndim
 
         // these are used before sampling
         void findMRT2Step();

@@ -43,7 +43,7 @@ namespace mci
                            bool needsEquil);
 
         void allocate(int Nmc); // allocate data memory
-        void accumulate(const double x[], bool flagacc, const bool flags_xchanged[]); // process accumulation for position x
+        void accumulate(const double x[], int nchanged, const int changedIdx[]); // process accumulation for position x, with nchanged indices changedIdx
         void printObsValues(std::ofstream &file) const; // write last observables values to filestream
         void finalize(); // used after sampling to apply all necessary data normalization
         void estimate(double average[], double error[]) const; // eval estimators on finalized data and return average/error

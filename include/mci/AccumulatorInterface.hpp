@@ -12,21 +12,25 @@ namespace mci
     {
     protected:
         const std::unique_ptr<ObservableFunctionInterface> _obs; // pointer to the related observable function (we own it uniquely, to avoid misuse)
-        //ObservableFunctionInterface * const _obs;
         const int _nobs; // number of values returned by the observable function
         const int _xndim; // dimension of walker positions/flags that get passed on accumulate
-
-        const double * const _obs_values; // observable's last values
-        bool * const _flags_xchanged; // remembers which x have changed since last obs evaluation
-
         const int _nskip; // evaluate observable only on every nskip-th step
-        int _nsteps; // total number of sampling steps (expected number of calls to accumulateObservables)
-        int _stepidx; // running step index
-        int _skipidx; // to determine when to skip accumulation
-        bool _flag_eval; // observable evaluation is needed before next accumulation
-        bool _flag_final; // was finalized called (without throwing error) ?
 
+        // fixed-size allocations
+        double * const _obs_values; // observable's last values (length _nobs)
+        bool * const _flags_xchanged; // remembers which x have changed since last obs evaluation (length _xndim)
+
+        // variables
+        int _nsteps; // total number of sampling steps (set on allocate() to planned number of calls to accumulateObservables)
         double * _data; // childs use this to store data
+
+        int _nchanged{}; // counter of how many x have changed since last obs evaluation
+        int _stepidx{}; // running step index
+        int _skipidx{}; // to determine when to skip accumulation
+        bool _flag_final{}; // was finalized called (without throwing error) ?
+
+
+        void _init(); // used in construct/reset
 
         // TO BE IMPLEMENTED BY CHILD
         virtual void _allocate() = 0; // allocate _data for a MC run of nsteps length ( expect deallocated state )
@@ -70,8 +74,8 @@ namespace mci
         // call this before a MC run of nsteps length
         void allocate(int nsteps); // will deallocate any existing allocation
 
-        // externally call this on every MC step
-        void accumulate(const double x[], bool flagacc, const bool flags_xchanged[]); // will throw if not allocated (enough)
+        // externally call these on every MC step, depending on situation
+        void accumulate(const double x[], int nchanged, const int changedIdx[] /*starts with nchanged changed indices*/); // process step with nchanged position indices
 
         // finalize (e.g. normalize) stored data
         void finalize(); // will throw if called prematurely, but does nothing if deallocated or used repeatedly

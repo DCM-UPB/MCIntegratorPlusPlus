@@ -69,7 +69,7 @@ void assertAccuResetted(const AccumulatorInterface &accu)
     assert(accu.getStepIndex() == 0);
     assert(accu.isClean());
     assert(!accu.isFinalized());
-    for (int i=0; i<accu.getNData(); ++i) { assert(accu.getData()[i] == 0.); } 
+    for (int i=0; i<accu.getNData(); ++i) { assert(accu.getData()[i] == 0.); }
 }
 
 void assertAccuDeallocated(const AccumulatorInterface &accu)
@@ -104,10 +104,10 @@ void assertAccuFinalized(const AccumulatorInterface &accu, int Nmc)
 
 void accumulateData(AccumulatorInterface &accu, int Nmc, int ndim, const double datax[], const bool datacc[])
 {   // simulated MC observable accumulation
-    bool flags_xchanged[ndim];
-    std::fill(flags_xchanged, flags_xchanged+ndim, true);
+    int changedIdx[ndim];
+    std::iota(changedIdx, changedIdx+ndim, 0); // fill with all indices
     for (int i=0; i<Nmc; ++i) {
-        accu.accumulate(datax+i*ndim, datacc[i], flags_xchanged);
+        accu.accumulate(datax+i*ndim, datacc[i] ? ndim : 0, changedIdx);
     }
     accu.finalize();
 }
