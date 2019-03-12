@@ -27,13 +27,17 @@ namespace mci
     class SamplingFunctionInterface: public Clonable<SamplingFunctionInterface>
     {
     protected:
-        const int _ndim; //dimension of the input array (walker position)
-        int _nproto; //number of proto sampling functions given as output
-        double * _protonew; //array containing the new proto sampling functions
-        double * _protoold; //array containing the old proto sampling functions
+        const int _ndim; // dimension of the input array (walker position)
+        int _nproto; // number of proto sampling functions given as output
+        double * _protonew; // array containing the new proto values (temporaries to compute scalar function value)
+        double * _protoold; // array containing the new old values
 
-        // Setters
+        // internal setters
         void setNProto(int nproto); // you may freely choose the amount of values you need
+
+        // Overwrite this if you have own data to copy on acceptance
+        // acceptance. It will be called in base's public newToOld()
+        virtual void _newToOld() {};
 
     public:
         SamplingFunctionInterface(int ndim, int nproto);
@@ -44,34 +48,52 @@ namespace mci
         int getNDim() const { return _ndim;}
         int getNProto() const { return _nproto;}
 
-        // Main operational methods
-        void computeNewSamplingFunction(const double in[]) { samplingFunction(in, _protonew); }
-        void computeNewSamplingFunction(const double xold[], const double xnew[], int nchanged, const int changedIdx[]) { samplingFunction(xold, xnew, nchanged, changedIdx, _protonew); }
-        double getAcceptance() const { return getAcceptance(_protoold, _protonew); }
 
-        // overwrite this if you have own data to swap, but remember
-        // to call SamplingFunctionInterface::newToTold() in your newToOld()
-        virtual void newToOld(); // swap old and new protovalues
+        // --- Main operational methods
+
+        // initializer for old
+        void computeOldSamplingFunction(const double in[]) { samplingFunction(in, _protoold); }
+
+        // compute full protonew and return acceptance
+        double computeAcceptance(const double in[]);
+
+        // update protonew and return acceptance, given the nchanged indices changedIdx, that differ between xold and xnew
+        double computeAcceptance(const double xold[], const double xnew[], int nchanged, const int changedIdx[]);
+
+        // copy new to old protov (we need to copy, not swap, to allow elementary updates), call _newToOld()
+        void newToOld();
 
 
         // --- METHODS THAT MUST BE IMPLEMENTED
-        // Function that MCI uses for the proto-sampling function. Computes _protonew
-        virtual void samplingFunction(const double in[], double protovalues[]) = 0;
-        //                                      ^walker position  ^resulting proto-values
 
-        // Acceptance function, that uses the new and old values of the proto sampling function
+        // Function that MCI uses to calculate your proto-sampling function values.
+        // Calculate them as they are expected from your samplingFunction().
+        virtual void samplingFunction(const double in[], double protovalues[]) = 0;
+        //                             ^walker position  ^resulting proto-values
+
+        // Acceptance function, that uses the old and new proto sampling function values
+        // If your actual sampling function is an exponential like exp(-sum(pv)), you would compute
+        // something like exp( -sum(protonew)+sum(protoold) ) here, i.e. division of exponentials.
         virtual double getAcceptance(const double protoold[], const double protonew[]) const = 0;
 
+
         // --- OPTIONALLY ALSO OVERWRITE THIS (to optimize for single/few particle moves)
-        // Compute the proto values, given both previous and current walker positions (xold/xnew), and additionally the
-        // array changedIdx containing the indices of the nchanged(!) elements that differ between xold and xnew. The
-        // indices in changedIdx are guaranteed to be in ascending order.
+
+        // Return step acceptance AND update(!) protonew elements, given both previous and current
+        // walker positions (xold/xnew), and additionally the array changedIdx containing the indices
+        // of the nchanged elements that differ between xold and xnew. The indices in changedIdx are
+        // guaranteed to be in ascending order.
         // This means:
         //     a) you never have to store the previous walker position in your child class and
         //     b) you can use the indices in changedIdx to provide efficient recalculation of your protovalues
+        // Remember that in this method you should only update the protov[] elements with indices in changedIdx.
         // If full recalculation is almost always more efficient in your case, you may also choose not to overwrite this method.
-        virtual void samplingFunction(const double xold[], const double xnew[], int /*nchanged*/, const int[] /*changedIdx*/, double protov[]) {
-            samplingFunction(xnew, protov); // default to "calculate all"
+        virtual double getUpdateAcceptance(const double[] /*xold*/, const double xnew[], int /*nchanged*/, const int[] /*changedIdx*/,
+                                           const double protoold[], double protonew[] /* update this! */)
+        {
+            // default to "calculate all"
+            this->samplingFunction(xnew, protonew);
+            return this->getAcceptance(protoold, protonew);
         }
     };
 }  // namespace mci

@@ -31,17 +31,15 @@ namespace mci
 
         void addSamplingFunction(std::unique_ptr<SamplingFunctionInterface> sampf); // we acquire ownership
 
-        void updateSamplingFunctions(); // swap old and new protovalues
+        void newToOld(); // copy new to old protovalues
         void computeOldSamplingFunctions(const double xold[]); //compute the old sampling function with the old coordinates
-        void computeNewSamplingFunctions(const double xnew[]); //compute the new sampling function with new coordinates
-        // compute new sampling from xold,xnew and _protoolds, with information about change (nchanged indices in changedIdx)
-        void computeNewSamplingFunctions(const double xold[], const double xnew[], int nchanged, const int changedIdx[]);
-        double computeAcceptance() const; // compute the full acceptance probability
+        double computeAcceptance(const double xnew[]); //compute then new sampling function and return acceptance of new coordinates
+        // compute new sampling from xold,xnew and _protoolds, with nchanged indices stored in changedIdx. return acceptance
+        double computeAcceptance(const double xold[], const double xnew[], int nchanged, const int changedIdx[]);
 
         //void printProtoValues(std::ofstream &file) const; // write last protovalues to filestream
         void clear(); // clear everything
     };
-
 
 } // namespace mci
 

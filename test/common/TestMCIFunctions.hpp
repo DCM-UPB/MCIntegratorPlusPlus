@@ -120,18 +120,21 @@ public:
         }
     }
 
-    void samplingFunction(const double xold[], const double xnew[], int nchanged, const int changedIdx[], double out[]) override
-    {
-        for (int i=0; i<nchanged; ++i) {
-            out[changedIdx[i]] = (xnew[changedIdx[i]])*(xnew[changedIdx[i]]);
-        }
-    }
-
     double getAcceptance(const double protoold[], const double protonew[]) const override
     {
         double expf = 0.;
         for (int i=0; i<_nproto; ++i) {
             expf += protonew[i]-protoold[i];
+        }
+        return exp(-expf);
+    }
+
+    double getUpdateAcceptance(const double xold[], const double xnew[], int nchanged, const int changedIdx[], const double pvold[], double pvnew[]) override
+    {
+        double expf = 0.;
+        for (int i=0; i<nchanged; ++i) {
+            pvnew[changedIdx[i]] = xnew[changedIdx[i]] * xnew[changedIdx[i]];
+            expf += pvnew[changedIdx[i]] - pvold[changedIdx[i]];
         }
         return exp(-expf);
     }

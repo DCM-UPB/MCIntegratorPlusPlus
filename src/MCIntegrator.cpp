@@ -237,10 +237,10 @@ namespace mci
         this->computeNewX();
 
         // find the corresponding sampling function value
-        _pdfcont.computeNewSamplingFunctions(_xold, _xnew, _ndim, changeIdx);
+        const double acceptance = _pdfcont.computeAcceptance(_xold, _xnew, _ndim, changeIdx);
 
         //determine if the proposed x is accepted or not
-        const int nchanged = ( _rd(_rgen) <= _pdfcont.computeAcceptance() ) ? _ndim : 0; // currently we do all-particle steps
+        const int nchanged = ( _rd(_rgen) <= acceptance ) ? _ndim : 0; // currently we do all-particle steps
 
         //update some values according to the acceptance of the mrt2 step
         if ( nchanged > 0 ) {
@@ -249,7 +249,7 @@ namespace mci
             //update the walker position x
             this->updateX();
             //update the sampling function values pdfx
-            _pdfcont.updateSamplingFunctions();
+            _pdfcont.newToOld();
         } else {
             //rejected
             _rej++;

@@ -31,9 +31,27 @@ namespace mci
         _nproto=nproto;
     }
 
+    double SamplingFunctionInterface::computeAcceptance(const double in[])
+    {
+        this->samplingFunction(in, _protonew);
+        return this->getAcceptance(_protoold, _protonew);
+    }
+
+    double SamplingFunctionInterface::computeAcceptance(const double xold[], const double xnew[], int nchanged, const int changedIdx[])
+    {
+        if (nchanged < _ndim) {
+            return this->getUpdateAcceptance(xold, xnew, nchanged, changedIdx, _protoold, _protonew);
+
+        } else { // all elements have changed
+            return this->computeAcceptance(xnew);
+        }
+    }
+
+
     void SamplingFunctionInterface::newToOld()
-    {   // pointer swap
-        std::swap(_protonew, _protoold);
+    {   // copy new values to old
+        std::copy(_protonew, _protonew+_nproto, _protoold);
+        this->_newToOld();
     }
 
 }  // namespace mci
