@@ -15,10 +15,10 @@
 namespace mci
 {
 
-    //   --- Integrate
+    //  --- Integrate
     void MCI::integrate(const int Nmc, double average[], double error[], const bool doFindMRT2step, const bool doDecorrelation)
     {
-        if ( _flagpdf ) {
+        if ( !_pdfcont.empty() ) {
             //find the optimal mrt2 step
             if (doFindMRT2step) { this->findMRT2Step(); }
             // take care to do the initial decorrelation of the walker
@@ -41,7 +41,7 @@ namespace mci
         _obscont.estimate(average, error);
 
         // if we sampled uniformly, scale results by volume
-        if (!_flagpdf) {
+        if (_pdfcont.empty()) {
             for (int i=0; i<_obscont.getNObsDim(); ++i) {
                 average[i] *=_vol;
                 error[i] *=_vol;
@@ -54,8 +54,7 @@ namespace mci
 
 
 
-    //   --- Internal methods
-
+    // --- "High-level" internal methods
 
     void MCI::initialDecorrelation()
     {
@@ -166,26 +165,23 @@ namespace mci
         }
     }
 
-    // sampling
+    // --- Sampling
 
-    void MCI::sample(const int npoints) // sample without taking observables
+    void MCI::sample(const int npoints) // sample without taking observables, file io or callbacks
     {
         // reset acceptance and rejection
         this->resetAccRejCounters();
 
-        // first call of the call-back functions
-        if (_flagpdf) {
-            for (auto & cback : _cbacks){
-                cback->callBackFunction(_xold, true);
-            }
-        }
-
         // initialize the pdf at x
-        computeOldSamplingFunction();
+        _pdfcont.computeOldSamplingFunctions(_xold);
 
+        //run the main loop for sampling
+        const bool flagpdf = !(_pdfcont.empty());
+        int changedIdx[_ndim] {0}; // we are not really using that right now
+        //std::iota(changedIdx, changedIdx+_ndim, 0); // init with 0...ndim-1
         for (_ridx=0; _ridx<npoints; ++_ridx) {
-            if (_flagpdf) { // use sampling function
-                this->doStepMRT2();
+            if (flagpdf) { // use sampling function
+                this->doStepMRT2(changedIdx);
             }
             else {
                 this->newRandomX();
@@ -196,39 +192,34 @@ namespace mci
 
     void MCI::sample(const int npoints, ObservableContainer &container)
     {
-        // reset acceptance and rejection
-        this->resetAccRejCounters();
-
-        // reset observable data (to be sure)
-        container.reset();
-
-        // first call of the call-back functions
-        if (_flagpdf) {
-            for (auto & cback : _cbacks){
-                cback->callBackFunction(_xold, true);
-            }
-        }
-
-        // initialize the pdf at x
-        computeOldSamplingFunction();
+        // Initialize
+        this->resetAccRejCounters(); // reset acceptance and rejection
+        container.reset(); // reset observable data (to be sure)
+        _pdfcont.computeOldSamplingFunctions(_xold); // initialize the pdf at x
+        this->callBackOnMove(_xold, true); // first call of the call-back functions
 
         //run the main loop for sampling
-        int changedIdx[_ndim];
-        std::iota(changedIdx, changedIdx+_ndim, 0); // init with 0...ndim-1
-
+        const bool flagpdf = !(_pdfcont.empty());
+        int changedIdx[_ndim] {0}; // we are not really using that right now
+        //std::iota(changedIdx, changedIdx+_ndim, 0); // init with 0...ndim-1
         for (_ridx=0; _ridx<npoints; ++_ridx) {
-            int nchanged = 0;
-
-            if (_flagpdf) { // use sampling function
-                nchanged = this->doStepMRT2();
+            // do MC step
+            int nchanged;
+            if (flagpdf) { // use sampling function
+                nchanged = this->doStepMRT2(changedIdx);
             }
             else {
                 this->newRandomX();
                 ++_acc; // "accept" move
                 nchanged = _ndim;
             }
+            // call the callbacks
+            this->callBackOnMove(_xold, nchanged>0);
 
-            container.accumulate(_xold, nchanged, changedIdx); // accumulate observables
+            // accumulate observables
+            container.accumulate(_xold, nchanged, changedIdx);
+
+            // file output
             if (_flagMC && _flagobsfile) { this->storeObservables(); } // store obs on file
             if (_flagMC && _flagwlkfile) { this->storeWalkerPositions(); } // store walkers on file
         }
@@ -237,38 +228,19 @@ namespace mci
         container.finalize();
     }
 
-    void MCI::storeObservables()
-    {
-        if ( _ridx%_freqobsfile == 0 ) {
-            _obscont.printObsValues(_obsfile);
-            _obsfile << std::endl;
-        }
-    }
 
+    // --- Walking
 
-    void MCI::storeWalkerPositions()
-    {
-        if ( _ridx%_freqwlkfile == 0 ) {
-            _wlkfile << _ridx;
-            for (int j=0; j<_ndim; ++j) {
-                _wlkfile << "   " << _xold[j] ;
-            }
-            _wlkfile << std::endl;
-        }
-    }
-
-    // Walking
-
-    int MCI::doStepMRT2(int * /*changeIdx, unused*/)
+    int MCI::doStepMRT2(const int changeIdx[])
     {
         // propose a new position x
         this->computeNewX();
 
         // find the corresponding sampling function value
-        this->computeNewSamplingFunction();
+        _pdfcont.computeNewSamplingFunctions(_xold, _xnew, _ndim, changeIdx);
 
         //determine if the proposed x is accepted or not
-        const int nchanged = ( _rd(_rgen) <= this->computeAcceptance() ) ? _ndim : 0; // currently we do all-particle steps
+        const int nchanged = ( _rd(_rgen) <= _pdfcont.computeAcceptance() ) ? _ndim : 0; // currently we do all-particle steps
 
         //update some values according to the acceptance of the mrt2 step
         if ( nchanged > 0 ) {
@@ -277,11 +249,7 @@ namespace mci
             //update the walker position x
             this->updateX();
             //update the sampling function values pdfx
-            this->updateSamplingFunction();
-            //if there are some call back functions, invoke them
-            for (auto & cback : _cbacks){
-                cback->callBackFunction(_xold, _flagMC);
-            }
+            _pdfcont.updateSamplingFunctions();
         } else {
             //rejected
             _rej++;
@@ -295,7 +263,6 @@ namespace mci
         std::swap(_xold, _xnew);
     }
 
-
     void MCI::newRandomX()
     {
         //set xold to new random values (within the irange)
@@ -304,13 +271,11 @@ namespace mci
         }
     }
 
-
     void MCI::resetAccRejCounters()
     {
         _acc = 0;
         _rej = 0;
     }
-
 
     void MCI::computeNewX()
     {
@@ -321,49 +286,21 @@ namespace mci
     }
 
 
-    void MCI::updateSamplingFunction()
-    {
-        for (auto & sf : _pdfs) {
-            sf->newToOld();
-        }
-    }
-
-
-    double MCI::computeAcceptance() const
-    {
-        double acceptance=1.;
-        for (auto & sf : _pdfs) {
-            acceptance*=sf->getAcceptance();
-        }
-        return acceptance;
-    }
-
-
-    void MCI::computeOldSamplingFunction()
-    {
-        for (auto & sf : _pdfs) {
-            sf->computeNewSamplingFunction(_xold);
-            sf->newToOld();
-        }
-    }
-
-
-    void MCI::computeNewSamplingFunction()
-    {
-        for (auto & sf : _pdfs) {
-            sf->computeNewSamplingFunction(_xnew);
-        }
-    }
-
-
-    //   --- Setters
-
+    // --- File Output
 
     void MCI::storeObservablesOnFile(const std::string &filepath, const int freq)
     {
         _pathobsfile = filepath;
         _freqobsfile = freq;
         _flagobsfile = true;
+    }
+
+    void MCI::storeObservables()
+    {
+        if ( _ridx%_freqobsfile == 0 ) {
+            _obscont.printObsValues(_obsfile);
+            _obsfile << std::endl;
+        }
     }
 
 
@@ -374,25 +311,45 @@ namespace mci
         _flagwlkfile = true;
     }
 
+    void MCI::storeWalkerPositions()
+    {
+        if ( _ridx%_freqwlkfile == 0 ) {
+            _wlkfile << _ridx;
+            for (int j=0; j<_ndim; ++j) {
+                _wlkfile << "   " << _xold[j] ;
+            }
+            _wlkfile << std::endl;
+        }
+    }
 
-    void MCI::clearCallBackOnMove(){
+    // --- Callbacks
+
+    void MCI::clearCallBackOnMove() {
         _cbacks.clear();
     }
 
-
-    void MCI::addCallBackOnMove(const CallBackOnMoveInterface &cback){
+    void MCI::addCallBackOnMove(const CallBackOnMoveInterface &cback)
+    {
         if (cback.getNDim() != _ndim) {
             throw std::invalid_argument("[MCI::addObservable] Passed callback function's number of inputs is not equal to MCI's number of walkers.");
         }
         _cbacks.emplace_back( std::unique_ptr<CallBackOnMoveInterface>(cback.clone()) ); // we add unique clone
     }
 
+    void MCI::callBackOnMove(const double x[], const bool accepted)
+    {
+        for (auto & cback : _cbacks){
+            cback->callBackFunction(x, accepted);
+        }
+    }
+
+
+    // --- Observables
 
     void MCI::clearObservables()
     {
         _obscont.clear();
     }
-
 
     void MCI::addObservable(const ObservableFunctionInterface &obs, int blocksize, int nskip, const bool flag_equil, const bool flag_correlated)
     {
@@ -412,21 +369,21 @@ namespace mci
     }
 
 
+    // --- Sampling functions
+
     void MCI::clearSamplingFunctions()
     {
-        _pdfs.clear();
-        _flagpdf = false;
+        _pdfcont.clear();
     }
-
 
     void MCI::addSamplingFunction(const SamplingFunctionInterface &mcisf)
     {
         if (mcisf.getNDim() != _ndim) {
             throw std::invalid_argument("[MCI::addObservable] Passed sampling function's number of inputs is not equal to MCI's number of walkers.");
         }
-        _pdfs.emplace_back( std::unique_ptr<SamplingFunctionInterface>(mcisf.clone()) ); // we add unique clone
-        _flagpdf = true;
+        _pdfcont.addSamplingFunction( mcisf.clone() );
     }
+
 
 
     void MCI::setTargetAcceptanceRate(const double targetaccrate)
@@ -523,8 +480,6 @@ namespace mci
         _NfindMRT2Iterations = -1;
         _NdecorrelationSteps = -1;
 
-        // probability density function
-        _flagpdf = false;
         // initialize file flags
         _flagwlkfile=false;
         _flagobsfile=false;

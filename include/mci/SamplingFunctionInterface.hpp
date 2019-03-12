@@ -47,6 +47,7 @@ namespace mci
         // Main operational methods
         void newToOld(); // swap old and new protovalues
         void computeNewSamplingFunction(const double in[]) { samplingFunction(in, _protonew); }
+        void computeNewSamplingFunction(const double xold[], const double xnew[], int nchanged, const int changedIdx[]) { samplingFunction(xold, xnew, nchanged, changedIdx, _protonew); }
         double getAcceptance() const { return getAcceptance(_protoold, _protonew); }
 
 
@@ -57,6 +58,18 @@ namespace mci
 
         // Acceptance function, that uses the new and old values of the proto sampling function
         virtual double getAcceptance(const double protoold[], const double protonew[]) const = 0;
+
+        // --- OPTIONALLY ALSO OVERWRITE THIS (to optimize for single/few particle moves)
+        // Compute the proto values, given both previous and current walker positions (xold/xnew), and additionally the
+        // array changedIdx containing the indices of the nchanged(!) elements that differ between xold and xnew. The
+        // indices in changedIdx are guaranteed to be in ascending order.
+        // This means:
+        //     a) you never have to store the previous walker position in your child class and
+        //     b) you can use the indices in changedIdx to provide efficient recalculation of your protovalues
+        // If full recalculation is almost always more efficient in your case, you may also choose not to overwrite this method.
+        virtual void samplingFunction(const double xold[], const double xnew[], int /*nchanged*/, const int[] /*changedIdx*/, double protov[]) {
+            samplingFunction(xnew, protov); // default to "calculate all"
+        }
     };
 }  // namespace mci
 

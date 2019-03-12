@@ -13,28 +13,35 @@ namespace mci
 {
     class ObservableContainer
     {
+        struct ObservableContainerElement
+        {
+            // Estimator function used to obtain result of MC integration
+            std::function< void (double [] /*avg*/, double [] /*error*/) > estim; // corresponding accumulator is already bound
+
+            // Accumulator
+            std::unique_ptr<AccumulatorInterface> accu;
+
+            // flags
+            bool flag_equil; // equilibrate this observable when using automatic decorrelation?
+        };
+
     private:
+        // vector with container elements
+        std::vector< ObservableContainerElement > _cont;
         int _nobsdim {0}; // stores total dimension of contained observables
-
-        // Accumulators
-        std::vector< std::unique_ptr<AccumulatorInterface> > _accus;
-
-        // Estimator functions used to obtain result of MC integration
-        std::vector< std::function< void (double [] /*avg*/, double [] /*error*/) > > _estims; // corresponding accumulators are already bound
-
-        // flags
-        std::vector< unsigned char /*avoid special vector<bool>..*/ > _flags_equil; // equilibrate this observable when using automatic decorrelation?
 
     public:
         explicit ObservableContainer() = default;
         ~ObservableContainer() = default;
 
         // simple getters
-        int getNObs() const { return _accus.size(); }
+        int getNObs() const { return _cont.size(); }
+        int size() const { return this->getNObs(); }
+
         int getNObsDim() const { return _nobsdim; }
 
-        const ObservableFunctionInterface & getObservableFunction(int i) const { return _accus[i]->getObservableFunction(); }
-        bool getFlagEquil(int i) const {return (_flags_equil[i]>0);}
+        const ObservableFunctionInterface & getObservableFunction(int i) const { return _cont[i].accu->getObservableFunction(); }
+        bool getFlagEquil(int i) const { return (_cont[i].flag_equil > 0); }
 
         // operational methods
         // add accumulator&estimator for an observable

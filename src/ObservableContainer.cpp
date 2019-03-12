@@ -9,40 +9,42 @@ namespace mci
                                             const std::function< void (int, int, const double [], double [], double []) > &estimator,
                                             bool needsEquil)
     {
-        _estims.emplace_back( [accu=accumulator.get(), estimator](double average[], double error[]) { // lambda functional
-                                  if(!accu->isFinalized()) {
-                                      throw std::runtime_error("[ObservableContainer.estim] Estimator was called, but accumulator is not finalized.");
-                                  }
-                                  estimator(accu->getNStore(), accu->getNObs(), accu->getData(), average, error);
-                              } );
         _nobsdim+=accumulator->getNObs();
-        _accus.emplace_back(std::move(accumulator)); // now accumulator is owned by _accus vector
-
-        _flags_equil.emplace_back(needsEquil ? 1 : 0);
+        ObservableContainerElement newElement;
+        newElement.estim = [accu=accumulator.get() /*OK*/, estimator](double average[], double error[]) // lambda functional
+                           {
+                               if(!accu->isFinalized()) {
+                                   throw std::runtime_error("[ObservableContainer.estim] Estimator was called, but accumulator is not finalized.");
+                               }
+                               estimator(accu->getNStore(), accu->getNObs(), accu->getData(), average, error);
+                           };
+        newElement.accu = std::move(accumulator); // ownership goes to new element
+        newElement.flag_equil = needsEquil;
+        _cont.emplace_back(std::move(newElement)); // and then into container
     }
 
 
     void ObservableContainer::allocate(const int Nmc)
     {
-        for (auto & accu : _accus) {
-            accu->allocate(Nmc);
+        for (auto & el : _cont) {
+            el.accu->allocate(Nmc);
         }
     }
 
 
     void ObservableContainer::accumulate(const double x[], const int nchanged, const int changedIdx[])
     {
-        for (auto & accu : _accus) {
-            accu->accumulate(x, nchanged, changedIdx);
+        for (auto & el : _cont) {
+            el.accu->accumulate(x, nchanged, changedIdx);
         }
     }
 
 
     void ObservableContainer::printObsValues(std::ofstream &file) const
     {
-        for (auto & accu : _accus) {
-            for (int j=0; j<accu->getNObs(); ++j) {
-                file << " " << accu->getObsValue(j);
+        for (auto & el : _cont) {
+            for (int j=0; j<el.accu->getNObs(); ++j) {
+                file << " " << el.accu->getObsValue(j);
             }
         }
         file << " ";
@@ -51,48 +53,40 @@ namespace mci
 
     void ObservableContainer::finalize()
     {
-        for (auto & accu : _accus) {
-            accu->finalize();
+        for (auto & el : _cont) {
+            el.accu->finalize();
         }
     }
 
 
     void ObservableContainer::estimate(double average[], double error[]) const
     {
-        int iobs = 0;
         int offset = 0;
-        for (auto & estim : _estims) { // use all estimators
-            estim(average+offset, error+offset);
-            offset += _accus[iobs]->getNObs();
-            ++iobs;
+        for (auto & el : _cont) { // go through estimators and write to avg/error blocks
+            el.estim(average+offset, error+offset);
+            offset += el.accu->getNObs();
         }
     }
 
 
     void ObservableContainer::reset()
     {
-        for (auto & accu : _accus) {
-            accu->reset();
+        for (auto & el : _cont) {
+            el.accu->reset();
         }
     }
 
     void ObservableContainer::deallocate()
     {
-        for (auto & accu : _accus) {
-            accu->deallocate();
+        for (auto & el : _cont) {
+            el.accu->deallocate();
         }
     }
 
     void ObservableContainer::clear()
     {
-        //for (auto & accu : _accus) {
-        //    delete accu;
-        //}
-        _accus.clear();
+        _cont.clear();
         _nobsdim=0;
-
-        _estims.clear();
-        _flags_equil.clear();
     }
 
 }  // namespace mci

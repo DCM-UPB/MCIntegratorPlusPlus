@@ -44,7 +44,7 @@ namespace mci
 
     void AccumulatorInterface::accumulate(const double x[], const int nchanged, const int changedIdx[])
     {
-        if (_stepidx == _nsteps) { throw std::runtime_error("[AccumulatorInterface::accumulate] Number of calls to accumulate exceed the allocation."); }
+        if (_stepidx >= _nsteps) { throw std::runtime_error("[AccumulatorInterface::accumulate] Number of calls to accumulate exceed the allocation."); }
 
         if (_nchanged<_xndim) { // if internal change counter is already full, we should skip this
             if (nchanged<_xndim) { // similarly for the step's nchange
@@ -61,10 +61,10 @@ namespace mci
         }
 
         if (_skipidx == 0) { // accumulate observables
-            if (_nchanged>=_xndim) { // call full obs compute
-                _obs->observableFunction(x, _obs_values);
-            } else { // call optimized recompute
+            if (_nchanged<_xndim) { // call optimized recompute
                 _obs->observableFunction(x, _nchanged, _flags_xchanged, _obs_values);
+            } else { // call full obs compute
+                _obs->observableFunction(x, _obs_values);
             }
             this->_accumulate(); // call child storage implementation
 

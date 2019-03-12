@@ -6,6 +6,7 @@
 #include "mci/ObservableContainer.hpp"
 #include "mci/ObservableFunctionInterface.hpp"
 #include "mci/SamplingFunctionInterface.hpp"
+#include "mci/SamplingFunctionContainer.hpp"
 
 #include <fstream>
 #include <random>
@@ -38,10 +39,8 @@ namespace mci
         double _targetaccrate;  // desired acceptance ratio
 
         // main object vectors/containers
-        std::vector< std::unique_ptr<SamplingFunctionInterface> > _pdfs; //vector of sampling functions
-        bool _flagpdf;  // did the user provide a sampling function?
-
-        ObservableContainer _obscont; // observable container
+        SamplingFunctionContainer _pdfcont; // sampling function container
+        ObservableContainer _obscont; // observable container used during integration
 
         std::vector< std::unique_ptr<CallBackOnMoveInterface> > _cbacks;  // Vector of acceptance callback functions
 
@@ -64,12 +63,6 @@ namespace mci
 
         // --- Internal methods
 
-        void computeNewSamplingFunction(); //compute the new sampling function with new coordinates
-        void computeOldSamplingFunction(); //compute the new sampling function with the old coordinates
-        // and it stores it in the old sampling
-        void updateSamplingFunction(); // swap old and new sampling function values
-        double computeAcceptance() const; //compute the acceptance
-
         void resetAccRejCounters();
 
         void updateVolume();
@@ -77,7 +70,7 @@ namespace mci
         void computeNewX();
         void updateX();
         //use this if there is a pdf, returns how many x were changed (0 if not accepted)
-        int doStepMRT2(int * changedIdx = nullptr /*unused, because all-particle steps*/); // returns number of changed positions, i.e. 0 or ndim
+        int doStepMRT2(const int changedIdx[] /*unused, because all-particle steps*/); // returns number of changed positions, i.e. 0 or ndim
 
         // these are used before sampling
         void findMRT2Step();
@@ -87,6 +80,9 @@ namespace mci
         void sample(int npoints);
         // fill data with samples
         void sample(int npoints, ObservableContainer &container);
+
+        // call callbacks
+        void callBackOnMove(const double x[], bool accepted);
 
         // store to file
         void storeObservables();
@@ -150,8 +146,8 @@ namespace mci
         int getNObs() const { return _obscont.getNObs(); }
         int getNObsDim() const { return _obscont.getNObsDim(); }
 
-        const SamplingFunctionInterface & getSamplingFunction(int i) const { return *_pdfs[i]; }
-        int getNSampF() const { return _pdfs.size(); }
+        const SamplingFunctionInterface & getSamplingFunction(int i) const { return _pdfcont.getSamplingFunction(i); }
+        int getNSampF() const { return _pdfcont.getNSampF(); }
 
         const CallBackOnMoveInterface & getCallBackOnMove(int i) const { return *_cbacks[i]; }
         int getNCallBacks() const { return _cbacks.size(); }
