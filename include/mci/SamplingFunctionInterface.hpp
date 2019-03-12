@@ -45,10 +45,13 @@ namespace mci
         int getNProto() const { return _nproto;}
 
         // Main operational methods
-        void newToOld(); // swap old and new protovalues
         void computeNewSamplingFunction(const double in[]) { samplingFunction(in, _protonew); }
         void computeNewSamplingFunction(const double xold[], const double xnew[], int nchanged, const int changedIdx[]) { samplingFunction(xold, xnew, nchanged, changedIdx, _protonew); }
         double getAcceptance() const { return getAcceptance(_protoold, _protonew); }
+
+        // overwrite this if you have own data to swap, but remember
+        // to call SamplingFunctionInterface::newToTold() in your newToOld()
+        virtual void newToOld(); // swap old and new protovalues
 
 
         // --- METHODS THAT MUST BE IMPLEMENTED

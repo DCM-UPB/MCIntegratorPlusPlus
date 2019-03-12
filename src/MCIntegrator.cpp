@@ -177,8 +177,8 @@ namespace mci
 
         //run the main loop for sampling
         const bool flagpdf = !(_pdfcont.empty());
-        int changedIdx[_ndim] {0}; // we are not really using that right now
-        //std::iota(changedIdx, changedIdx+_ndim, 0); // init with 0...ndim-1
+        int changedIdx[_ndim]; // we are not really using that right now
+        std::iota(changedIdx, changedIdx+_ndim, 0); // init with 0...ndim-1
         for (_ridx=0; _ridx<npoints; ++_ridx) {
             if (flagpdf) { // use sampling function
                 this->doStepMRT2(changedIdx);
@@ -200,8 +200,8 @@ namespace mci
 
         //run the main loop for sampling
         const bool flagpdf = !(_pdfcont.empty());
-        int changedIdx[_ndim] {0}; // we are not really using that right now
-        //std::iota(changedIdx, changedIdx+_ndim, 0); // init with 0...ndim-1
+        int changedIdx[_ndim]; // we are not really using that right now
+        std::iota(changedIdx, changedIdx+_ndim, 0); // init with 0...ndim-1
         for (_ridx=0; _ridx<npoints; ++_ridx) {
             // do MC step
             int nchanged;

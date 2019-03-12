@@ -61,15 +61,17 @@ namespace mci
         }
 
         if (_skipidx == 0) { // accumulate observables
-            if (_nchanged<_xndim) { // call optimized recompute
-                _obs->observableFunction(x, _nchanged, _flags_xchanged, _obs_values);
-            } else { // call full obs compute
-                _obs->observableFunction(x, _obs_values);
+            if (_nchanged > 0) { // we need to compute obs
+                if (_nchanged<_xndim) { // call optimized recompute
+                    _obs->observableFunction(x, _nchanged, _flags_xchanged, _obs_values);
+                } else { // call full obs compute
+                    _obs->observableFunction(x, _obs_values);
+                }
+                std::fill(_flags_xchanged, _flags_xchanged+_xndim, false);
+                _nchanged = 0;
             }
-            this->_accumulate(); // call child storage implementation
 
-            std::fill(_flags_xchanged, _flags_xchanged+_xndim, false);
-            _nchanged = 0;
+            this->_accumulate(); // call child storage implementation
         }
 
         ++_stepidx;

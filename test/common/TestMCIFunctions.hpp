@@ -4,6 +4,8 @@
 #include <algorithm>
 #include <cmath>
 #include <random>
+#include <vector>
+#include <numeric>
 
 
 class TestWalk1s
@@ -81,7 +83,7 @@ public:
 
 // --- SAMPLING FUNCTIONS
 
-class ThreeDimGaussianPDF: public mci::SamplingFunctionInterface{
+class ThreeDimGaussianPDF: public mci::SamplingFunctionInterface {
 protected:
     mci::SamplingFunctionInterface * _clone() const override {
         return new ThreeDimGaussianPDF();
@@ -106,21 +108,32 @@ protected:
     mci::SamplingFunctionInterface * _clone() const override {
         return new Gauss(_ndim);
     }
+
 public:
-    explicit Gauss(const int ndim): mci::SamplingFunctionInterface(ndim,1) {}
+    explicit Gauss(const int ndim): mci::SamplingFunctionInterface(ndim,ndim)
+    { }
 
     void samplingFunction(const double in[], double out[]) override
     {
-        out[0]=0.;
-        for (int i=0; i<this->getNDim(); ++i)
-            {
-                out[0] += (in[i])*(in[i]);
-            }
+        for (int i=0; i<this->getNDim(); ++i) {
+            out[i] = in[i]*in[i];
+        }
+    }
+
+    void samplingFunction(const double xold[], const double xnew[], int nchanged, const int changedIdx[], double out[]) override
+    {
+        for (int i=0; i<nchanged; ++i) {
+            out[changedIdx[i]] = (xnew[changedIdx[i]])*(xnew[changedIdx[i]]);
+        }
     }
 
     double getAcceptance(const double protoold[], const double protonew[]) const override
     {
-        return exp(-(protonew[0]-protoold[0]));
+        double expf = 0.;
+        for (int i=0; i<_nproto; ++i) {
+            expf += protonew[i]-protoold[i];
+        }
+        return exp(-expf);
     }
 };
 
@@ -151,14 +164,14 @@ public:
     XYZSquared(): mci::ObservableFunctionInterface(3, 3){}
     ~XYZSquared() override= default;
 
-    void observableFunction(const double in[], double out[]) override{
+    void observableFunction(const double in[], double out[]) override {
         out[0] = in[0] * in[0];
         out[1] = in[1] * in[1];
         out[2] = in[2] * in[2];
     }
 };
 
-class XND: public mci::ObservableFunctionInterface{
+class XND: public mci::ObservableFunctionInterface {
 protected:
     mci::ObservableFunctionInterface * _clone() const override {
         return new XND(_ndim);
@@ -167,7 +180,7 @@ public:
     explicit XND(int nd): mci::ObservableFunctionInterface(nd, nd){}
     ~XND() override= default;
 
-    void observableFunction(const double in[], double out[]) override{
+    void observableFunction(const double in[], double out[]) override {
         std::copy(in, in+_ndim, out);
     }
 };
@@ -199,10 +212,9 @@ public:
     void observableFunction(const double in[], double out[]) override
     {
         out[0]=0.;
-        for (int i=0; i<this->getNDim(); ++i)
-            {
-                out[0] += in[i];
-            }
+        for (int i=0; i<this->getNDim(); ++i) {
+            out[0] += in[i];
+        }
     }
 };
 
@@ -218,9 +230,8 @@ public:
     void observableFunction(const double in[], double out[]) override
     {
         out[0]=0.;
-        for (int i=0; i<this->getNDim(); ++i)
-            {
-                out[0] += in[i]*in[i];
-            }
+        for (int i=0; i<this->getNDim(); ++i) {
+            out[0] += in[i]*in[i];
+        }
     }
 };
