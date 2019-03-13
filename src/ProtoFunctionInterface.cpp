@@ -6,12 +6,9 @@ namespace mci
 {
 
     ProtoFunctionInterface::ProtoFunctionInterface(const int ndim, const int nproto):
-        _ndim(ndim), _nproto(nproto)
+        _ndim(ndim), _nproto(0), _protonew(nullptr), _protoold(nullptr)
     {
-        _protonew = new double[_nproto];
-        _protoold = new double[_nproto];
-        std::fill(_protonew, _protonew+_nproto, 0.);
-        std::fill(_protoold, _protoold+_nproto, 0.);
+        this->setNProto(nproto);
     }
 
     ProtoFunctionInterface::~ProtoFunctionInterface()
@@ -24,11 +21,18 @@ namespace mci
     {
         delete[] _protoold;
         delete[] _protonew;
-        _protonew = new double[_nproto];
-        _protoold = new double[_nproto];
-        std::fill(_protonew, _protonew+_nproto, 0.);
-        std::fill(_protoold, _protoold+_nproto, 0.);
-        _nproto=nproto;
+        if (nproto>0) {
+            _protonew = new double[_nproto];
+            _protoold = new double[_nproto];
+            std::fill(_protonew, _protonew+_nproto, 0.);
+            std::fill(_protoold, _protoold+_nproto, 0.);
+            _nproto=nproto;
+        }
+        else {
+            _protonew = nullptr;
+            _protoold = nullptr;
+            _nproto = 0;
+        }
     }
 
     void ProtoFunctionInterface::computeOldProtoValues(const double in[]) {

@@ -25,15 +25,15 @@ namespace mci
     {
     protected:
         const int _ndim; // dimension of the input array (walker position)
-        int _nproto; // number of proto sampling functions given as output
-        double * _protonew; // array containing the new proto values (temporaries to compute scalar function value)
+        int _nproto; // number of proto values calculated in protoFunction
+        double * _protonew; // array containing the new proto values
         double * _protoold; // array containing the new old values
 
         // internal setters
         void setNProto(int nproto); // you may freely choose the amount of values you need
 
-        // Overwrite this if you have own data to copy on acceptance
-        // It will be called in the public newToOld()
+        // Overwrite this if you have own data to copy on acceptance.
+        // It will be called in the public newToOld() method.
         virtual void _newToOld() {};
 
     public:
@@ -51,7 +51,6 @@ namespace mci
 
         // copy new to old protov, call _newToOld()
         void newToOld();
-
 
         // --- METHOD THAT MUST BE IMPLEMENTED
 
