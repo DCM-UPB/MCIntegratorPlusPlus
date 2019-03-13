@@ -32,7 +32,7 @@ namespace mci
         void addSamplingFunction(std::unique_ptr<SamplingFunctionInterface> sampf); // we acquire ownership
 
         void newToOld(); // copy new to old protovalues
-        void computeOldSamplingFunctions(const double xold[]); //compute the old sampling function with the old coordinates
+        void computeOldProtoValues(const double xold[]); //compute the old proto sampling function with the old coordinates
         double computeAcceptance(const double xnew[]); //compute then new sampling function and return acceptance of new coordinates
         // compute new sampling from xold,xnew and _protoolds, with nchanged indices stored in changedIdx. return acceptance
         double computeAcceptance(const double xold[], const double xnew[], int nchanged, const int changedIdx[]);

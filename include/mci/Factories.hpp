@@ -27,13 +27,13 @@ namespace mci
         nskip = std::max(1, nskip);
 
         if (blocksize == 0) {
-            return std::unique_ptr<AccumulatorInterface>( new SimpleAccumulator(obs, nskip) );
+            return std::unique_ptr<AccumulatorInterface>( new SimpleAccumulator(obs.clone(), nskip) );
         }
         else {
             if (blocksize == 1) {
-                return std::unique_ptr<AccumulatorInterface>( new FullAccumulator(obs, nskip) );
+                return std::unique_ptr<AccumulatorInterface>( new FullAccumulator(obs.clone(), nskip) );
             } else {
-                return std::unique_ptr<AccumulatorInterface>( new BlockAccumulator(obs, nskip, blocksize) );
+                return std::unique_ptr<AccumulatorInterface>( new BlockAccumulator(obs.clone(), nskip, blocksize) );
             }
         }
     }

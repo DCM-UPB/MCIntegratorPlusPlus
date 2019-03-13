@@ -26,8 +26,8 @@ namespace mci
         void _deallocate() override;
 
     public:
-        FullAccumulator(const ObservableFunctionInterface &obs, int nskip):
-            AccumulatorInterface(obs, nskip), _nstore(0), _storeidx(0)
+        FullAccumulator(std::unique_ptr<ObservableFunctionInterface> obs, int nskip):
+            AccumulatorInterface(std::move(obs), nskip), _nstore(0), _storeidx(0)
         {}
 
         ~FullAccumulator() override { this->_deallocate(); }

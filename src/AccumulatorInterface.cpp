@@ -5,9 +5,10 @@
 namespace mci
 {
 
-    AccumulatorInterface::AccumulatorInterface(const ObservableFunctionInterface &obs, const int nskip):
-        _obs(obs.clone()), _nobs(_obs->getNObs()), _xndim(_obs->getNDim()), _nskip(nskip),
-        _obs_values(new double[_nobs]), _flags_xchanged(new bool[_xndim]),
+    AccumulatorInterface::AccumulatorInterface(std::unique_ptr<ObservableFunctionInterface> obs, const int nskip):
+        _obs(std::move(obs)), _updobs(dynamic_cast<UpdateableObservableFunction *>(_obs.get())), _flag_updobs(_updobs!=nullptr),
+        _nobs(_obs->getNObs()), _xndim(_obs->getNDim()), _nskip(nskip),
+        _obs_values(new double[_nobs]), _flags_xchanged(_flag_updobs ? new bool[_xndim] : nullptr),
         _nsteps(0), _data(nullptr)
     {
         if (nskip < 1) { throw std::invalid_argument("[AccumulatorInterface] Provided number of steps per evaluation was < 1 ."); }
@@ -23,11 +24,11 @@ namespace mci
     void AccumulatorInterface::_init() // reset base variables (except nsteps/_data)
     {
         _stepidx = 0;
-        _skipidx = 0;
+        _skipidx = _nskip-1; // first step should not be skipped, so we prepare ++_skipidx == _nskip
         _flag_final = false;
 
         _nchanged = _xndim; // on the first step we always need to evaluate fully
-        std::fill(_flags_xchanged, _flags_xchanged+_xndim, true);
+        if (_flag_updobs) { std::fill(_flags_xchanged, _flags_xchanged+_xndim, true); }
     }
 
 
@@ -46,8 +47,8 @@ namespace mci
     {
         if (_stepidx >= _nsteps) { throw std::runtime_error("[AccumulatorInterface::accumulate] Number of calls to accumulate exceed the allocation."); }
 
-        if (_nchanged<_xndim) { // if internal change counter is already full, we should skip this
-            if (nchanged<_xndim) { // similarly for the step's nchange
+        if (_nchanged<_xndim && nchanged>0) { // we need to record changes
+            if (_flag_updobs && nchanged<_xndim) { // track changes by index
                 for (int i=0; i<nchanged; ++i) { // if nchange>0 (accepted step), we need to evaluate obs on next skipidx==0)
                     if (!_flags_xchanged[changedIdx[i]]) {
                         _flags_xchanged[changedIdx[i]] = true;
@@ -55,29 +56,27 @@ namespace mci
                     }
                 }
             }
-            else { // all-particle move case
-                _nchanged = _xndim; // when _nchanged>=_xndim, the flags get ignored so we don't need to set them
+            else { // all-particle move case or no tracking
+                _nchanged = _xndim; // note: if _nchanged>=_xndim, the flags get ignored, so no need to set them
             }
         }
 
-        if (_skipidx == 0) { // accumulate observables
+        if (++_skipidx == _nskip) { // accumulate observables
+            _skipidx = 0;
+
             if (_nchanged > 0) { // we need to compute obs
-                if (_nchanged<_xndim) { // call optimized recompute
-                    _obs->observableFunction(x, _nchanged, _flags_xchanged, _obs_values);
+                if (_flag_updobs && _nchanged<_xndim) { // call optimized recompute
+                    _updobs->updatedObservable(x, _nchanged, _flags_xchanged, _obs_values);
                 } else { // call full obs compute
                     _obs->observableFunction(x, _obs_values);
                 }
-                std::fill(_flags_xchanged, _flags_xchanged+_xndim, false);
+                if (_flag_updobs) { std::fill(_flags_xchanged, _flags_xchanged+_xndim, false); }
                 _nchanged = 0;
             }
 
             this->_accumulate(); // call child storage implementation
         }
-
         ++_stepidx;
-        if (++_skipidx == _nskip) {
-            _skipidx = 0; // next step will be evaluated
-        }
     }
 
 

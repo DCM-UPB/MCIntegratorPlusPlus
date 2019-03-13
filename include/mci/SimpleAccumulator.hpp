@@ -20,8 +20,8 @@ namespace mci
         void _deallocate() override;
 
     public:
-        SimpleAccumulator(const ObservableFunctionInterface &obs, int nskip):
-            AccumulatorInterface(obs, nskip), _flag_alloc(false)
+        SimpleAccumulator(std::unique_ptr<ObservableFunctionInterface> obs, int nskip):
+            AccumulatorInterface(std::move(obs), nskip), _flag_alloc(false)
         {}
 
         ~SimpleAccumulator() override { this->_deallocate(); }

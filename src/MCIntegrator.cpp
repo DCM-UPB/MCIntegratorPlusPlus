@@ -65,7 +65,7 @@ namespace mci
             ObservableContainer obs_equil;
             for (int i=0; i<_obscont.getNObs(); ++i) {
                 if (_obscont.getFlagEquil(i)) {
-                    obs_equil.addObservable(std::unique_ptr<AccumulatorInterface>( new FullAccumulator(*_obscont.getObservableFunction(i).clone(), 1) ),
+                    obs_equil.addObservable(std::unique_ptr<AccumulatorInterface>( new FullAccumulator(_obscont.getObservableFunction(i).clone(), 1) ),
                                             mci::CorrelatedEstimator, true);
                 }
             }
@@ -173,7 +173,7 @@ namespace mci
         this->resetAccRejCounters();
 
         // initialize the pdf at x
-        _pdfcont.computeOldSamplingFunctions(_xold);
+        _pdfcont.computeOldProtoValues(_xold);
 
         //run the main loop for sampling
         const bool flagpdf = !(_pdfcont.empty());
@@ -195,7 +195,7 @@ namespace mci
         // Initialize
         this->resetAccRejCounters(); // reset acceptance and rejection
         container.reset(); // reset observable data (to be sure)
-        _pdfcont.computeOldSamplingFunctions(_xold); // initialize the pdf at x
+        _pdfcont.computeOldProtoValues(_xold); // initialize the pdf at x
         this->callBackOnMove(_xold, true); // first call of the call-back functions
 
         //run the main loop for sampling
@@ -237,7 +237,10 @@ namespace mci
         this->computeNewX();
 
         // find the corresponding sampling function value
-        const double acceptance = _pdfcont.computeAcceptance(_xold, _xnew, _ndim, changeIdx);
+        const int nmoved = _ndim;
+        const double acceptance = (nmoved < _ndim) ?
+                                           _pdfcont.computeAcceptance(_xold, _xnew, _ndim, changeIdx)
+                                           : _pdfcont.computeAcceptance(_xnew);
 
         //determine if the proposed x is accepted or not
         const int nchanged = ( _rd(_rgen) <= acceptance ) ? _ndim : 0; // currently we do all-particle steps

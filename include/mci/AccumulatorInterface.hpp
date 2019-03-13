@@ -2,6 +2,7 @@
 #define MCI_ACCUMULATORINTERFACE_HPP
 
 #include "mci/ObservableFunctionInterface.hpp"
+#include "mci/UpdateableObservableFunction.hpp"
 
 #include <memory>
 
@@ -11,7 +12,10 @@ namespace mci
     class AccumulatorInterface
     {
     protected:
-        const std::unique_ptr<ObservableFunctionInterface> _obs; // pointer to the related observable function (we own it uniquely, to avoid misuse)
+        const std::unique_ptr<ObservableFunctionInterface> _obs; // "unique" pointer to the passed observable function (we own it)
+        UpdateableObservableFunction * const _updobs; // if _obs is an UpdateObs, we store a casted raw pointer for internal use (else nullptr)
+        const bool _flag_updobs; // is the passed observable derived from UpdateableObservableFunction? (i.e. is _updobs!=nullptr ?)
+
         const int _nobs; // number of values returned by the observable function
         const int _xndim; // dimension of walker positions/flags that get passed on accumulate
         const int _nskip; // evaluate observable only on every nskip-th step
@@ -40,7 +44,7 @@ namespace mci
         virtual void _deallocate() = 0; // delete _data allocation ( reset will be called already )
 
     public:
-        AccumulatorInterface(const ObservableFunctionInterface &obs, int nskip);
+        AccumulatorInterface(std::unique_ptr<ObservableFunctionInterface> obs, int nskip);
         virtual ~AccumulatorInterface();
 
         const ObservableFunctionInterface & getObservableFunction() const { return *_obs; } // acquire raw read-only ref
@@ -58,6 +62,7 @@ namespace mci
         bool isAllocated() const { return (_nsteps>0); }
         bool isClean() const { return (_stepidx == 0); }
         bool isFinalized() const { return _flag_final; }
+        bool isUpdateable() const { return _flag_updobs; }
 
         // get data
         const double * getData() const { return _data; } // direct read-only access to internal data pointer

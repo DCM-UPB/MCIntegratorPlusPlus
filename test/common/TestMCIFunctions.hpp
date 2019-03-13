@@ -1,10 +1,10 @@
 #include "mci/ObservableFunctionInterface.hpp"
+#include "mci/UpdateableObservableFunction.hpp"
 #include "mci/SamplingFunctionInterface.hpp"
 
 #include <algorithm>
 #include <cmath>
 #include <random>
-#include <vector>
 #include <numeric>
 
 
@@ -92,12 +92,21 @@ public:
     ThreeDimGaussianPDF(): mci::SamplingFunctionInterface(3, 1){}
     ~ThreeDimGaussianPDF() override= default;
 
-    void samplingFunction(const double in[], double protovalues[]) override{
+    void protoFunction(const double in[], double protovalues[]) override{
         protovalues[0] = (in[0]*in[0]) + (in[1]*in[1]) + (in[2]*in[2]);
     }
 
-    double getAcceptance(const double protoold[], const double protonew[]) const override{
+    double acceptanceFunction(const double protoold[], const double protonew[]) const override{
         return exp(-protonew[0]+protoold[0]);
+    }
+
+    double updatedAcceptance(const double xold[], const double xnew[], int nchanged, const int changedIdx[], const double pvold[], double pvnew[]) override
+    {  // not worth it in 3 dim, but useful for testing
+        pvnew[0] = 0.;
+        for (int i=0; i<nchanged; ++i) {
+            pvnew[0] += xnew[changedIdx[i]] * xnew[changedIdx[i]];
+        }
+        return exp(-pvnew[0]+pvold[0]);
     }
 };
 
@@ -113,14 +122,14 @@ public:
     explicit Gauss(const int ndim): mci::SamplingFunctionInterface(ndim,ndim)
     { }
 
-    void samplingFunction(const double in[], double out[]) override
+    void protoFunction(const double in[], double out[]) override
     {
         for (int i=0; i<this->getNDim(); ++i) {
             out[i] = in[i]*in[i];
         }
     }
 
-    double getAcceptance(const double protoold[], const double protonew[]) const override
+    double acceptanceFunction(const double protoold[], const double protonew[]) const override
     {
         double expf = 0.;
         for (int i=0; i<_nproto; ++i) {
@@ -129,7 +138,7 @@ public:
         return exp(-expf);
     }
 
-    double getUpdateAcceptance(const double xold[], const double xnew[], int nchanged, const int changedIdx[], const double pvold[], double pvnew[]) override
+    double updatedAcceptance(const double xold[], const double xnew[], int nchanged, const int changedIdx[], const double pvold[], double pvnew[]) override
     {
         double expf = 0.;
         for (int i=0; i<nchanged; ++i) {
@@ -174,17 +183,22 @@ public:
     }
 };
 
-class XND: public mci::ObservableFunctionInterface {
+class XND: public mci::UpdateableObservableFunction {
 protected:
     mci::ObservableFunctionInterface * _clone() const override {
         return new XND(_ndim);
     }
 public:
-    explicit XND(int nd): mci::ObservableFunctionInterface(nd, nd){}
+    explicit XND(int nd): mci::UpdateableObservableFunction(nd, nd){}
     ~XND() override= default;
 
     void observableFunction(const double in[], double out[]) override {
         std::copy(in, in+_ndim, out);
+    }
+    void updatedObservable(const double in[], const int , const bool flags[], double out[]) {
+        for (int i=0; i<_ndim; ++i) { // this is likely slower in any case, but used for testing
+            if (flags[i]) { out[i] = in[i]; }
+        }
     }
 };
 
@@ -221,20 +235,46 @@ public:
     }
 };
 
-class X2: public mci::ObservableFunctionInterface
+class X2Sum: public mci::ObservableFunctionInterface
 {
 protected:
     mci::ObservableFunctionInterface * _clone() const override {
-        return new X2(_ndim);
+        return new X2Sum(_ndim);
     }
 public:
-    explicit X2(const int ndim): mci::ObservableFunctionInterface(ndim,1) {}
+    explicit X2Sum(const int ndim): mci::ObservableFunctionInterface(ndim,1) {}
 
     void observableFunction(const double in[], double out[]) override
     {
-        out[0]=0.;
+        out[0] = 0.;
         for (int i=0; i<this->getNDim(); ++i) {
             out[0] += in[i]*in[i];
+        }
+    }
+};
+
+class X2: public mci::UpdateableObservableFunction
+{
+protected:
+    mci::ObservableFunctionInterface * _clone() const override {
+        return new X2Sum(_ndim);
+    }
+public:
+    explicit X2(const int ndim): mci::UpdateableObservableFunction(ndim,ndim) {}
+
+    void observableFunction(const double in[], double out[]) override
+    {
+        for (int i=0; i<this->getNDim(); ++i) {
+            out[i] = in[i]*in[i];
+        }
+    }
+
+    void updatedObservable(const double in[], const int nchanged, const bool flags[], double out[]) override
+    {
+        for (int i=0; i<this->getNDim(); ++i) {
+            if (flags[i]) { // this may actually be faster for small nchanged and large _ndim
+                out[i] = in[i]*in[i];
+            }
         }
     }
 };

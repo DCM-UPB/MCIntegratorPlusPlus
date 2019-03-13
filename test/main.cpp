@@ -101,7 +101,7 @@ int main(){
     nd = 1;
     MCI mci_1d(1);
     mci_1d.setIRange(-1., 1.);
-    X2 x2(nd);
+    X2Sum x2(nd);
     mci_1d.addObservable(x2);
     N=10000;
     mci_1d.integrate(N,&avg1D,&err1D);
@@ -112,7 +112,7 @@ int main(){
     MCI mci_1dgauss(1);
     Gauss gauss_1D(nd);
     Constval constval_1D(nd);
-    X2 x2_1D(nd);
+    X2Sum x2_1D(nd);
     mci_1dgauss.addSamplingFunction(gauss_1D);
     mci_1dgauss.addObservable(x2_1D);
     mci_1dgauss.addObservable(constval_1D);

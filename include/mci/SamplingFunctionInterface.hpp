@@ -7,8 +7,8 @@ namespace mci
 {
     // Base class for MC sampling functions (probability distribution functions)
     //
-    // Derive from this and implement the virtual samplingFunction(...) and getAcceptance (..) methods.
-    // You also need to provide a protected _clone method returning a raw pointer of
+    // Derive from this and implement the virtual protoFunction(...) and acceptanceFunction(..)
+    // methods. You also need to provide a protected _clone method returning a raw pointer of
     // type SamplingFunctionInterface, pointing to an object of your type MyPDF, e.g.:
     //
     // class MyPDF: public SamplingFunctionInterface {
@@ -17,8 +17,8 @@ namespace mci
     //         return new MyPDF(...); // create a cloned version here
     //     }
     // public:
-    //     void samplingFunction(...) overwrite;
-    //     double getAcceptance(...) const overwrite;
+    //     void protoFunction(...) overwrite;
+    //     double acceptanceFunction(...) const overwrite;
     //     ...
     // };
     //
@@ -41,7 +41,6 @@ namespace mci
 
     public:
         SamplingFunctionInterface(int ndim, int nproto);
-
         virtual ~SamplingFunctionInterface();
 
         // Getters
@@ -52,7 +51,7 @@ namespace mci
         // --- Main operational methods
 
         // initializer for old
-        void computeOldSamplingFunction(const double in[]) { samplingFunction(in, _protoold); }
+        void computeOldProtoValues(const double in[]) { protoFunction(in, _protoold); }
 
         // compute full protonew and return acceptance
         double computeAcceptance(const double in[]);
@@ -67,18 +66,17 @@ namespace mci
         // --- METHODS THAT MUST BE IMPLEMENTED
 
         // Function that MCI uses to calculate your proto-sampling function values.
-        // Calculate them as they are expected from your samplingFunction().
-        virtual void samplingFunction(const double in[], double protovalues[]) = 0;
+        // Calculate them as they are expected from your acceptanceFunction().
+        virtual void protoFunction(const double in[], double protovalues[]) = 0;
         //                             ^walker position  ^resulting proto-values
 
         // Acceptance function, that uses the old and new proto sampling function values
         // If your actual sampling function is an exponential like exp(-sum(pv)), you would compute
         // something like exp( -sum(protonew)+sum(protoold) ) here, i.e. division of exponentials.
-        virtual double getAcceptance(const double protoold[], const double protonew[]) const = 0;
+        virtual double acceptanceFunction(const double protoold[], const double protonew[]) const = 0;
 
 
         // --- OPTIONALLY ALSO OVERWRITE THIS (to optimize for single/few particle moves)
-
         // Return step acceptance AND update(!) protonew elements, given both previous and current
         // walker positions (xold/xnew), and additionally the array changedIdx containing the indices
         // of the nchanged elements that differ between xold and xnew. The indices in changedIdx are
@@ -86,16 +84,19 @@ namespace mci
         // This means:
         //     a) you never have to store the previous walker position in your child class and
         //     b) you can use the indices in changedIdx to provide efficient recalculation of your protovalues
-        // Remember that in this method you should only update the protov[] elements with indices in changedIdx.
-        // If full recalculation is almost always more efficient in your case, you may also choose not to overwrite this method.
-        virtual double getUpdateAcceptance(const double[] /*xold*/, const double xnew[], int /*nchanged*/, const int[] /*changedIdx*/,
+        // Remember that in this method you should only update the protov[] elements that need to change due
+        // to the nchanged input indices in changedIdx.
+        // If full recalculation is more efficient in your case, you may also choose not to overwrite this method.
+        virtual double updatedAcceptance(const double[] /*xold*/, const double xnew[],
+                                           int /*nchanged*/, const int[] /*changedIdx*/,
                                            const double protoold[], double protonew[] /* update this! */)
         {
             // default to "calculate all"
-            this->samplingFunction(xnew, protonew);
-            return this->getAcceptance(protoold, protonew);
+            this->protoFunction(xnew, protonew);
+            return this->acceptanceFunction(protoold, protonew);
         }
     };
+
 }  // namespace mci
 
 #endif

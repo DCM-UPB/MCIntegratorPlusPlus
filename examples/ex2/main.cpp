@@ -54,11 +54,11 @@ protected:
 public:
     explicit NormalizedLine(): mci::SamplingFunctionInterface(1, 1) {}
 
-    void samplingFunction(const double in[], double protovalue[]) override{
+    void protoFunction(const double in[], double protovalue[]) override{
         protovalue[0] = 0.2 * fabs(in[0]);
     }
 
-    double getAcceptance(const double protoold[], const double protonew[]) const override{
+    double acceptanceFunction(const double protoold[], const double protonew[]) const override{
         return protonew[0] / protoold[0];
     }
 };

@@ -36,8 +36,8 @@ int main () {
     mci.setSeed(5649871);
     mci.addSamplingFunction(pdf);
     mci.addObservable(obs1, 0); // use simple accu (i.e. no error), no skipping
-    mci.addObservable(obs2, 1); // use auto-blocking, no skipping
-    mci.addObservable(obs3, 5, 2); // fixed blocksize 5, skip every 2nd step (i.e. "effective" block size of 10)
+    mci.addObservable(obs2, 1, 5); // use auto-blocking, evaluate every 5th step
+    mci.addObservable(obs3, 5, 2); // fixed blocksize 5, eval every 2nd step (i.e. "effective" block size of 10)
 
     double avg[mci.getNObsDim()],err[mci.getNObsDim()];
     const double mrt2step[3] = {1.85, 1.85, 1.85};
