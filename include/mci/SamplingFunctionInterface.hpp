@@ -1,15 +1,17 @@
 #ifndef MCI_SAMPLINGFUNCTIONINTERFACE_HPP
 #define MCI_SAMPLINGFUNCTIONINTERFACE_HPP
 
+#include "mci/ProtoFunctionInterface.hpp"
 #include "mci/Clonable.hpp"
 
 namespace mci
 {
     // Base class for MC sampling functions (probability distribution functions)
     //
-    // Derive from this and implement the virtual protoFunction(...) and acceptanceFunction(..)
-    // methods. You also need to provide a protected _clone method returning a raw pointer of
-    // type SamplingFunctionInterface, pointing to an object of your type MyPDF, e.g.:
+    // Derive from this and implement the protoFunction(...) (from ProtoFunctionInterface)
+    // and acceptanceFunction(..) methods. You also need to provide a protected _clone method
+    // returning a raw pointer of type SamplingFunctionInterface, pointing to an object of
+    // your type MyPDF, e.g.:
     //
     // class MyPDF: public SamplingFunctionInterface {
     // protected:
@@ -18,40 +20,22 @@ namespace mci
     //     }
     // public:
     //     void protoFunction(...) overwrite;
+    //     double samplingFunction(...) const overwrite;
     //     double acceptanceFunction(...) const overwrite;
     //     ...
     // };
     //
-    // Your class will have a public clone() method returning std::unique_ptr<SamplingFunctionInterface> .
-    // If you want/need it, also create a non-overriding clone() method returning a pointer of type MyPDF.
-    class SamplingFunctionInterface: public Clonable<SamplingFunctionInterface>
+    // Now your class has a public clone() method returning std::unique_ptr<SamplingFunctionInterface> .
+    //
+    class SamplingFunctionInterface: public ProtoFunctionInterface, public Clonable<SamplingFunctionInterface>
     {
-    protected:
-        const int _ndim; // dimension of the input array (walker position)
-        int _nproto; // number of proto sampling functions given as output
-        double * _protonew; // array containing the new proto values (temporaries to compute scalar function value)
-        double * _protoold; // array containing the new old values
-
-        // internal setters
-        void setNProto(int nproto); // you may freely choose the amount of values you need
-
-        // Overwrite this if you have own data to copy on acceptance
-        // acceptance. It will be called in base's public newToOld()
-        virtual void _newToOld() {};
-
     public:
-        SamplingFunctionInterface(int ndim, int nproto);
-        virtual ~SamplingFunctionInterface();
-
-        // Getters
-        int getNDim() const { return _ndim;}
-        int getNProto() const { return _nproto;}
-
+        SamplingFunctionInterface(int ndim, int nproto): ProtoFunctionInterface(ndim, nproto) {}
 
         // --- Main operational methods
 
-        // initializer for old
-        void computeOldProtoValues(const double in[]) { protoFunction(in, _protoold); }
+        // return value of old sampling function
+        double getOldSamplingFunction() const { return this->samplingFunction(_protoold); }
 
         // compute full protonew and return acceptance
         double computeAcceptance(const double in[]);
@@ -59,21 +43,21 @@ namespace mci
         // update protonew and return acceptance, given the nchanged indices changedIdx, that differ between xold and xnew
         double computeAcceptance(const double xold[], const double xnew[], int nchanged, const int changedIdx[]);
 
-        // copy new to old protov (we need to copy, not swap, to allow elementary updates), call _newToOld()
-        void newToOld();
-
 
         // --- METHODS THAT MUST BE IMPLEMENTED
 
-        // Function that MCI uses to calculate your proto-sampling function values.
-        // Calculate them as they are expected from your acceptanceFunction().
-        virtual void protoFunction(const double in[], double protovalues[]) = 0;
-        //                             ^walker position  ^resulting proto-values
+        // Remember to implement the protoFunction from ProtoFunctionInterface!
+        // In the "e.g." comments below it is assumed that your sampling function is of the form
+        // exp(-sum(protovalues)), where protovalues are the values computed in your protoFunction().
 
-        // Acceptance function, that uses the old and new proto sampling function values
-        // If your actual sampling function is an exponential like exp(-sum(pv)), you would compute
-        // something like exp( -sum(protonew)+sum(protoold) ) here, i.e. division of exponentials.
-        virtual double acceptanceFunction(const double protoold[], const double protonew[]) const = 0;
+        // Function that can be used to calculate the true value of your sampling function,
+        // from the given set of proto values. Note that this function is not used by the main
+        // parts of MCI, but for example certain trial moves might require this method.
+        virtual double samplingFunction(const double protovalues[]) const = 0; // e.g. exp(-sum(protovalues))
+
+        // Acceptance function, that uses the old and new proto sampling function values to compute
+        // the acceptance quotient to use in the metropolis criterion.
+        virtual double acceptanceFunction(const double protoold[], const double protonew[]) const = 0; // e.g. exp(-sum(protonew)+sum(protoold))
 
 
         // --- OPTIONALLY ALSO OVERWRITE THIS (to optimize for single/few particle moves)

@@ -27,7 +27,6 @@ namespace mci
     // };
     class UpdateableObservableFunction: public ObservableFunctionInterface
     {
-
     public:
         UpdateableObservableFunction(int ndim, int nobs): ObservableFunctionInterface(ndim ,nobs) {}
 

@@ -58,6 +58,10 @@ public:
         protovalue[0] = 0.2 * fabs(in[0]);
     }
 
+    double samplingFunction(const double protovalue[]) const override{
+        return protovalue[0];
+    }
+
     double acceptanceFunction(const double protoold[], const double protonew[]) const override{
         return protonew[0] / protoold[0];
     }

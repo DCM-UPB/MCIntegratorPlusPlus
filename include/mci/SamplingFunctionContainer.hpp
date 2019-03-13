@@ -33,6 +33,7 @@ namespace mci
 
         void newToOld(); // copy new to old protovalues
         void computeOldProtoValues(const double xold[]); //compute the old proto sampling function with the old coordinates
+        double getOldSamplingFunction() const; // returns the combined true sampling function value of the old step (potential use in trial moves)
         double computeAcceptance(const double xnew[]); //compute then new sampling function and return acceptance of new coordinates
         // compute new sampling from xold,xnew and _protoolds, with nchanged indices stored in changedIdx. return acceptance
         double computeAcceptance(const double xold[], const double xnew[], int nchanged, const int changedIdx[]);

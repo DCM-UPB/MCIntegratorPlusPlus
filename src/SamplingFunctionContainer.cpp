@@ -22,6 +22,15 @@ namespace mci
         }
     }
 
+    double SamplingFunctionContainer::getOldSamplingFunction() const
+    {
+        double sampf = 1.;
+        for (auto & sf : _pdfs) {
+            sampf *= sf->getOldSamplingFunction();
+        }
+        return sampf;
+    }
+
     double SamplingFunctionContainer::computeAcceptance(const double xnew[])
     {
         double acceptance = 1.;

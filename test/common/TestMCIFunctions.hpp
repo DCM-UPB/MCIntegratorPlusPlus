@@ -83,17 +83,24 @@ public:
 
 // --- SAMPLING FUNCTIONS
 
-class ThreeDimGaussianPDF: public mci::SamplingFunctionInterface {
+class ThreeDimGaussianPDF: public mci::SamplingFunctionInterface
+{
 protected:
     mci::SamplingFunctionInterface * _clone() const override {
         return new ThreeDimGaussianPDF();
     }
+
 public:
     ThreeDimGaussianPDF(): mci::SamplingFunctionInterface(3, 1){}
     ~ThreeDimGaussianPDF() override= default;
 
     void protoFunction(const double in[], double protovalues[]) override{
         protovalues[0] = (in[0]*in[0]) + (in[1]*in[1]) + (in[2]*in[2]);
+    }
+
+    double samplingFunction(const double protov[]) const override
+    {
+        return exp(-protov[0]);
     }
 
     double acceptanceFunction(const double protoold[], const double protonew[]) const override{
@@ -129,13 +136,16 @@ public:
         }
     }
 
+    double samplingFunction(const double protov[]) const override
+    {
+        return exp(-std::accumulate(protov, protov+this->getNProto(), 0.));
+    }
+
     double acceptanceFunction(const double protoold[], const double protonew[]) const override
     {
-        double expf = 0.;
-        for (int i=0; i<_nproto; ++i) {
-            expf += protonew[i]-protoold[i];
-        }
-        return exp(-expf);
+        double expf = std::accumulate(protoold, protoold+this->getNProto(), 0.);
+        expf -= std::accumulate(protonew, protonew+this->getNProto(), 0.);
+        return exp(expf);
     }
 
     double updatedAcceptance(const double xold[], const double xnew[], int nchanged, const int changedIdx[], const double pvold[], double pvnew[]) override
@@ -152,11 +162,13 @@ public:
 
 // --- OBSERVABLE FUNCTIONS
 
-class XSquared: public mci::ObservableFunctionInterface{
+class XSquared: public mci::ObservableFunctionInterface
+{
 protected:
     mci::ObservableFunctionInterface * _clone() const override {
         return new XSquared();
     }
+
 public:
     XSquared(): mci::ObservableFunctionInterface(3, 1){}
     ~XSquared() override= default;
@@ -167,11 +179,13 @@ public:
 };
 
 
-class XYZSquared: public mci::ObservableFunctionInterface{
+class XYZSquared: public mci::ObservableFunctionInterface
+{
 protected:
     mci::ObservableFunctionInterface * _clone() const override {
         return new XYZSquared();
     }
+
 public:
     XYZSquared(): mci::ObservableFunctionInterface(3, 3){}
     ~XYZSquared() override= default;
@@ -183,11 +197,14 @@ public:
     }
 };
 
-class XND: public mci::UpdateableObservableFunction {
+
+class XND: public mci::UpdateableObservableFunction
+{
 protected:
     mci::ObservableFunctionInterface * _clone() const override {
         return new XND(_ndim);
     }
+
 public:
     explicit XND(int nd): mci::UpdateableObservableFunction(nd, nd){}
     ~XND() override= default;
@@ -202,12 +219,14 @@ public:
     }
 };
 
+
 class Constval: public mci::ObservableFunctionInterface
 {
 protected:
     mci::ObservableFunctionInterface * _clone() const override {
         return new Constval(_ndim);
     }
+
 public:
     explicit Constval(const int ndim): mci::ObservableFunctionInterface(ndim, 1) {}
 
@@ -217,12 +236,14 @@ public:
     }
 };
 
+
 class Polynom: public mci::ObservableFunctionInterface
 {
 protected:
     mci::ObservableFunctionInterface * _clone() const override {
         return new Polynom(_ndim);
     }
+
 public:
     explicit Polynom(const int ndim): mci::ObservableFunctionInterface(ndim, 1) {}
 
@@ -235,12 +256,14 @@ public:
     }
 };
 
+
 class X2Sum: public mci::ObservableFunctionInterface
 {
 protected:
     mci::ObservableFunctionInterface * _clone() const override {
         return new X2Sum(_ndim);
     }
+
 public:
     explicit X2Sum(const int ndim): mci::ObservableFunctionInterface(ndim,1) {}
 
@@ -253,12 +276,14 @@ public:
     }
 };
 
+
 class X2: public mci::UpdateableObservableFunction
 {
 protected:
     mci::ObservableFunctionInterface * _clone() const override {
         return new X2Sum(_ndim);
     }
+
 public:
     explicit X2(const int ndim): mci::UpdateableObservableFunction(ndim,ndim) {}
 
