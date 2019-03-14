@@ -127,7 +127,7 @@ protected:
 
 public:
     explicit Gauss(const int ndim): mci::SamplingFunctionInterface(ndim,ndim)
-    { }
+    {}
 
     void protoFunction(const double in[], double out[]) override
     {

@@ -2,11 +2,12 @@
 #define MCI_MCINTEGRATOR_HPP
 
 #include "mci/AccumulatorInterface.hpp"
-#include "mci/CallBackOnMoveInterface.hpp"
 #include "mci/ObservableContainer.hpp"
 #include "mci/ObservableFunctionInterface.hpp"
 #include "mci/SamplingFunctionInterface.hpp"
 #include "mci/SamplingFunctionContainer.hpp"
+#include "mci/CallBackOnMoveInterface.hpp"
+#include "mci/TrialMoveInterface.hpp"
 
 #include <fstream>
 #include <random>
@@ -19,7 +20,7 @@ namespace mci
     class MCI
     {
     protected:
-        const double INITIAL_STEP=0.1;
+        const double INITIAL_STEP=0.05;
 
         std::random_device _rdev;
         std::mt19937_64 _rgen;
@@ -39,6 +40,8 @@ namespace mci
         double _targetaccrate;  // desired acceptance ratio
 
         // main object vectors/containers
+        std::unique_ptr<TrialMoveInterface> _trialMove;
+
         SamplingFunctionContainer _pdfcont; // sampling function container
         ObservableContainer _obscont; // observable container used during integration
 
@@ -63,14 +66,17 @@ namespace mci
 
         // --- Internal methods
 
-        void resetAccRejCounters();
+        // prepare new sampling run
+        void initializeSampling(ObservableContainer * obsCont);
 
         void updateVolume();
+        double getMinBoxLen() const; // min(ubound[i]-lbound[i])
         void applyPBC(double v[]) const;
-        void computeNewX();
-        void updateX();
+        //void computeNewX();
+        void acceptX();
+        void rejectX();
         //use this if there is a pdf, returns how many x were changed (0 if not accepted)
-        int doStepMRT2(const int changedIdx[] /*unused, because all-particle steps*/); // returns number of changed positions, i.e. 0 or ndim
+        int doStepMRT2(int changedIdx[] /*unused, because all-particle steps*/); // returns number of changed positions, i.e. 0 or ndim
 
         // these are used before sampling
         void findMRT2Step();

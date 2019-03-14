@@ -40,9 +40,10 @@ int main () {
     mci.addObservable(obs3, 5, 2); // fixed blocksize 5, eval every 2nd step (i.e. "effective" block size of 10)
 
     double avg[mci.getNObsDim()],err[mci.getNObsDim()];
-    const double mrt2step[3] = {1.85, 1.85, 1.85};
+    const double mrt2step[3] = {0.925, 0.925, 0.925};
     mci.setMRT2Step(mrt2step);
-    mci.integrate(5000, avg, err, true, true); // decorrelate
+    
+    mci.integrate(5000, avg, err, false, false); // decorrelate
 
     cout << "=========================================================================================" << endl << endl;
     cout << "Benchmark results (time per sample):" << endl;

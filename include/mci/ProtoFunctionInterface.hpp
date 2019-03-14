@@ -32,9 +32,10 @@ namespace mci
         // internal setters
         void setNProto(int nproto); // you may freely choose the amount of values you need
 
-        // Overwrite this if you have own data to copy on acceptance.
-        // It will be called in the public newToOld() method.
+        // Overwrite this if you have own data to copy on acceptance/rejection.
+        // It will be called in the public newToOld()/oldToNew() methods.
         virtual void _newToOld() {};
+        virtual void _oldToNew() {};
 
     public:
         ProtoFunctionInterface(int ndim, int nproto);
@@ -46,11 +47,12 @@ namespace mci
 
         // --- Main operational methods
 
-        // initializer for old (and as a side-effect, new)
-        void computeOldProtoValues(const double in[]);
+        // initializer for proto values
+        void initializeProtoValues(const double in[]);
 
-        // copy new to old protov, call _newToOld()
-        void newToOld();
+        // copy new to old protov, call _newToOld()/_oldToNew()
+        void newToOld(); // called on acceptance
+        void oldToNew(); // called on rejection
 
         // --- METHOD THAT MUST BE IMPLEMENTED
 

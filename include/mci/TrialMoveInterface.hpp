@@ -5,6 +5,8 @@
 #include "mci/Clonable.hpp"
 #include "mci/SamplingFunctionContainer.hpp"
 
+#include <random>
+
 namespace mci
 {
 
@@ -13,13 +15,13 @@ namespace mci
     protected:
         // we share the random generator with MCI, get's passed on bindRGen()
         std::mt19937_64 * _rgen; // ptr to MCI's rgen
-        std::mt19937_64 * getRGen() { return _rgen; }
+        std::mt19937_64 * getRGen() const { return _rgen; }
 
     public:
         TrialMoveInterface(int ndim, int nproto): ProtoFunctionInterface(ndim, nproto), _rgen(nullptr) {}
 
         // store ptr to MCI's rgen
-        void bindRGen(const std::mt19937_64 &rgen) {
+        void bindRGen(std::mt19937_64 &rgen) {
             _rgen = &rgen;
         }
 
@@ -34,16 +36,26 @@ namespace mci
 
         // --- METHODS THAT MUST BE IMPLEMENTED
 
-        // Methods required for auto-callibration:
-        virtual int getNStepSizes() const = 0; // how many step-size like parameters do you have? (typically 0, 1 or ndim)
+        // Methods only used for auto-calibration of step sizes:
+        virtual int getNStepSizes() const = 0; // how many step-size like parameters do you have? (usually 0, 1 or ndim)
+        virtual double getStepSize(int i) const = 0; // get step size with index i
         virtual void setStepSize(int i, double val) = 0; // set step size with index i to val
+        virtual double getChangeRate() const = 0; // average probability of a single x index to change on move (e.g. 1./ndim on single-index moves)
+        // tell which step sizes were used in a step where the x-indices changedIdx changed
+        virtual void getUsedStepSizes(int nchangedX, const int changedIdx[], int &nusedSizes, int usedSizeIdx[]) const = 0;
 
+        void scaleStepSize(int i, double fac) { this->setStepSize(i, this->getStepSize(i)*fac); } // scale step size with index i by fac
+
+        // Methods used during sampling:
+
+        // Proto-value function
         // Remember to implement the protoFunction from ProtoFunctionInterface, if you can optimize
-        // your trial moves by storing two sets of temporary values (new/old). For details, see
-        // ProtoFunctionInterface.hpp. If you don't need that, in your constructor call the Trial-
-        // MoveInterface constructor with nproto set to 0 and and implement protoFunction as:
+        // calculation of your trial move acceptance factor, by storing two sets of temporaries (new/old).
+        // For details, see ProtoFunctionInterface.hpp. If you don't need that, in your constructor call
+        // the TrialMoveInterface constructor with nproto set to 0 and and implement protoFunction as:
         //     double protoFunction(const double[], double[]) const override {}
 
+        // Callback on acceptance
         // If your trial move requires knowledge of the previous sampling function value,
         // you may extract it on acceptance and store it into a designated proto value element.
         // Otherwise, leave the method empty.

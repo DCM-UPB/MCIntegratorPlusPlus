@@ -5,6 +5,8 @@
 #include "mci/SimpleAccumulator.hpp"
 #include "mci/Estimators.hpp"
 #include "mci/Factories.hpp"
+#include "mci/UniformAllMove.hpp"
+#include "mci/UniformNTypeVecMove.hpp"
 
 #include <algorithm>
 #include <functional>
@@ -115,6 +117,8 @@ namespace mci
 
     void MCI::findMRT2Step()
     {
+        if (!_trialMove->hasStepSizes()) { return; } // in the odd case that our mover has no adjustable step sizes
+
         //constants
         const int MIN_STAT=200;  //minimum statistic: number of M(RT)^2 steps done before deciding if the step must be increased or decreased
         const int MIN_CONS=5;   //minimum consecutive: minimum number of consecutive loops without need of changing mrt2step
@@ -125,13 +129,15 @@ namespace mci
         //initialize index
         int cons_count = 0;  //number of consecutive loops without need of changing mrt2step
         int counter = 0;  //counter of loops
-        double fact;
         while ( ( _NfindMRT2Iterations < 0 && cons_count < MIN_CONS ) || counter < _NfindMRT2Iterations ) {
+            const int nsizes = _trialMove->getNStepSizes();
+            const double minboxlen = this->getMinBoxLen();
+
             //do MIN_STAT M(RT)^2 steps
             this->sample(MIN_STAT);
 
             //increase or decrease mrt2step depending on the acceptance rate
-            double rate = this->getAcceptanceRate();
+            const double rate = this->getAcceptanceRate();
             if ( fabs(rate-_targetaccrate) < TOLERANCE ) {
                 //mrt2step was ok
                 cons_count++;
@@ -139,20 +145,20 @@ namespace mci
             else {
                 //need to change mrt2step
                 cons_count=0;
-                fact = std::min(2., std::max(0.5, rate/_targetaccrate) );
-                for (int j=0; j<_ndim; ++j) {
-                    _mrt2step[j] *= fact;
+                const double fact = std::min(2., std::max(0.5, rate/_targetaccrate) );
+                for (int j=0; j<nsizes; ++j) {
+                    _trialMove->scaleStepSize(j, fact);
                 }
 
                 // sanity checks
-                for (int j=0; j<_ndim; ++j) { //mrt2step = Infinity
-                    if ( _mrt2step[j] > ( _ubound[j] - _lbound[j] ) ) {
-                        _mrt2step[j] = ( _ubound[j] - _lbound[j] );
+                for (int j=0; j<nsizes; ++j) { //mrt2step = Infinity
+                    if ( _trialMove->getStepSize(j) > minboxlen ) {
+                        _trialMove->setStepSize(j, minboxlen);
                     }
                 }
-                for (int j=0; j<_ndim; ++j) { //mrt2step ~ 0
-                    if ( _mrt2step[j] < SMALLEST_ACCEPTABLE_DOUBLE ) {
-                        _mrt2step[j] = SMALLEST_ACCEPTABLE_DOUBLE;
+                for (int j=0; j<nsizes; ++j) { //mrt2step ~ 0
+                    if ( _trialMove->getStepSize(j) < SMALLEST_ACCEPTABLE_DOUBLE ) {
+                        _trialMove->setStepSize(j, SMALLEST_ACCEPTABLE_DOUBLE);
                     }
                 }
             }
@@ -169,16 +175,13 @@ namespace mci
 
     void MCI::sample(const int npoints) // sample without taking observables, file io or callbacks
     {
-        // reset acceptance and rejection
-        this->resetAccRejCounters();
-
-        // initialize the pdf at x
-        _pdfcont.computeOldProtoValues(_xold);
+        // Initialize
+        this->initializeSampling(nullptr);
 
         //run the main loop for sampling
         const bool flagpdf = !(_pdfcont.empty());
-        int changedIdx[_ndim]; // we are not really using that right now
-        std::iota(changedIdx, changedIdx+_ndim, 0); // init with 0...ndim-1
+        int changedIdx[_ndim]; // index array for tracking changed indices
+        std::iota(changedIdx, changedIdx+_ndim, 0); // init with 0...ndim-1 (just because we can)
         for (_ridx=0; _ridx<npoints; ++_ridx) {
             if (flagpdf) { // use sampling function
                 this->doStepMRT2(changedIdx);
@@ -193,15 +196,12 @@ namespace mci
     void MCI::sample(const int npoints, ObservableContainer &container)
     {
         // Initialize
-        this->resetAccRejCounters(); // reset acceptance and rejection
-        container.reset(); // reset observable data (to be sure)
-        _pdfcont.computeOldProtoValues(_xold); // initialize the pdf at x
-        this->callBackOnMove(_xold, true); // first call of the call-back functions
+        this->initializeSampling(&container);
 
         //run the main loop for sampling
         const bool flagpdf = !(_pdfcont.empty());
-        int changedIdx[_ndim]; // we are not really using that right now
-        std::iota(changedIdx, changedIdx+_ndim, 0); // init with 0...ndim-1
+        int changedIdx[_ndim]; // index array for tracking changed indices
+        std::iota(changedIdx, changedIdx+_ndim, 0); // init with 0...ndim-1 (just because we can)
         for (_ridx=0; _ridx<npoints; ++_ridx) {
             // do MC step
             int nchanged;
@@ -231,39 +231,52 @@ namespace mci
 
     // --- Walking
 
-    int MCI::doStepMRT2(const int changeIdx[])
+    int MCI::doStepMRT2(int changedIdx[])
     {
         // propose a new position x
-        this->computeNewX();
+        int nchanged;
+        const double moveAcc = _trialMove->computeTrialMove(_xnew, nchanged, changedIdx);
+        applyPBC(_xnew);
+
+            /*this->computeNewX();
+        const double moveAcc = 1.;
+        nchanged = _ndim;*/
 
         // find the corresponding sampling function value
-        const int nmoved = _ndim;
-        const double acceptance = (nmoved < _ndim) ?
-                                           _pdfcont.computeAcceptance(_xold, _xnew, _ndim, changeIdx)
+        const double pdfAcc = (nchanged < _ndim) ?
+                                           _pdfcont.computeAcceptance(_xold, _xnew, nchanged, changedIdx)
                                            : _pdfcont.computeAcceptance(_xnew);
 
         //determine if the proposed x is accepted or not
-        const int nchanged = ( _rd(_rgen) <= acceptance ) ? _ndim : 0; // currently we do all-particle steps
+        nchanged = ( _rd(_rgen) <= pdfAcc * moveAcc /* maybe it must be / */ ) ? nchanged : 0;
 
         //update some values according to the acceptance of the mrt2 step
         if ( nchanged > 0 ) {
             //accepted
-            _acc++;
-            //update the walker position x
-            this->updateX();
-            //update the sampling function values pdfx
-            _pdfcont.newToOld();
+            this->acceptX();
         } else {
             //rejected
-            _rej++;
+            this->rejectX();
         }
 
         return nchanged;
     }
 
-    void MCI::updateX()
+    void MCI::acceptX()
     {
-        std::swap(_xold, _xnew);
+        std::copy(_xnew, _xnew+_ndim, _xold);
+        _pdfcont.newToOld();
+        _trialMove->newToOld();
+        _trialMove->callOnAcceptance(_pdfcont);
+        ++_acc;
+    }
+
+    void MCI::rejectX()
+    {
+        std::copy(_xold, _xold+_ndim, _xnew);
+        _pdfcont.oldToNew();
+        _trialMove->oldToNew();
+        ++_rej;
     }
 
     void MCI::newRandomX()
@@ -274,12 +287,24 @@ namespace mci
         }
     }
 
-    void MCI::resetAccRejCounters()
+    void MCI::initializeSampling(ObservableContainer * obsCont)
     {
+        // reset running counters
         _acc = 0;
         _rej = 0;
+        _ridx = 0;
+
+        // init xnew and all protovalues
+        std::copy(_xold, _xold+_ndim, _xnew);
+        _pdfcont.initializeProtoValues(_xold); // initialize the pdf at x
+        _trialMove->initializeProtoValues(_xold); // initialize the trial mover
+
+        // call callbacks and initialize passed obs container
+        this->callBackOnMove(_xold, true); // first call of the call-back functions
+        if (obsCont != nullptr) { obsCont->reset(); }// reset observable data (passed per argument!)
     }
 
+    /* // deprecated
     void MCI::computeNewX()
     {
         for (int i=0; i<_ndim; ++i) {
@@ -287,6 +312,7 @@ namespace mci
         }
         applyPBC(_xnew);
     }
+    */
 
 
     // --- File Output
@@ -322,27 +348,6 @@ namespace mci
                 _wlkfile << "   " << _xold[j] ;
             }
             _wlkfile << std::endl;
-        }
-    }
-
-    // --- Callbacks
-
-    void MCI::clearCallBackOnMove() {
-        _cbacks.clear();
-    }
-
-    void MCI::addCallBackOnMove(const CallBackOnMoveInterface &cback)
-    {
-        if (cback.getNDim() != _ndim) {
-            throw std::invalid_argument("[MCI::addObservable] Passed callback function's number of inputs is not equal to MCI's number of walkers.");
-        }
-        _cbacks.emplace_back( std::unique_ptr<CallBackOnMoveInterface>(cback.clone()) ); // we add unique clone
-    }
-
-    void MCI::callBackOnMove(const double x[], const bool accepted)
-    {
-        for (auto & cback : _cbacks){
-            cback->callBackFunction(x, accepted);
         }
     }
 
@@ -388,6 +393,28 @@ namespace mci
     }
 
 
+    // --- Callbacks
+
+    void MCI::clearCallBackOnMove() {
+        _cbacks.clear();
+    }
+
+    void MCI::addCallBackOnMove(const CallBackOnMoveInterface &cback)
+    {
+        if (cback.getNDim() != _ndim) {
+            throw std::invalid_argument("[MCI::addObservable] Passed callback function's number of inputs is not equal to MCI's number of walkers.");
+        }
+        _cbacks.emplace_back( std::unique_ptr<CallBackOnMoveInterface>(cback.clone()) ); // we add unique clone
+    }
+
+    void MCI::callBackOnMove(const double x[], const bool accepted)
+    {
+        for (auto & cback : _cbacks){
+            cback->callBackFunction(x, accepted);
+        }
+    }
+
+    // setters
 
     void MCI::setTargetAcceptanceRate(const double targetaccrate)
     {
@@ -397,7 +424,9 @@ namespace mci
 
     void MCI::setMRT2Step(const double mrt2step[])
     {
-        std::copy(mrt2step, mrt2step+_ndim, _mrt2step);
+        for (int i=0; i<_trialMove->getNStepSizes(); ++i) {
+            _trialMove->setStepSize(i, mrt2step[i]);
+        }
     }
 
 
@@ -420,6 +449,17 @@ namespace mci
         for (int i=0; i<_ndim; ++i) {
             _vol = _vol*( _ubound[i] - _lbound[i] );
         }
+    }
+
+    double MCI::getMinBoxLen() const {
+        // find minimal box length
+        double minboxlen = _ubound[0] - _lbound[0];
+        for (int i=1; i<_ndim; ++i) {
+            if ( (_ubound[i] - _lbound[i]) < minboxlen ) {
+                minboxlen = _ubound[i] - _lbound[i];
+            }
+        }
+        return minboxlen;
     }
 
     void MCI::applyPBC(double v[]) const
@@ -464,8 +504,8 @@ namespace mci
         // _lbound and _ubound
         _lbound = new double[_ndim];
         _ubound = new double[_ndim];
-        std::fill(_lbound, _lbound+_ndim, -std::numeric_limits<double>::max());
-        std::fill(_ubound, _ubound+_ndim, std::numeric_limits<double>::max());
+        std::fill(_lbound, _lbound+_ndim, -0.49*std::numeric_limits<double>::max()); // set it so that ubound-lbound can still be computed
+        std::fill(_ubound, _ubound+_ndim, 0.49*std::numeric_limits<double>::max());
         // _vol (will only be relevant without sampling function)
         _vol=0.;
 
@@ -476,22 +516,26 @@ namespace mci
         std::fill(_xnew, _xnew+_ndim, 0.);
 
         // _mrt2step
-        _mrt2step = new double[_ndim];
-        std::fill(_mrt2step, _mrt2step+_ndim, INITIAL_STEP);
+        //_mrt2step = new double[_ndim];
+        //std::fill(_mrt2step, _mrt2step+_ndim, INITIAL_STEP);
+
+        // initialize random generator
+        _rgen = std::mt19937_64(_rdev());
+        _rd = std::uniform_real_distribution<double>(0.,1.);
+
+        // trial move
+        _trialMove = std::unique_ptr<TrialMoveInterface>(new UniformAllMove(_ndim, INITIAL_STEP));
+        _trialMove->bindRGen(_rgen);
 
         // other controls, defaulting to auto behavior
         _NfindMRT2Iterations = -1;
         _NdecorrelationSteps = -1;
-
         // initialize file flags
         _flagwlkfile=false;
         _flagobsfile=false;
-        // initialize random generator
-        _rgen = std::mt19937_64(_rdev());
-        _rd = std::uniform_real_distribution<double>(0.,1.);
-        //initialize the running index
+
+        //initialize the running counters
         _ridx=0;
-        //initialize the acceptance counters
         _acc=0;
         _rej=0;
         // initialize all the other variables
@@ -502,7 +546,7 @@ namespace mci
     MCI::~MCI()
     {
         // _mrt2step
-        delete [] _mrt2step;
+        //delete [] _mrt2step;
 
         // _xold and _xnew
         delete [] _xnew;

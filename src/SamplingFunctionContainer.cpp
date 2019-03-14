@@ -15,10 +15,17 @@ namespace mci
         }
     }
 
-    void SamplingFunctionContainer::computeOldProtoValues(const double xold[])
+    void SamplingFunctionContainer::oldToNew()
     {
         for (auto & sf : _pdfs) {
-            sf->computeOldProtoValues(xold);
+            sf->oldToNew();
+        }
+    }
+
+    void SamplingFunctionContainer::initializeProtoValues(const double xold[])
+    {
+        for (auto & sf : _pdfs) {
+            sf->initializeProtoValues(xold);
         }
     }
 
