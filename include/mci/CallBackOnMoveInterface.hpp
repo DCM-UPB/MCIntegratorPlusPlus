@@ -31,7 +31,6 @@ namespace mci
 
     public:
         explicit CallBackOnMoveInterface(int ndim): _ndim(ndim) {}
-        virtual ~CallBackOnMoveInterface()= default;
 
         // Getters
         int getNDim() const {return _ndim;}

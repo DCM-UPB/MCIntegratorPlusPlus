@@ -53,7 +53,7 @@ namespace mci
             UniformAllMove(ndim, 1, nullptr, initStepSize) // it is safe to use the constructor like this
         {}
 
-        ~UniformAllMove() {
+        ~UniformAllMove() override {
             delete [] _stepSizes;
             delete [] _typeEnds;
         }
@@ -63,17 +63,17 @@ namespace mci
         void setStepSize(int i, double val) override { _stepSizes[i] = val; }
         double getStepSize(int i) const override { return _stepSizes[i]; }
         double getChangeRate() const override { return 1.; } // chance for a single index to change is 1 (because they all change)
-        void getUsedStepSizes(int, const int[], int &nusedSizes, int usedSizeIdx[]) const override
+        void getUsedStepSizes(int /*nchangedX*/, const int /*changedIdx*/[], int &nusedSizes, int usedSizeIdx[]) const override
         { // we always use all step sizes
             nusedSizes = _ntypes;
             std::iota(usedSizeIdx, usedSizeIdx+_ntypes, 0); // fill 0..._ntypes-1
         }
 
-        void protoFunction(const double[], double[]) override {} // not needed
+        void protoFunction(const double/*in*/[], double/*protovalues*/[]) override {} // not needed
 
-        void onAcceptance(const SamplingFunctionContainer &, double[]) override {} // not needed
+        void onAcceptance(const SamplingFunctionContainer&/*pdfcont*/, double/*protoold*/[]) override {} // not needed
 
-        double trialMove(double xnew[], int &nchanged, int[], const double[], double[]) override
+        double trialMove(double xnew[], int &nchanged, int/*changedIdx*/[], const double/*protoold*/[], double/*protonew*/[]) override
         {
             // do step
             int xidx = 0;

@@ -2,7 +2,7 @@
 #define MCI_ACCUMULATORINTERFACE_HPP
 
 #include "mci/ObservableFunctionInterface.hpp"
-#include "mci/UpdateableObservableFunction.hpp"
+#include "mci/UpdateableObservableInterface.hpp"
 
 #include <memory>
 
@@ -13,8 +13,8 @@ namespace mci
     {
     protected:
         const std::unique_ptr<ObservableFunctionInterface> _obs; // "unique" pointer to the passed observable function (we own it)
-        UpdateableObservableFunction * const _updobs; // if _obs is an UpdateObs, we store a casted raw pointer for internal use (else nullptr)
-        const bool _flag_updobs; // is the passed observable derived from UpdateableObservableFunction? (i.e. is _updobs!=nullptr ?)
+        UpdateableObservableInterface * const _updobs; // if _obs is an UpdateObs, we store a casted raw pointer for internal use (else nullptr)
+        const bool _flag_updobs; // is the passed observable derived from UpdateableObservableInterface? (i.e. is _updobs!=nullptr ?)
 
         const int _nobs; // number of values returned by the observable function
         const int _xndim; // dimension of walker positions/flags that get passed on accumulate

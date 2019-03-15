@@ -128,7 +128,7 @@ int main() {
     cout << "Dimension of observables set = " << mci.getNObsDim() << endl;
 
     // sampling function
-    cout << "Number of sampling function set = " << mci.getNSampF() << endl;
+    cout << "Number of sampling function set = " << mci.getNPDF() << endl;
 
 
     // integrate
@@ -161,7 +161,7 @@ int main() {
     NormalizedLine sf;
     mci.addSamplingFunction(sf);
 
-    cout << "Number of sampling function set = " << mci.getNSampF() << endl;
+    cout << "Number of sampling function set = " << mci.getNPDF() << endl;
 
 
     // integrate

@@ -1,3 +1,6 @@
+#ifndef MCI_MCIBENCHMARKS_HPP
+#define MCI_MCIBENCHMARKS_HPP
+
 #include <cmath>
 #include <functional>
 #include <iostream>
@@ -96,3 +99,5 @@ inline double benchmark_estimators(const double datax[],
 inline std::pair<double, double> sample_benchmark_estimators(const double datax[], const int estimatorType, const int NMC, const int ndim, const int nruns) {
     return sample_benchmark([&] { return benchmark_estimators(datax, estimatorType, NMC, ndim); }, nruns);
 }
+
+#endif

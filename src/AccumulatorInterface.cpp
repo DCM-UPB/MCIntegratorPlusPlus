@@ -6,7 +6,7 @@ namespace mci
 {
 
     AccumulatorInterface::AccumulatorInterface(std::unique_ptr<ObservableFunctionInterface> obs, const int nskip):
-        _obs(std::move(obs)), _updobs(dynamic_cast<UpdateableObservableFunction *>(_obs.get())), _flag_updobs(_updobs!=nullptr),
+        _obs(std::move(obs)), _updobs(dynamic_cast<UpdateableObservableInterface *>(_obs.get())), _flag_updobs(_updobs!=nullptr),
         _nobs(_obs->getNObs()), _xndim(_obs->getNDim()), _nskip(nskip),
         _obs_values(new double[_nobs]), _flags_xchanged(_flag_updobs ? new bool[_xndim] : nullptr),
         _nsteps(0), _data(nullptr)

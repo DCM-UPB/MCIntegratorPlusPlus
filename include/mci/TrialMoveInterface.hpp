@@ -1,8 +1,8 @@
 #ifndef MCI_TRIALMOVEINTERFACE_HPP
 #define MCI_TRIALMOVEINTERFACE_HPP
 
-#include "mci/ProtoFunctionInterface.hpp"
 #include "mci/Clonable.hpp"
+#include "mci/ProtoFunctionInterface.hpp"
 #include "mci/SamplingFunctionContainer.hpp"
 
 #include <random>

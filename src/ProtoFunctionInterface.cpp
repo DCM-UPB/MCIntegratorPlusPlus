@@ -1,7 +1,7 @@
 #include "mci/ProtoFunctionInterface.hpp"
 
-#include <stdexcept>
 #include <algorithm>
+#include <stdexcept>
 
 namespace mci
 {

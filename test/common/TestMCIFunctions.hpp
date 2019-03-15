@@ -1,11 +1,14 @@
+#ifndef MCI_TESTMCIFUNCTIONS_HPP
+#define MCI_TESTMCIFUNCTIONS_HPP
+
 #include "mci/ObservableFunctionInterface.hpp"
-#include "mci/UpdateableObservableFunction.hpp"
 #include "mci/SamplingFunctionInterface.hpp"
+#include "mci/UpdateableObservableInterface.hpp"
 
 #include <algorithm>
 #include <cmath>
-#include <random>
 #include <numeric>
+#include <random>
 
 
 class TestWalk1s
@@ -106,15 +109,6 @@ public:
     double acceptanceFunction(const double protoold[], const double protonew[]) const override{
         return exp(-protonew[0]+protoold[0]);
     }
-
-    double updatedAcceptance(const double xold[], const double xnew[], int nchanged, const int changedIdx[], const double pvold[], double pvnew[]) override
-    {  // not worth it in 3 dim, but useful for testing
-        pvnew[0] = 0.;
-        for (int i=0; i<nchanged; ++i) {
-            pvnew[0] += xnew[changedIdx[i]] * xnew[changedIdx[i]];
-        }
-        return exp(-pvnew[0]+pvold[0]);
-    }
 };
 
 
@@ -148,7 +142,7 @@ public:
         return exp(expf);
     }
 
-    double updatedAcceptance(const double xold[], const double xnew[], int nchanged, const int changedIdx[], const double pvold[], double pvnew[]) override
+    double updatedAcceptance(const double/*xold*/[], const double xnew[], int nchanged, const int changedIdx[], const double pvold[], double pvnew[]) override
     {
         double expf = 0.;
         for (int i=0; i<nchanged; ++i) {
@@ -238,7 +232,7 @@ public:
     }
 };
 
-class XND: public mci::UpdateableObservableFunction
+class XND: public mci::UpdateableObservableInterface
 {
 protected:
     mci::ObservableFunctionInterface * _clone() const override {
@@ -246,13 +240,13 @@ protected:
     }
 
 public:
-    explicit XND(int nd): mci::UpdateableObservableFunction(nd, nd){}
+    explicit XND(int nd): mci::UpdateableObservableInterface(nd, nd){}
     ~XND() override= default;
 
     void observableFunction(const double in[], double out[]) override {
         std::copy(in, in+_ndim, out);
     }
-    void updatedObservable(const double in[], const int , const bool flags[], double out[]) {
+    void updatedObservable(const double in[], const int/*nchanged*/, const bool flags[], double out[]) override {
         for (int i=0; i<_ndim; ++i) { // this is likely slower in any case, but used for testing
             if (flags[i]) { out[i] = in[i]; }
         }
@@ -317,7 +311,7 @@ public:
 };
 
 
-class X2: public mci::UpdateableObservableFunction
+class X2: public mci::UpdateableObservableInterface
 {
 protected:
     mci::ObservableFunctionInterface * _clone() const override {
@@ -325,7 +319,7 @@ protected:
     }
 
 public:
-    explicit X2(const int ndim): mci::UpdateableObservableFunction(ndim,ndim) {}
+    explicit X2(const int ndim): mci::UpdateableObservableInterface(ndim,ndim) {}
 
     void observableFunction(const double in[], double out[]) override
     {
@@ -334,7 +328,7 @@ public:
         }
     }
 
-    void updatedObservable(const double in[], const int nchanged, const bool flags[], double out[]) override
+    void updatedObservable(const double in[], const int/*nchanged*/, const bool flags[], double out[]) override
     {
         for (int i=0; i<this->getNDim(); ++i) {
             if (flags[i]) { // this may actually be faster for small nchanged and large _ndim
@@ -343,3 +337,5 @@ public:
         }
     }
 };
+
+#endif

@@ -2,8 +2,9 @@
 
 #include <algorithm>
 #include <cmath>
-#include <iostream>
 #include <numeric>
+#include <stdexcept>
+#include <string>
 
 double calcErrDelta(const int mode, const double err[9])
 {   // for Francesco's plateau finding algorithm
@@ -38,8 +39,7 @@ namespace mci
         const double SMALLEST_ERROR=1.e-300;
 
         if ( n < 2) {
-            cout << "MCI error OneDimUncorrelatedEstimator() : n must be larger than 1";
-            exit(EXIT_FAILURE);
+            throw std::invalid_argument("[OneDimUncorrelatedEstimator] n must be larger than 1");
         }
 
         average = accumulate(x, x+n, 0.);
@@ -61,8 +61,7 @@ namespace mci
         using namespace std;
 
         if ( n < nblocks) {
-            cout << "MCI error OneDimBlockEstimator() : n must be >= nblocks";
-            exit(EXIT_FAILURE);
+            throw std::invalid_argument("[OneDimBlockEstimator] n must be >= nblocks");
         }
 
         const int nperblock=n/nblocks; // if there is a rest, it is ignored
@@ -86,8 +85,7 @@ namespace mci
         using namespace std;
 
         if ( n < MAX_BLOCKS) {
-            cout << "MCI error OneDimCorrelatedEstimator() : n must be >= " << MAX_BLOCKS;
-            exit(EXIT_FAILURE);
+            throw std::invalid_argument("[OneDimCorrelatedEstimator] n must be >= " + std::to_string(MAX_BLOCKS));
         }
 
         const int nav = MAX_BLOCKS-MIN_BLOCKS+1;
@@ -131,8 +129,7 @@ namespace mci
         const double SMALLEST_ERROR=1.e-300;
 
         if ( n < 2) {
-            cout << "MCI error MultiDimUncorrelatedEstimator() : n must be larger than 1";
-            exit(EXIT_FAILURE);
+            throw std::invalid_argument("[MultiDimUncorrelatedEstimator] n must be larger than 1");
         }
 
         fill(average, average+ndim, 0.);
@@ -164,8 +161,7 @@ namespace mci
         using namespace std;
 
         if ( n < nblocks) {
-            cout << "MCI error MultiDimBlockEstimator() : n must be >= nblocks";
-            exit(EXIT_FAILURE);
+            throw std::invalid_argument("MCI error MultiDimBlockEstimator() : n must be >= nblocks");
         }
 
         const int nperblock=n/nblocks; // if there is a rest, it is ignored
@@ -200,8 +196,7 @@ namespace mci
         using namespace std;
 
         if ( n < MAX_BLOCKS) {
-            cout << "MCI error MultiDimCorrelatedEstimator() : n must be >= " << MAX_BLOCKS;
-            exit(EXIT_FAILURE);
+            throw std::invalid_argument("MCI error MultiDimCorrelatedEstimator() : n must be >= " + std::to_string(MAX_BLOCKS));
         }
 
         const int nav = MAX_BLOCKS-MIN_BLOCKS+1;
@@ -283,7 +278,7 @@ namespace mci
 
 
     // Noop Estimator
-    void NoopEstimator(int , int nobs, const double data[], double avg[], double err[]) {
+    void NoopEstimator(int/*n*/, int nobs, const double data[], double avg[], double err[]) {
         std::copy(data, data+nobs, avg);
         std::fill(err, err+nobs, 0.);
     }

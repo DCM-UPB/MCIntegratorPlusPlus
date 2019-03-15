@@ -37,7 +37,7 @@ namespace mci
     void CorrelatedEstimator(int n, int ndim, const double x[], double average[], double error[]);
 
     // no-op estimator (used when data contains the averages already and error is irrelevant)
-    void NoopEstimator(int /*unused*/, int nobs, const double data[], double avg[], double err[]);
+    void NoopEstimator(int/*n*/, int nobs, const double data[], double avg[], double err[]);
 
 } // namespace mci
 

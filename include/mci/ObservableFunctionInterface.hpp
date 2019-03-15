@@ -33,7 +33,6 @@ namespace mci
 
     public:
         ObservableFunctionInterface(int ndim, int nobs): _ndim(ndim), _nobs(nobs) {}
-        virtual ~ObservableFunctionInterface() = default;
 
         // getters
         int getNObs() const { return _nobs; }

@@ -3,8 +3,8 @@
 
 #include "mci/TrialMoveInterface.hpp"
 
-#include <stdexcept>
 #include <algorithm>
+#include <stdexcept>
 
 namespace mci
 {
@@ -68,7 +68,7 @@ namespace mci
             UniformVecMove(nvecs, veclen, 1, nullptr, initStepSize) // it is safe to use the constructor like this
         {}
 
-        ~UniformVecMove() {
+        ~UniformVecMove() override {
             delete [] _stepSizes;
             delete [] _typeEnds;
         }
@@ -91,11 +91,11 @@ namespace mci
             throw std::runtime_error("[UniformVecMove::getUsedStepSizes] End of method reached, without result.");
         }
 
-        void protoFunction(const double[], double[]) override {} // not needed
+        void protoFunction(const double/*in*/[], double/*protovalues*/[]) override {} // not needed
 
-        void onAcceptance(const SamplingFunctionContainer &, double[]) override {} // not needed
+        void onAcceptance(const SamplingFunctionContainer&/*pdfcont*/, double/*protoold*/[]) override {} // not needed
 
-        double trialMove(double xnew[], int &nchanged, int changedIdx[], const double[], double[]) override
+        double trialMove(double xnew[], int &nchanged, int changedIdx[], const double/*protoold*/[], double/*protonew*/[]) override
         {
             // determine vector to change and its type
             const int vidx = _rdidx(*_rgen);

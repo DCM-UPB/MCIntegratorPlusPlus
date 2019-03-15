@@ -3,8 +3,8 @@
 
 #include "mci/SamplingFunctionInterface.hpp"
 
-#include <vector>
 #include <memory>
+#include <vector>
 
 namespace mci
 {
@@ -19,17 +19,18 @@ namespace mci
         ~SamplingFunctionContainer() = default;
 
         // simple getters
-        int getNSampF() const { return _pdfs.size(); }
-        int size() const { return this->getNSampF(); }
 
-        bool isEmpty() const { return ( _pdfs.size()==0 ); }
-        bool empty() const { return this->isEmpty(); }
+        int size() const { return _pdfs.size(); }
+        int getNPDF() const { return this->size(); }
+
+        bool empty() const { return _pdfs.empty(); }
+        bool hasPDF() const { return !this->empty(); }
 
         const SamplingFunctionInterface & getSamplingFunction(int i) const { return *_pdfs[i]; }
 
         // operational methods
 
-        void addSamplingFunction(std::unique_ptr<SamplingFunctionInterface> sampf); // we acquire ownership
+        void addSamplingFunction(std::unique_ptr<SamplingFunctionInterface> sf); // we acquire ownership
 
         void newToOld(); // copy new to old protovalues
         void oldToNew(); // copy old to new protovalues

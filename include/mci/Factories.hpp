@@ -8,9 +8,9 @@
 
 #include "mci/Estimators.hpp"
 
-#include <memory>
 #include <algorithm>
 #include <functional>
+#include <memory>
 #include <stdexcept>
 
 // All factory functions go here
@@ -20,7 +20,7 @@ namespace mci
 
     // --- Create Accumulators
 
-    std::unique_ptr<AccumulatorInterface> createAccumulator(const ObservableFunctionInterface &obs, int blocksize = 1, int nskip = 1)
+    inline std::unique_ptr<AccumulatorInterface> createAccumulator(const ObservableFunctionInterface &obs, int blocksize = 1, int nskip = 1)
     {
         // sanity
         blocksize = std::max(0, blocksize);
@@ -29,53 +29,55 @@ namespace mci
         if (blocksize == 0) {
             return std::unique_ptr<AccumulatorInterface>( new SimpleAccumulator(obs.clone(), nskip) );
         }
-        else {
-            if (blocksize == 1) {
-                return std::unique_ptr<AccumulatorInterface>( new FullAccumulator(obs.clone(), nskip) );
-            } else {
-                return std::unique_ptr<AccumulatorInterface>( new BlockAccumulator(obs.clone(), nskip, blocksize) );
-            }
+        if (blocksize == 1) {
+            return std::unique_ptr<AccumulatorInterface>( new FullAccumulator(obs.clone(), nskip) );
         }
+
+        return std::unique_ptr<AccumulatorInterface>( new BlockAccumulator(obs.clone(), nskip, blocksize) );
     }
 
 
     // --- Create Estimator Functions
 
-    enum class Estimator {
-                          // Enumeration of built-in any-dim estimators with the same general interface,
-                          // which are either not-blocking (to be used when data already consists of
-                          // block-averages or is uncorrelated) or auto-blocking estimators.
-                          Noop,
-                          Uncorrelated,
-                          Correlated
+    enum class EstimatorType {
+                              // Enumeration of built-in any-dim estimators with the same general interface,
+                              // which are either not-blocking (to be used when data already consists of
+                              // block-averages or is uncorrelated) or auto-blocking estimators.
+                              Noop,
+                              Uncorrelated,
+                              Correlated
     };
-    std::function<void(int/*nstore*/, int/*nobs*/, const double[]/*data*/, double[]/*avg*/, double[]/*error*/)> createEstimator(Estimator estim /*from Estimators enumeration*/)
+    inline EstimatorType selectEstimatorType(const bool flag_correlated, const bool flag_error = true)
     {
-        switch (estim) {
-        case Estimator::Noop:
+        if (flag_correlated) {
+            if (!flag_error) {
+                throw std::invalid_argument("[selectEstimatorType] Error calculation is set off, but correlated error estimation is set on.");
+            }
+            return EstimatorType::Correlated;
+        }
+
+        return flag_error? EstimatorType::Uncorrelated : EstimatorType::Noop;
+    }
+
+    inline std::function<void(int/*nstore*/, int/*nobs*/, const double[]/*data*/, double[]/*avg*/, double[]/*error*/)> createEstimator(EstimatorType estimType /*from Estimators enumeration*/)
+    {
+        switch (estimType) {
+        case EstimatorType::Noop:
             return NoopEstimator;
 
-        case Estimator::Uncorrelated:
+        case EstimatorType::Uncorrelated:
             return UncorrelatedEstimator;
 
-        case Estimator::Correlated:
+        case EstimatorType::Correlated:
             return CorrelatedEstimator;
 
         default:
             throw std::domain_error("[createEstimator] Unhandled estimator enumerator.");
         }
     }
-    std::function<void(int, int, const double[], double[], double[])> createEstimator(const bool flag_correlated, const bool flag_error = true)
+    inline std::function<void(int, int, const double[], double[], double[])> createEstimator(const bool flag_correlated, const bool flag_error = true)
     {
-        if (flag_correlated) {
-            if (!flag_error) {
-                throw std::invalid_argument("[createEstimator] Error calculation was set off, but correlated error estimation was set on.");
-            }
-            return createEstimator(Estimator::Correlated);
-        }
-        else {
-            return createEstimator(flag_error? Estimator::Uncorrelated : Estimator::Noop);
-        }
+        return createEstimator(selectEstimatorType(flag_correlated, flag_error));
     }
 
 } // namespace mci

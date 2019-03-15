@@ -1,8 +1,8 @@
 #ifndef MCI_SAMPLINGFUNCTIONINTERFACE_HPP
 #define MCI_SAMPLINGFUNCTIONINTERFACE_HPP
 
-#include "mci/ProtoFunctionInterface.hpp"
 #include "mci/Clonable.hpp"
+#include "mci/ProtoFunctionInterface.hpp"
 
 namespace mci
 {
@@ -71,9 +71,9 @@ namespace mci
         // Remember that in this method you should only update the protov[] elements that need to change due
         // to the nchanged input indices in changedIdx.
         // If full recalculation is more efficient in your case, you may also choose not to overwrite this method.
-        virtual double updatedAcceptance(const double[] /*xold*/, const double xnew[],
-                                           int /*nchanged*/, const int[] /*changedIdx*/,
-                                           const double protoold[], double protonew[] /* update this! */)
+        virtual double updatedAcceptance(const double/*xold*/[], const double xnew[],
+                                         int /*nchanged*/, const int/*changedIdx*/[],
+                                         const double protoold[], double protonew[] /* update this! */)
         {
             // default to "calculate all"
             this->protoFunction(xnew, protonew);

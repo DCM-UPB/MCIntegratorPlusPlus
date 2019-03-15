@@ -22,7 +22,7 @@ namespace mci
             std::unique_ptr<AccumulatorInterface> accu;
 
             // flags
-            bool flag_equil; // equilibrate this observable when using automatic decorrelation?
+            bool flag_equil{}; // equilibrate this observable when using automatic decorrelation?
         };
 
     private:
@@ -35,13 +35,15 @@ namespace mci
         ~ObservableContainer() = default;
 
         // simple getters
-        int getNObs() const { return _cont.size(); }
-        int size() const { return this->getNObs(); }
-
+        int size() const { return _cont.size(); }
+        int getNObs() const { return this->size(); }
         int getNObsDim() const { return _nobsdim; }
 
+        bool empty() const { return _cont.empty(); }
+        bool hasObs() const { return !this->empty(); }
+
         const ObservableFunctionInterface & getObservableFunction(int i) const { return _cont[i].accu->getObservableFunction(); }
-        bool getFlagEquil(int i) const { return (_cont[i].flag_equil > 0); }
+        bool getFlagEquil(int i) const { return _cont[i].flag_equil; }
 
         // operational methods
         // add accumulator&estimator for an observable

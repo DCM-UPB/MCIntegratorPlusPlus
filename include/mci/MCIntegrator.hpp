@@ -2,18 +2,19 @@
 #define MCI_MCINTEGRATOR_HPP
 
 #include "mci/AccumulatorInterface.hpp"
+#include "mci/CallBackOnMoveInterface.hpp"
+#include "mci/Factories.hpp"
 #include "mci/ObservableContainer.hpp"
 #include "mci/ObservableFunctionInterface.hpp"
-#include "mci/SamplingFunctionInterface.hpp"
 #include "mci/SamplingFunctionContainer.hpp"
-#include "mci/CallBackOnMoveInterface.hpp"
+#include "mci/SamplingFunctionInterface.hpp"
 #include "mci/TrialMoveInterface.hpp"
 
 #include <fstream>
+#include <memory>
 #include <random>
 #include <string>
 #include <vector>
-#include <memory>
 
 namespace mci
 {
@@ -116,16 +117,21 @@ namespace mci
         // how many decorrelation steps to do
         void setNdecorrelationSteps(int nsteps /* -1 == auto, 0 == disabled */){_NdecorrelationSteps=nsteps;}
 
+        // --- Adding objects to MCI (everything you pass will be cloned!)
 
-        void addObservable(const ObservableFunctionInterface & obs /* MCI adds accumulator and estimator for this obs, with following options: */,
+        //void setTrialMove(const TrialMoveInterface &tmove);
+        //void setTrialMove(const TrialMoveInterface &tmove);
+
+        void addObservable(const ObservableFunctionInterface &obs /* MCI adds accumulator and estimator for this obs, with following options: */,
                            int blocksize, /* if > 1, use fixed block size and assume uncorrelated samples, if <= 0, use no blocks and no error calculation */
                            int nskip, /* evaluate observable only every n-th step NOTE: now a block consists of $blocksize non-skipped samples */
                            bool flag_equil, /* observable wants to be equilibrated when using automatic initial decorrelation (blocksize must be > 0) */
                            bool flag_correlated /* should block averages be treated as correlated samples? (blocksize must be > 0) */
                            );
-        void addObservable(const ObservableFunctionInterface & obs, int blocksize = 1, int nskip = 1) {
+        void addObservable(const ObservableFunctionInterface &obs, int blocksize = 1, int nskip = 1) {
             addObservable(obs, blocksize, nskip, blocksize>0, blocksize==1); // safe&easy defaults, appropriate for most cases
         }
+        void addObservable(const ObservableFunctionInterface &obs, int blocksize, int nskip, bool flag_equil, EstimatorType estimType /*enumerator, see Factories*/);
         void clearObservables(); // clear
 
         void addSamplingFunction(const SamplingFunctionInterface &mcisf);
@@ -153,7 +159,7 @@ namespace mci
         int getNObsDim() const { return _obscont.getNObsDim(); }
 
         const SamplingFunctionInterface & getSamplingFunction(int i) const { return _pdfcont.getSamplingFunction(i); }
-        int getNSampF() const { return _pdfcont.getNSampF(); }
+        int getNPDF() const { return _pdfcont.getNPDF(); }
 
         const CallBackOnMoveInterface & getCallBackOnMove(int i) const { return *_cbacks[i]; }
         int getNCallBacks() const { return _cbacks.size(); }

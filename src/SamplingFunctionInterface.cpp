@@ -14,10 +14,10 @@ namespace mci
     {
         if (nchanged < _ndim) {
             return this->updatedAcceptance(xold, xnew, nchanged, changedIdx, _protoold, _protonew);
-        } else { // all elements have changed
-            this->protoFunction(xnew, _protonew);
-            return this->acceptanceFunction(_protoold, _protonew);
         }
+        // all elements have changed
+        this->protoFunction(xnew, _protonew);
+        return this->acceptanceFunction(_protoold, _protonew);
     }
 
 }  // namespace mci

@@ -1,5 +1,5 @@
-#ifndef MCI_UPDATEABLEOBSERVABLEFUNCTION_HPP
-#define MCI_UPDATEABLEOBSERVABLEFUNCTION_HPP
+#ifndef MCI_UPDATEABLEOBSERVABLEINTERFACE_HPP
+#define MCI_UPDATEABLEOBSERVABLEINTERFACE_HPP
 
 #include "mci/ObservableFunctionInterface.hpp"
 
@@ -14,7 +14,7 @@ namespace mci
     // implement the mentioned partial update method.
     // So typically your class would look like the following:
     //
-    // class MyObservable: public UpdateableObservableFunction {
+    // class MyObservable: public UpdateableObservableInterface {
     // protected:
     //     ObservableFunctionInterface * _clone() const override {
     //         // returns ptr of type ObservableFunctionInterface
@@ -25,10 +25,10 @@ namespace mci
     //     void observableUpdate(in, nchanged, changeFlags, out) overwrite; // partial update, see below
     //     ...
     // };
-    class UpdateableObservableFunction: public ObservableFunctionInterface
+    class UpdateableObservableInterface: public ObservableFunctionInterface
     {
     public:
-        UpdateableObservableFunction(int ndim, int nobs): ObservableFunctionInterface(ndim ,nobs) {}
+        UpdateableObservableInterface(int ndim, int nobs): ObservableFunctionInterface(ndim ,nobs) {}
 
         // --- YOU MUST IMPLEMENT THIS
         // Compute the observable, given ndim flags indicating which inputs have changed since last observable calculation.
@@ -38,8 +38,8 @@ namespace mci
         // need to do so.
         // You may use the nchanged argument to decide whether a full recalculation or flag-based recalculation is more efficient.
         // If full recalculation is almost always more efficient in your case, you may also choose not to overwrite this method.
-        virtual void updatedObservable(const double in[], const int /*nchanged*/, const bool[]/*flags[ndim]*/, double out[]) = 0;
-        //                               ^input = walker positions  ^how many inputs changed  ^which indices are new   ^resulting observables (passed containing old obs, so you can make use of those)
+        virtual void updatedObservable(const double in[], int nchanged, const bool flags_xchanged[]/*[ndim]*/, double out[]) = 0;
+        //                             ^input = walker positions  ^how many inputs changed  ^which indices are new  ^resulting observables (passed containing old obs, so you may make use of those)
     };
 
 }  // namespace mci

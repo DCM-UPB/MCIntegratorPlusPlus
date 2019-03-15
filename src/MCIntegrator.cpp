@@ -1,10 +1,10 @@
 #include "mci/MCIntegrator.hpp"
 
 #include "mci/BlockAccumulator.hpp"
-#include "mci/FullAccumulator.hpp"
-#include "mci/SimpleAccumulator.hpp"
 #include "mci/Estimators.hpp"
 #include "mci/Factories.hpp"
+#include "mci/FullAccumulator.hpp"
+#include "mci/SimpleAccumulator.hpp"
 #include "mci/UniformAllMove.hpp"
 #include "mci/UniformVecMove.hpp"
 
@@ -179,7 +179,7 @@ namespace mci
         this->initializeSampling(nullptr);
 
         //run the main loop for sampling
-        const bool flagpdf = !(_pdfcont.empty());
+        const bool flagpdf = _pdfcont.hasPDF();
         int changedIdx[_ndim]; // index array for tracking changed indices
         std::iota(changedIdx, changedIdx+_ndim, 0); // init with 0...ndim-1 (just because we can)
         for (_ridx=0; _ridx<npoints; ++_ridx) {
@@ -199,7 +199,7 @@ namespace mci
         this->initializeSampling(&container);
 
         //run the main loop for sampling
-        const bool flagpdf = !(_pdfcont.empty());
+        const bool flagpdf = _pdfcont.hasPDF();
         int changedIdx[_ndim]; // index array for tracking changed indices
         std::iota(changedIdx, changedIdx+_ndim, 0); // init with 0...ndim-1 (just because we can)
         for (_ridx=0; _ridx<npoints; ++_ridx) {
@@ -237,10 +237,6 @@ namespace mci
         int nchanged;
         const double moveAcc = _trialMove->computeTrialMove(_xnew, nchanged, changedIdx);
         applyPBC(_xnew);
-
-            /*this->computeNewX();
-        const double moveAcc = 1.;
-        nchanged = _ndim;*/
 
         // find the corresponding sampling function value
         const double pdfAcc = (nchanged < _ndim) ?
@@ -304,16 +300,6 @@ namespace mci
         if (obsCont != nullptr) { obsCont->reset(); }// reset observable data (passed per argument!)
     }
 
-    /* // deprecated
-    void MCI::computeNewX()
-    {
-        for (int i=0; i<_ndim; ++i) {
-            _xnew[i] = _xold[i] + _mrt2step[i] * (_rd(_rgen)-0.5);
-        }
-        applyPBC(_xnew);
-    }
-    */
-
 
     // --- File Output
 
@@ -359,21 +345,30 @@ namespace mci
         _obscont.clear();
     }
 
-    void MCI::addObservable(const ObservableFunctionInterface &obs, int blocksize, int nskip, const bool flag_equil, const bool flag_correlated)
+    void MCI::addObservable(const ObservableFunctionInterface &obs, int blocksize, int nskip, const bool flag_equil, const EstimatorType estimType)
     {
         // sanity
+        blocksize = std::max(0, blocksize);
+        nskip = std::max(1, nskip);
         if (obs.getNDim() != _ndim) {
             throw std::invalid_argument("[MCI::addObservable] Passed observable function's number of inputs is not equal to MCI's number of walkers.");
         }
-        blocksize = std::max(0, blocksize);
-        nskip = std::max(1, nskip);
-        const bool flag_error = (blocksize > 0); // will we calculate errors?
-        if (flag_equil && blocksize==0) {
-            throw std::invalid_argument("[MCI::addObservable] Requested automatic observable equilibration requires blocksize > 0.");
+        if (flag_equil && estimType == EstimatorType::Noop) {
+            throw std::invalid_argument("[MCI::addObservable] Requested automatic observable equilibration requires estimator with error calculation.");
         }
 
         // add accumulator&estimator from factory functions
-        _obscont.addObservable(createAccumulator(obs, blocksize, nskip), createEstimator(flag_correlated, flag_error), flag_equil);
+        _obscont.addObservable(createAccumulator(obs, blocksize, nskip), createEstimator(estimType), flag_equil);
+    }
+
+    void MCI::addObservable(const ObservableFunctionInterface &obs, const int blocksize, const int nskip, const bool flag_equil, const bool flag_correlated)
+    {
+        // select type
+        const bool flag_error = (blocksize > 0); // will we calculate errors?
+        const EstimatorType estimType = selectEstimatorType(flag_correlated, flag_error);
+
+        // use addObservable above
+        this->addObservable(obs, blocksize, nskip, flag_equil, estimType);
     }
 
 
@@ -520,8 +515,8 @@ namespace mci
         // _lbound and _ubound
         _lbound = new double[_ndim];
         _ubound = new double[_ndim];
-        std::fill(_lbound, _lbound+_ndim, -0.49*std::numeric_limits<double>::max()); // set it so that ubound-lbound can still be computed
-        std::fill(_ubound, _ubound+_ndim, 0.49*std::numeric_limits<double>::max());
+        std::fill(_lbound, _lbound+_ndim, -0.1*std::numeric_limits<double>::max()); // play it safe
+        std::fill(_ubound, _ubound+_ndim, 0.1*std::numeric_limits<double>::max());
         // _vol (will only be relevant without sampling function)
         _vol=0.;
 
@@ -531,13 +526,9 @@ namespace mci
         _xnew = new double[_ndim];
         std::fill(_xnew, _xnew+_ndim, 0.);
 
-        // _mrt2step
-        //_mrt2step = new double[_ndim];
-        //std::fill(_mrt2step, _mrt2step+_ndim, INITIAL_STEP);
-
         // initialize random generator
         _rgen = std::mt19937_64(_rdev());
-        _rd = std::uniform_real_distribution<double>(0.,1.);
+        _rd = std::uniform_real_distribution<double>(0.,1.); // for full random moves
 
         // trial move
         _trialMove = std::unique_ptr<TrialMoveInterface>(new UniformAllMove(_ndim, INITIAL_STEP));

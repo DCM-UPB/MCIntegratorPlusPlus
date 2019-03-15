@@ -128,7 +128,7 @@ int main() {
         cout << "Number of observables set = " << mci.getNObs() << endl;
         cout << "Dimension of observables set = " << mci.getNObsDim() << endl;
         // sampling function
-        cout << "Number of sampling function set = " << mci.getNSampF() << endl;
+        cout << "Number of sampling function set = " << mci.getNPDF() << endl;
     }
 
     // integrate
@@ -165,7 +165,7 @@ int main() {
     if (myrank == 0) {
         cout << "Number of observables set = " << mci.getNObs() << endl;
         cout << "Dimension of observables set = " << mci.getNObsDim() << endl;
-        cout << "Number of sampling function set = " << mci.getNSampF() << endl;
+        cout << "Number of sampling function set = " << mci.getNPDF() << endl;
     }
 
     // integrate
