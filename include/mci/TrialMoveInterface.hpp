@@ -4,6 +4,7 @@
 #include "mci/Clonable.hpp"
 #include "mci/ProtoFunctionInterface.hpp"
 #include "mci/SamplingFunctionContainer.hpp"
+#include "mci/WalkerState.hpp"
 
 #include <random>
 
@@ -29,7 +30,7 @@ namespace mci
         void callOnAcceptance(const SamplingFunctionContainer &pdfcont) { this->onAcceptance(pdfcont, _protoold); }
 
         // compute move, for details see below
-        double computeTrialMove(double xnew[], int &nchanged, int changedIdx[]) { return this->trialMove(xnew, nchanged, changedIdx, _protoold, _protonew); }
+        double computeTrialMove(WalkerState &wlkstate) { return this->trialMove(wlkstate, _protoold, _protonew); }
 
         // do we have step sizes to calibrate?
         bool hasStepSizes() const { return (this->getNStepSizes() > 0); }
@@ -41,8 +42,8 @@ namespace mci
         virtual double getStepSize(int i) const = 0; // get step size with index i
         virtual void setStepSize(int i, double val) = 0; // set step size with index i to val
         virtual double getChangeRate() const = 0; // average probability of a single x index to change on move (e.g. 1./ndim on single-index moves)
-        // tell which step sizes were used in a step where the x-indices changedIdx changed
-        virtual void getUsedStepSizes(int nchangedX, const int changedIdx[], int &nusedSizes, int usedSizeIdx[]) const = 0;
+        // tell which step sizes were used in a step described by wlkstate
+        virtual void getUsedStepSizes(const WalkerState &wlkstate, int &nusedSizes, int usedSizeIdx[]) const = 0;
 
         void scaleStepSize(int i, double fac) { this->setStepSize(i, this->getStepSize(i)*fac); } // scale step size with index i by fac
 
@@ -64,11 +65,11 @@ namespace mci
 
         // Propose a trial move
         // For performance reasons, this method does everything related to a new trial move, at once.
-        // That means: Update xnew (and protonew), count changed indices in nchanged, store the indices in
+        // We pass the walker state to update (i.e. xnew, nchanged and changedIdx) and your protovalues.
+        // Update xnew (and your protonew), count changed indices in nchanged, store the indices in
         // ascending order in changedIdx (is allocated to length ndim) and finally return the acceptance
         // factor of your trial move.
-        // Note: The passed xnew array is in/out and originally contains the previous positions.
-        virtual double trialMove(double xnew[], int &nchanged, int changedIdx[], const double protoold[], double protonew[]) = 0;
+        virtual double trialMove(WalkerState &wlkstate, const double protoold[], double protonew[]) = 0;
     };
 
 }; // namespace mci

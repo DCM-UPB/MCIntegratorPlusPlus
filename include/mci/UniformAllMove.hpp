@@ -63,7 +63,7 @@ namespace mci
         void setStepSize(int i, double val) override { _stepSizes[i] = val; }
         double getStepSize(int i) const override { return _stepSizes[i]; }
         double getChangeRate() const override { return 1.; } // chance for a single index to change is 1 (because they all change)
-        void getUsedStepSizes(int /*nchangedX*/, const int /*changedIdx*/[], int &nusedSizes, int usedSizeIdx[]) const override
+        void getUsedStepSizes(const WalkerState&/*wlkstate*/, int &nusedSizes, int usedSizeIdx[]) const override
         { // we always use all step sizes
             nusedSizes = _ntypes;
             std::iota(usedSizeIdx, usedSizeIdx+_ntypes, 0); // fill 0..._ntypes-1
@@ -73,17 +73,17 @@ namespace mci
 
         void onAcceptance(const SamplingFunctionContainer&/*pdfcont*/, double/*protoold*/[]) override {} // not needed
 
-        double trialMove(double xnew[], int &nchanged, int/*changedIdx*/[], const double/*protoold*/[], double/*protonew*/[]) override
+        double trialMove(WalkerState &wlkstate, const double/*protoold*/[], double/*protonew*/[]) override
         {
             // do step
             int xidx = 0;
             for (int tidx=0; tidx<_ntypes; ++tidx) {
                 while (xidx < _typeEnds[tidx]) {
-                    xnew[xidx] += _stepSizes[tidx] * _rd( *(_rgen) );
+                    wlkstate.xnew[xidx] += _stepSizes[tidx] * _rd( *(_rgen) );
                     ++xidx;
                 }
             }
-            nchanged = _ndim; // if we changed all, we don't need to fill changedIdx
+            wlkstate.nchanged = _ndim; // if we changed all, we don't need to fill changedIdx
 
             return 1.; // uniform -> no move acceptance factor
         }

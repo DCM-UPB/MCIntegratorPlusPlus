@@ -7,7 +7,7 @@ namespace mci
 {
 
     ProtoFunctionInterface::ProtoFunctionInterface(const int ndim, const int nproto):
-        _ndim(ndim), _nproto(0), _protonew(nullptr), _protoold(nullptr)
+        _ndim(ndim), _nproto(0), _protoold(nullptr), _protonew(nullptr)
     {
         if (ndim < 1) { throw std::invalid_argument("[ProtoFunctionInterface] Number of dimensions must be at least 1."); }
         this->setNProto(nproto);
@@ -15,19 +15,17 @@ namespace mci
 
     ProtoFunctionInterface::~ProtoFunctionInterface()
     {
-        delete[] _protoold;
-        delete[] _protonew;
+        delete[] _protoold; // this one was used to allocate
     }
 
     void ProtoFunctionInterface::setNProto(const int nproto)
     {
         delete[] _protoold;
-        delete[] _protonew;
         if (nproto>0) {
-            _protonew = new double[nproto];
-            _protoold = new double[nproto];
-            std::fill(_protonew, _protonew+nproto, 0.);
-            std::fill(_protoold, _protoold+nproto, 0.);
+
+            _protoold = new double[2*nproto];
+            _protonew = _protoold + nproto; // ptr to second half
+            std::fill(_protoold, _protoold+2*nproto, 0.);
             _nproto=nproto;
         }
         else {

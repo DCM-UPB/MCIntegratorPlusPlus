@@ -24,8 +24,8 @@ int main () {
     //const int nruns[5] = {2, 2, 2, 2, 2};
 
     // benchmark settings
-    const int NMC[5] = {10000000, 1000000, 100000, 10000, 1000};
-    const int nruns[5] = {5, 50, 500, 5000, 50000};
+    const int NMC[5] = {1000, 10000, 100000, 1000000, 10000000};
+    const int nruns[5] = {50000, 5000, 500, 50, 5};
 
     Exp1DPDF pdf;
     X1D obs;
@@ -36,11 +36,12 @@ int main () {
     mci.addObservable(obs, 0, 1); // use simple accu (i.e. no error), no skipping
 
     double avg, err;
-    const double mrt2step = 0.925;
+    const double mrt2step = 3.185;
     mci.setMRT2Step(&mrt2step);
 
-    mci.integrate(5000, &avg, &err, false, false); // decorrelate
+    mci.integrate(100000, &avg, &err, false, false); // warmup&decorrelate
     cout << "avg " << avg <<  ", err " << err << endl;
+    cout << "acceptance rate " << mci.getAcceptanceRate() << endl;
 
     cout << "=========================================================================================" << endl << endl;
     cout << "Benchmark results (time per sample):" << endl;

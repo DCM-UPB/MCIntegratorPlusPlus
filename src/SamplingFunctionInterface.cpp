@@ -10,13 +10,13 @@ namespace mci
         return this->acceptanceFunction(_protoold, _protonew);
     }
 
-    double SamplingFunctionInterface::computeAcceptance(const double xold[], const double xnew[], int nchanged, const int changedIdx[])
+    double SamplingFunctionInterface::computeAcceptance(const WalkerState &wlkstate)
     {
-        if (nchanged < _ndim) {
-            return this->updatedAcceptance(xold, xnew, nchanged, changedIdx, _protoold, _protonew);
+        if (wlkstate.nchanged < _ndim) {
+            return this->updatedAcceptance(wlkstate, _protoold, _protonew);
         }
         // all elements have changed
-        this->protoFunction(xnew, _protonew);
+        this->protoFunction(wlkstate.xnew, _protonew);
         return this->acceptanceFunction(_protoold, _protonew);
     }
 

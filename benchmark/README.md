@@ -7,13 +7,15 @@ A conda environment that can be used to run the python script is available as `c
 
 Currently there are the following benchmarks:
 
-   `bench_integrate_nmc`: Benchmark of MC integration's time per step, for different amounts of steps 
-
+   `bench_estimators`: Benchmark of MCI's estimator implementations, for different settings.
+   `bench_integrate_mixed`: Benchmark of MC integration (uni-all-moves) in 3D, for a fast PDF and a small mix of observables.
+   `bench_throughput_nmc`: Benchmark of maximal MC sampling throughput in 1D, depending on NMC, using near-zero cost PDF&observable.
+   `bench_throughput_ndim`: Like the previous, but with fixed NMC and varying number of dimensions.
 
 # Using the benchmarks
 
 Just provide the script `run.sh` the desired benchmark's name, e.g.:
-   `./run.sh bench_actfs_ffprop`
+   `./run.sh bench_estimators`
 
 Alternatively, you can run all benchmarks sequentially by calling:
    `./run_all.sh`
@@ -36,4 +38,3 @@ you just need to provide gperftools's libprofiler.so library to `run_prof.sh` as
    `./run_prof.sh bench_actfs_ffprop /usr/lib/libprofiler.so`
 
 Note that this script does not save any benchmark results.
-Also note that for profiling you might want to avoid LTO flags when building the library, to avoid cryptic LTO chunk names in the profile.

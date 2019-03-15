@@ -24,8 +24,8 @@ int main () {
     //const int nruns[5] = {2, 2, 2, 2, 2};
 
     // benchmark settings
-    const int NMC[5] = {10000000, 1000000, 100000, 10000, 1000};
-    const int nruns[5] = {5, 50, 500, 5000, 50000};
+    const int NMC[5] = {1000, 10000, 100000, 1000000, 10000000};
+    const int nruns[5] = {50000, 5000, 500, 50, 5};
 
     ThreeDimGaussianPDF pdf;
     XND obs1(3);
@@ -40,10 +40,15 @@ int main () {
     mci.addObservable(obs3, 5, 2); // fixed blocksize 5, eval every 2nd step (i.e. "effective" block size of 10)
 
     double avg[mci.getNObsDim()],err[mci.getNObsDim()];
-    const double mrt2step[3] = {0.925, 0.925, 0.925};
-    mci.setMRT2Step(mrt2step);
+    mci.setMRT2Step(1.0);
     
-    mci.integrate(5000, avg, err, false, false); // decorrelate
+    mci.integrate(100000, avg, err, false, false); // warmup&decorrelate
+    cout << "avg ";
+    for (int i=0; i<mci.getNObsDim(); ++i) { cout << avg[i] << " "; }
+    cout << endl << "err ";
+    for (int i=0; i<mci.getNObsDim(); ++i) { cout << err[i] << " "; }
+    cout << endl;
+    cout << "acceptance rate " << mci.getAcceptanceRate() << endl;
 
     cout << "=========================================================================================" << endl << endl;
     cout << "Benchmark results (time per sample):" << endl;

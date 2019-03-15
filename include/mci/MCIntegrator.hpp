@@ -9,6 +9,7 @@
 #include "mci/SamplingFunctionContainer.hpp"
 #include "mci/SamplingFunctionInterface.hpp"
 #include "mci/TrialMoveInterface.hpp"
+#include "mci/WalkerState.hpp"
 
 #include <fstream>
 #include <memory>
@@ -27,24 +28,22 @@ namespace mci
         std::mt19937_64 _rgen;
         std::uniform_real_distribution<double> _rd;  //after initialization (done in the constructor) can be used with _rd(_rgen)
 
-        int _ndim;  // number of dimensions
+        const int _ndim;  // number of dimensions
         double * _lbound; // integration lower bounds
         double * _ubound; // integration upper bounds
         double _vol;  // Integration volume
-
-        double * _xold;  // walker position
-        double * _xnew;  //walker proposed position
 
         int _NfindMRT2Iterations; // how many MRT2 step adjustment iterations to do before integrating
         int _NdecorrelationSteps; // how many decorrelation steps to do before integrating
         double _targetaccrate;  // desired acceptance ratio
 
-        // main object vectors/containers
-        std::unique_ptr<TrialMoveInterface> _trialMove;
+        // main objects/vectors/containers
+
+        WalkerState _wlkstate; // holds the current walker state (xold/xnew), including move information
+        std::unique_ptr<TrialMoveInterface> _trialMove; // holds the object to perform walker moves
 
         SamplingFunctionContainer _pdfcont; // sampling function container
         ObservableContainer _obscont; // observable container used during integration
-
         std::vector< std::unique_ptr<CallBackOnMoveInterface> > _cbacks;  // Vector of acceptance callback functions
 
         // internal flags & counters
@@ -66,21 +65,15 @@ namespace mci
 
         // --- Internal methods
 
-        // prepare new sampling run
-        void initializeSampling(ObservableContainer * obsCont);
-
-        void updateVolume();
-        double getMinBoxLen() const; // min(ubound[i]-lbound[i])
-        void applyPBC(double v[]) const;
-        //void computeNewX();
-        void acceptX();
-        void rejectX();
-        //use this if there is a pdf, returns how many x were changed (0 if not accepted)
-        int doStepMRT2(int changedIdx[] /*unused, because all-particle steps*/); // returns number of changed positions, i.e. 0 or ndim
-
         // these are used before sampling
         void findMRT2Step();
         void initialDecorrelation();
+
+        // prepare new sampling run
+        void initializeSampling(ObservableContainer * obsCont);
+
+        //use this if there is a pdf, performs move and decides acc/rej
+        void doStepMRT2();
 
         // sample without taking data
         void sample(int npoints);
@@ -88,11 +81,15 @@ namespace mci
         void sample(int npoints, ObservableContainer &container);
 
         // call callbacks
-        void callBackOnMove(const double x[], bool accepted);
+        void callBackOnMove();
 
         // store to file
         void storeObservables();
         void storeWalkerPositions();
+
+        void updateVolume();
+        double getMinBoxLen() const; // min(ubound[i]-lbound[i])
+        void applyPBC(double v[]) const;
 
     public:
         explicit MCI(int ndim);  //Constructor, need the number of dimensions
@@ -105,6 +102,7 @@ namespace mci
         void setIRange(double lbound, double ubound); // set the same range on all dimensions
         void setIRange(const double lbound[], const double ubound[]);
 
+        void setX(int i, const double val) { _wlkstate.xold[i] = val; }
         void setX(const double x[]);
         void newRandomX();  // use if you want to take a new random _xold
 
@@ -148,8 +146,8 @@ namespace mci
         double getLBound(int i) const { return _lbound[i]; }
         double getUBound(int i) const { return _ubound[i]; }
 
-        double getX(int i) const { return _xold[i];}
-        const double * getX() const { return _xold; }
+        double getX(int i) const { return _wlkstate.xold[i];}
+        const double * getX() const { return _wlkstate.xold; }
         double getMRT2Step(int i) const { return (i < _trialMove->getNStepSizes()) ? _trialMove->getStepSize(i) : 0.; } // this is easy to get wrong, so we make it safer
         int getNfindMRT2Iterations() const { return _NfindMRT2Iterations; }
         int getNdecorrelationSteps() const { return _NdecorrelationSteps; }

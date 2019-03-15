@@ -3,6 +3,7 @@
 
 #include "mci/Clonable.hpp"
 #include "mci/ProtoFunctionInterface.hpp"
+#include "mci/WalkerState.hpp"
 
 namespace mci
 {
@@ -40,8 +41,9 @@ namespace mci
         // compute full protonew and return acceptance
         double computeAcceptance(const double in[]);
 
-        // update protonew and return acceptance, given the nchanged indices changedIdx, that differ between xold and xnew
-        double computeAcceptance(const double xold[], const double xnew[], int nchanged, const int changedIdx[]);
+        // update protonew and return acceptance, given the Walkerstate, which
+        // contains the changed indices changedIdx, that differ between xold and xnew
+        double computeAcceptance(const WalkerState &wlkstate);
 
 
         // --- METHODS THAT MUST BE IMPLEMENTED
@@ -61,22 +63,21 @@ namespace mci
 
 
         // --- OPTIONALLY ALSO OVERWRITE THIS (to optimize for single/few particle moves)
-        // Return step acceptance AND update(!) protonew elements, given both previous and current
-        // walker positions (xold/xnew), and additionally the array changedIdx containing the indices
-        // of the nchanged elements that differ between xold and xnew. The indices in changedIdx are
-        // guaranteed to be in ascending order.
+        // Return step acceptance AND update(!) protonew elements, given the WalkerSate, which
+        // contains previous and current walker positions (xold/xnew), and additionally the array
+        // changedIdx containing the indices of the nchanged elements that differ between xold and xnew.
+        // The indices in changedIdx are guaranteed to be in ascending order.
         // This means:
         //     a) you never have to store the previous walker position in your child class and
         //     b) you can use the indices in changedIdx to provide efficient recalculation of your protovalues
         // Remember that in this method you should only update the protov[] elements that need to change due
         // to the nchanged input indices in changedIdx.
         // If full recalculation is more efficient in your case, you may also choose not to overwrite this method.
-        virtual double updatedAcceptance(const double/*xold*/[], const double xnew[],
-                                         int /*nchanged*/, const int/*changedIdx*/[],
+        virtual double updatedAcceptance(const WalkerState &wlkstate,
                                          const double protoold[], double protonew[] /* update this! */)
         {
             // default to "calculate all"
-            this->protoFunction(xnew, protonew);
+            this->protoFunction(wlkstate.xnew, protonew);
             return this->acceptanceFunction(protoold, protonew);
         }
     };

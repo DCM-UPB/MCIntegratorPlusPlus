@@ -4,6 +4,7 @@
 #include "mci/ObservableFunctionInterface.hpp"
 #include "mci/SamplingFunctionInterface.hpp"
 #include "mci/UpdateableObservableInterface.hpp"
+#include "mci/WalkerState.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -125,29 +126,29 @@ public:
 
     void protoFunction(const double in[], double out[]) override
     {
-        for (int i=0; i<this->getNDim(); ++i) {
+        for (int i=0; i<_ndim; ++i) {
             out[i] = in[i]*in[i];
         }
     }
 
     double samplingFunction(const double protov[]) const override
     {
-        return exp(-std::accumulate(protov, protov+this->getNProto(), 0.));
+        return exp(-std::accumulate(protov, protov+_nproto, 0.));
     }
 
     double acceptanceFunction(const double protoold[], const double protonew[]) const override
     {
-        double expf = std::accumulate(protoold, protoold+this->getNProto(), 0.);
-        expf -= std::accumulate(protonew, protonew+this->getNProto(), 0.);
+        double expf = std::accumulate(protoold, protoold+_nproto, 0.);
+        expf -= std::accumulate(protonew, protonew+_nproto, 0.);
         return exp(expf);
     }
 
-    double updatedAcceptance(const double/*xold*/[], const double xnew[], int nchanged, const int changedIdx[], const double pvold[], double pvnew[]) override
+    double updatedAcceptance(const mci::WalkerState &wlk, const double pvold[], double pvnew[]) override
     {
         double expf = 0.;
-        for (int i=0; i<nchanged; ++i) {
-            pvnew[changedIdx[i]] = xnew[changedIdx[i]] * xnew[changedIdx[i]];
-            expf += pvnew[changedIdx[i]] - pvold[changedIdx[i]];
+        for (int i=0; i<wlk.nchanged; ++i) {
+            pvnew[wlk.changedIdx[i]] = wlk.xnew[wlk.changedIdx[i]] * wlk.xnew[wlk.changedIdx[i]];
+            expf += pvnew[wlk.changedIdx[i]] - pvold[wlk.changedIdx[i]];
         }
         return exp(-expf);
     }
@@ -175,6 +176,45 @@ public:
 
     double acceptanceFunction(const double protoold[], const double protonew[]) const override{
         return exp(-protonew[0]+protoold[0]);
+    }
+};
+
+class ExpNDPDF: public mci::SamplingFunctionInterface
+{
+protected:
+    mci::SamplingFunctionInterface * _clone() const override {
+        return new ExpNDPDF(_ndim);
+    }
+
+public:
+    explicit ExpNDPDF(const int ndim): mci::SamplingFunctionInterface(ndim,ndim)
+    {}
+
+    void protoFunction(const double in[], double protovalues[]) override
+    {
+        for (int i=0; i<_ndim; ++i) { protovalues[i] = fabs(in[i]); }
+    }
+
+    double samplingFunction(const double protov[]) const override
+    {
+        return exp(-std::accumulate(protov, protov+_nproto, 0.));
+    }
+
+    double acceptanceFunction(const double protoold[], const double protonew[]) const override
+    {
+        double expf = std::accumulate(protoold, protoold+_nproto, 0.);
+        expf -= std::accumulate(protonew, protonew+_nproto, 0.);
+        return exp(expf);
+    }
+
+    double updatedAcceptance(const mci::WalkerState &wlk, const double pvold[], double pvnew[]) override
+    {
+        double expf = 0.;
+        for (int i=0; i<wlk.nchanged; ++i) {
+            pvnew[wlk.changedIdx[i]] = wlk.xnew[wlk.changedIdx[i]];
+            expf += pvnew[wlk.changedIdx[i]] - pvold[wlk.changedIdx[i]];
+        }
+        return exp(-expf);
     }
 };
 
@@ -284,7 +324,7 @@ public:
     void observableFunction(const double in[], double out[]) override
     {
         out[0]=0.;
-        for (int i=0; i<this->getNDim(); ++i) {
+        for (int i=0; i<_ndim; ++i) {
             out[0] += in[i];
         }
     }
@@ -304,7 +344,7 @@ public:
     void observableFunction(const double in[], double out[]) override
     {
         out[0] = 0.;
-        for (int i=0; i<this->getNDim(); ++i) {
+        for (int i=0; i<_ndim; ++i) {
             out[0] += in[i]*in[i];
         }
     }
@@ -323,14 +363,14 @@ public:
 
     void observableFunction(const double in[], double out[]) override
     {
-        for (int i=0; i<this->getNDim(); ++i) {
+        for (int i=0; i<_ndim; ++i) {
             out[i] = in[i]*in[i];
         }
     }
 
     void updatedObservable(const double in[], const int/*nchanged*/, const bool flags[], double out[]) override
     {
-        for (int i=0; i<this->getNDim(); ++i) {
+        for (int i=0; i<_ndim; ++i) {
             if (flags[i]) { // this may actually be faster for small nchanged and large _ndim
                 out[i] = in[i]*in[i];
             }

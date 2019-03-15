@@ -47,11 +47,11 @@ namespace mci
         return acceptance;
     }
 
-    double SamplingFunctionContainer::computeAcceptance(const double xold[], const double xnew[], const int nchanged, const int changedIdx[])
+    double SamplingFunctionContainer::computeAcceptance(const WalkerState &wlkstate)
     {
         double acceptance = 1.;
         for (auto & sf : _pdfs) {
-            acceptance *= sf->computeAcceptance(xold, xnew, nchanged, changedIdx);
+            acceptance *= sf->computeAcceptance(wlkstate);
         }
         return acceptance;
     }

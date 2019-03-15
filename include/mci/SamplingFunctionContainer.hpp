@@ -2,6 +2,7 @@
 #define MCI_SAMPLINGFUNCTIONCONTAINER_HPP
 
 #include "mci/SamplingFunctionInterface.hpp"
+#include "mci/WalkerState.hpp"
 
 #include <memory>
 #include <vector>
@@ -37,8 +38,8 @@ namespace mci
         void initializeProtoValues(const double xold[]); // initialize the proto sampling values, given the old coordinates
         double getOldSamplingFunction() const; // returns the combined true sampling function value of the old step (potential use in trial moves)
         double computeAcceptance(const double xnew[]); //compute then new sampling function and return acceptance of new coordinates
-        // compute new sampling from xold,xnew and _protoolds, with nchanged indices stored in changedIdx. return acceptance
-        double computeAcceptance(const double xold[], const double xnew[], int nchanged, const int changedIdx[]);
+        // perform selective update given walkerstate, return acceptance
+        double computeAcceptance(const WalkerState &wlkstate);
 
         //void printProtoValues(std::ofstream &file) const; // write last protovalues to filestream
         void clear(); // clear everything

@@ -27,31 +27,33 @@ namespace mci
             if (doDecorrelation) { this->initialDecorrelation(); }
         }
 
-        // allocation of the accumulators where the data will be stored
-        _obscont.allocate(Nmc);
+        if (Nmc>0) {
+            // allocation of the accumulators where the data will be stored
+            _obscont.allocate(Nmc);
 
-        //sample the observables
-        if (_flagobsfile) { _obsfile.open(_pathobsfile); }
-        if (_flagwlkfile) { _wlkfile.open(_pathwlkfile); }
-        _flagMC = true;
-        this->sample(Nmc, _obscont); // let sample accumulate data
-        _flagMC = false;
-        if (_flagobsfile) { _obsfile.close(); }
-        if (_flagwlkfile) { _wlkfile.close(); }
+            //sample the observables
+            if (_flagobsfile) { _obsfile.open(_pathobsfile); }
+            if (_flagwlkfile) { _wlkfile.open(_pathwlkfile); }
+            _flagMC = true;
+            this->sample(Nmc, _obscont); // let sample accumulate data
+            _flagMC = false;
+            if (_flagobsfile) { _obsfile.close(); }
+            if (_flagwlkfile) { _wlkfile.close(); }
 
-        // estimate average and standard deviation
-        _obscont.estimate(average, error);
+            // estimate average and standard deviation
+            _obscont.estimate(average, error);
 
-        // if we sampled uniformly, scale results by volume
-        if (_pdfcont.empty()) {
-            for (int i=0; i<_obscont.getNObsDim(); ++i) {
-                average[i] *=_vol;
-                error[i] *=_vol;
+            // if we sampled randomly, scale results by volume
+            if (_pdfcont.empty()) {
+                for (int i=0; i<_obscont.getNObsDim(); ++i) {
+                    average[i] *=_vol;
+                    error[i] *=_vol;
+                }
             }
-        }
 
-        // deallocate
-        _obscont.deallocate();
+            // deallocate
+            _obscont.deallocate();
+        }
     }
 
 
@@ -180,11 +182,9 @@ namespace mci
 
         //run the main loop for sampling
         const bool flagpdf = _pdfcont.hasPDF();
-        int changedIdx[_ndim]; // index array for tracking changed indices
-        std::iota(changedIdx, changedIdx+_ndim, 0); // init with 0...ndim-1 (just because we can)
         for (_ridx=0; _ridx<npoints; ++_ridx) {
             if (flagpdf) { // use sampling function
-                this->doStepMRT2(changedIdx);
+                this->doStepMRT2();
             }
             else {
                 this->newRandomX();
@@ -200,24 +200,21 @@ namespace mci
 
         //run the main loop for sampling
         const bool flagpdf = _pdfcont.hasPDF();
-        int changedIdx[_ndim]; // index array for tracking changed indices
-        std::iota(changedIdx, changedIdx+_ndim, 0); // init with 0...ndim-1 (just because we can)
         for (_ridx=0; _ridx<npoints; ++_ridx) {
             // do MC step
-            int nchanged;
             if (flagpdf) { // use sampling function
-                nchanged = this->doStepMRT2(changedIdx);
+                this->doStepMRT2();
             }
             else {
                 this->newRandomX();
                 ++_acc; // "accept" move
-                nchanged = _ndim;
+                _wlkstate.nchanged = _ndim;
             }
             // call the callbacks
-            this->callBackOnMove(_xold, nchanged>0);
+            this->callBackOnMove();
 
             // accumulate observables
-            container.accumulate(_xold, nchanged, changedIdx);
+            container.accumulate(_wlkstate.xold, _wlkstate.nchanged, _wlkstate.changedIdx);
 
             // file output
             if (_flagMC && _flagobsfile) { this->storeObservables(); } // store obs on file
@@ -231,55 +228,43 @@ namespace mci
 
     // --- Walking
 
-    int MCI::doStepMRT2(int changedIdx[])
+    void MCI::doStepMRT2()
     {
         // propose a new position x
-        int nchanged;
-        const double moveAcc = _trialMove->computeTrialMove(_xnew, nchanged, changedIdx);
-        applyPBC(_xnew);
+        const double moveAcc = _trialMove->computeTrialMove(_wlkstate);
+        applyPBC(_wlkstate.xnew);
 
         // find the corresponding sampling function value
-        const double pdfAcc = (nchanged < _ndim) ?
-                                           _pdfcont.computeAcceptance(_xold, _xnew, nchanged, changedIdx)
-                                           : _pdfcont.computeAcceptance(_xnew);
+        const double pdfAcc = (_wlkstate.nchanged < _ndim) ?
+            _pdfcont.computeAcceptance(_wlkstate)
+            : _pdfcont.computeAcceptance(_wlkstate.xnew);
 
         //determine if the proposed x is accepted or not
-        nchanged = ( _rd(_rgen) <= pdfAcc * moveAcc /* maybe it must be / */ ) ? nchanged : 0;
+        _wlkstate.nchanged = ( _rd(_rgen) <= pdfAcc * moveAcc /* maybe it must be / */ ) ? _wlkstate.nchanged : 0;
 
         //update some values according to the acceptance of the mrt2 step
-        if ( nchanged > 0 ) {
+        if ( _wlkstate.nchanged > 0 ) {
             //accepted
-            this->acceptX();
+            _wlkstate.newToOld();
+            _pdfcont.newToOld();
+            _trialMove->newToOld();
+            _trialMove->callOnAcceptance(_pdfcont);
+            ++_acc;
         } else {
             //rejected
-            this->rejectX();
+            _wlkstate.oldToNew();
+            _pdfcont.oldToNew();
+            _trialMove->oldToNew();
+            ++_rej;
         }
-
-        return nchanged;
     }
 
-    void MCI::acceptX()
-    {
-        std::copy(_xnew, _xnew+_ndim, _xold);
-        _pdfcont.newToOld();
-        _trialMove->newToOld();
-        _trialMove->callOnAcceptance(_pdfcont);
-        ++_acc;
-    }
-
-    void MCI::rejectX()
-    {
-        std::copy(_xold, _xold+_ndim, _xnew);
-        _pdfcont.oldToNew();
-        _trialMove->oldToNew();
-        ++_rej;
-    }
 
     void MCI::newRandomX()
     {
         //set xold to new random values (within the irange)
         for (int i=0; i<_ndim; ++i) {
-            _xold[i] = _lbound[i] + ( _ubound[i] - _lbound[i] ) * _rd(_rgen);
+            _wlkstate.xold[i] = _lbound[i] + ( _ubound[i] - _lbound[i] ) * _rd(_rgen);
         }
     }
 
@@ -291,13 +276,15 @@ namespace mci
         _ridx = 0;
 
         // init xnew and all protovalues
-        std::copy(_xold, _xold+_ndim, _xnew);
-        _pdfcont.initializeProtoValues(_xold); // initialize the pdf at x
-        _trialMove->initializeProtoValues(_xold); // initialize the trial mover
+        _wlkstate.initialize();
+        _pdfcont.initializeProtoValues(_wlkstate.xold); // initialize the pdf at x
+        _trialMove->initializeProtoValues(_wlkstate.xold); // initialize the trial mover
 
         // call callbacks and initialize passed obs container
-        this->callBackOnMove(_xold, true); // first call of the call-back functions
-        if (obsCont != nullptr) { obsCont->reset(); }// reset observable data (passed per argument!)
+        if (obsCont != nullptr) { // if false then we are just doing warmup sampling
+            this->callBackOnMove(); // first call of the call-back functions
+            obsCont->reset(); // reset observable data (obsCont passed per argument!)
+        }
     }
 
 
@@ -331,7 +318,7 @@ namespace mci
         if ( _ridx%_freqwlkfile == 0 ) {
             _wlkfile << _ridx;
             for (int j=0; j<_ndim; ++j) {
-                _wlkfile << "   " << _xold[j] ;
+                _wlkfile << "   " << _wlkstate.xold[j] ;
             }
             _wlkfile << std::endl;
         }
@@ -402,10 +389,10 @@ namespace mci
         _cbacks.emplace_back( std::unique_ptr<CallBackOnMoveInterface>(cback.clone()) ); // we add unique clone
     }
 
-    void MCI::callBackOnMove(const double x[], const bool accepted)
+    void MCI::callBackOnMove()
     {
         for (auto & cback : _cbacks){
-            cback->callBackFunction(x, accepted);
+            cback->callBackFunction(_wlkstate.xnew, (_wlkstate.nchanged > 0));
         }
     }
 
@@ -426,7 +413,7 @@ namespace mci
     void MCI::setMRT2Step(const int i, const double mrt2step)
     {
         if (i<_trialMove->getNStepSizes()) {
-        _trialMove->setStepSize(i, mrt2step);
+            _trialMove->setStepSize(i, mrt2step);
         }
         else {
             std::cout << "[MCI::setMRT2Step] Warning: Tried to set non-existing MRT2step index." << std::endl;
@@ -443,8 +430,8 @@ namespace mci
 
     void MCI::setX(const double x[])
     {
-        std::copy(x, x+_ndim, _xold);
-        applyPBC(_xold);
+        std::copy(x, x+_ndim, _wlkstate.xold);
+        applyPBC(_wlkstate.xold);
     }
 
     void MCI::setSeed(const uint_fast64_t seed) // fastest unsigned integer which is at least 64 bit (as expected by rgen)
@@ -492,7 +479,7 @@ namespace mci
         std::fill(_ubound, _ubound+_ndim, ubound);
         updateVolume();
 
-        applyPBC(_xold);
+        applyPBC(_wlkstate.xold);
     }
 
     void MCI::setIRange(const double lbound[], const double ubound[])
@@ -502,16 +489,22 @@ namespace mci
         std::copy(ubound, ubound+_ndim, _ubound);
         updateVolume();
 
-        applyPBC(_xold);
+        applyPBC(_wlkstate.xold);
     }
 
 
     //   --- Constructor and Destructor
 
-    MCI::MCI(const int ndim)
+    MCI::MCI(const int ndim): _ndim(ndim), _wlkstate(_ndim)
     {
-        // _ndim
-        _ndim = ndim;
+        // initialize random generator
+        _rgen = std::mt19937_64(_rdev());
+        _rd = std::uniform_real_distribution<double>(0.,1.); // for full random moves
+
+        // default trial move
+        _trialMove = std::unique_ptr<TrialMoveInterface>(new UniformAllMove(_ndim, INITIAL_STEP));
+        _trialMove->bindRGen(_rgen);
+
         // _lbound and _ubound
         _lbound = new double[_ndim];
         _ubound = new double[_ndim];
@@ -519,20 +512,6 @@ namespace mci
         std::fill(_ubound, _ubound+_ndim, 0.1*std::numeric_limits<double>::max());
         // _vol (will only be relevant without sampling function)
         _vol=0.;
-
-        // _x
-        _xold = new double[_ndim];
-        std::fill(_xold, _xold+_ndim, 0.);
-        _xnew = new double[_ndim];
-        std::fill(_xnew, _xnew+_ndim, 0.);
-
-        // initialize random generator
-        _rgen = std::mt19937_64(_rdev());
-        _rd = std::uniform_real_distribution<double>(0.,1.); // for full random moves
-
-        // trial move
-        _trialMove = std::unique_ptr<TrialMoveInterface>(new UniformAllMove(_ndim, INITIAL_STEP));
-        _trialMove->bindRGen(_rgen);
 
         // other controls, defaulting to auto behavior
         _NfindMRT2Iterations = -1;
@@ -552,13 +531,6 @@ namespace mci
 
     MCI::~MCI()
     {
-        // _mrt2step
-        //delete [] _mrt2step;
-
-        // _xold and _xnew
-        delete [] _xnew;
-        delete [] _xold;
-
         // lbound and ubound
         delete [] _ubound;
         delete [] _lbound;
