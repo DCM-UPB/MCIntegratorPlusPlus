@@ -102,9 +102,7 @@ int main() {
 
 
     // initial MRT2 step
-    double step[ndim];
-    step[0] = 0.25;
-    mci.setMRT2Step(step);
+    mci.setMRT2Step(0.25);
 
     cout << "MRT2 step = " << mci.getMRT2Step(0) << endl;
 

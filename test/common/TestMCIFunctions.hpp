@@ -159,6 +159,30 @@ public:
     }
 };
 
+class Exp1DPDF: public mci::SamplingFunctionInterface
+{
+protected:
+    mci::SamplingFunctionInterface * _clone() const override {
+        return new Exp1DPDF();
+    }
+
+public:
+    Exp1DPDF(): mci::SamplingFunctionInterface(1, 1){}
+    ~Exp1DPDF() override= default;
+
+    void protoFunction(const double in[], double protovalues[]) override{
+        protovalues[0] = fabs(in[0]);
+    }
+
+    double samplingFunction(const double protov[]) const override
+    {
+        return exp(-protov[0]);
+    }
+
+    double acceptanceFunction(const double protoold[], const double protonew[]) const override{
+        return exp(-protonew[0]+protoold[0]);
+    }
+};
 
 // --- OBSERVABLE FUNCTIONS
 
@@ -197,6 +221,22 @@ public:
     }
 };
 
+
+class X1D: public mci::ObservableFunctionInterface
+{
+protected:
+    mci::ObservableFunctionInterface * _clone() const override {
+        return new X1D();
+    }
+
+public:
+    X1D(): mci::ObservableFunctionInterface(1, 1){}
+    ~X1D() override= default;
+
+    void observableFunction(const double in[], double out[]) override{
+        out[0] = in[0];
+    }
+};
 
 class XND: public mci::UpdateableObservableFunction
 {

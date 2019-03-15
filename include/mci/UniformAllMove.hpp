@@ -3,6 +3,8 @@
 
 #include "mci/TrialMoveInterface.hpp"
 
+#include <algorithm>
+
 namespace mci
 {
     // Uniform all-particle move. Probably the simplest kind of move,
@@ -13,29 +15,58 @@ namespace mci
     class UniformAllMove: public TrialMoveInterface
     {
     private:
-        double _stepSize; // same step size for all indices
-        std::uniform_real_distribution<double> _rd; // uniform random distribution
+        const int _ntypes; // how many different types of particles do you have?
+        int * const _typeEnds; // end-indices of every type in x (i.e. the last index of type i is _typeEnds[i]-1 )
+        double * const _stepSizes; // holds the step sizes, one per type
+        std::uniform_real_distribution<double> _rd; // uniform random distribution for move
 
     protected:
         TrialMoveInterface * _clone() const override {
-            return new UniformAllMove(this->getNDim(), 0.5*_stepSize);
+            return new UniformAllMove(_ndim, _ntypes, _typeEnds, _stepSizes);
         }
 
     public:
+        // Full constructor, scalar step init
+        UniformAllMove(int ndim, int ntypes, const int typeEnds[] /*len ntypes*/, double initStepSize /*scalar init*/):
+            TrialMoveInterface(ndim, 0), _ntypes(ntypes),
+            _typeEnds(new int[_ntypes]), _stepSizes(new double[_ntypes]),
+            _rd(std::uniform_real_distribution<double>(-1.,1.))
+        {
+            if (_ntypes < 1) { throw std::invalid_argument("[UniformAllMove] Number of types must be at least 1."); }
+            if (_ntypes > 1) {
+                std::copy(typeEnds, typeEnds+_ntypes, _typeEnds);
+            } else {
+                _typeEnds[0] = _ndim;
+            }
+            std::fill(_stepSizes, _stepSizes+_ntypes, initStepSize);
+        }
+
+        // Full constructor, array step init
+        UniformAllMove(int ndim, int ntypes, const int typeEnds[], const double initStepSizes[] /*len ntypes*/):
+            UniformAllMove(ndim, ntypes, typeEnds, 0.) // reuse above constructor
+        {
+            std::copy(initStepSizes, initStepSizes+_ntypes, _stepSizes); // put the proper values in
+        }
+
+        // ntype=1 constructor
         UniformAllMove(int ndim, double initStepSize):
-            TrialMoveInterface(ndim, 0), _stepSize(initStepSize),
-            _rd(std::uniform_real_distribution<double>(-1.,1.)) // note that we chose the dist symmetric around 0
+            UniformAllMove(ndim, 1, nullptr, initStepSize) // it is safe to use the constructor like this
         {}
 
+        ~UniformAllMove() {
+            delete [] _stepSizes;
+            delete [] _typeEnds;
+        }
+
         // Methods required for auto-calibration:
-        int getNStepSizes() const override { return 1; }
-        void setStepSize(int, double val) override { _stepSize = val; }
-        double getStepSize(int) const override { return _stepSize; }
+        int getNStepSizes() const override { return _ntypes; }
+        void setStepSize(int i, double val) override { _stepSizes[i] = val; }
+        double getStepSize(int i) const override { return _stepSizes[i]; }
         double getChangeRate() const override { return 1.; } // chance for a single index to change is 1 (because they all change)
         void getUsedStepSizes(int, const int[], int &nusedSizes, int usedSizeIdx[]) const override
-        { // we have only one step size
-            nusedSizes = 1;
-            usedSizeIdx[0] = 0;
+        { // we always use all step sizes
+            nusedSizes = _ntypes;
+            std::iota(usedSizeIdx, usedSizeIdx+_ntypes, 0); // fill 0..._ntypes-1
         }
 
         void protoFunction(const double[], double[]) override {} // not needed
@@ -45,10 +76,14 @@ namespace mci
         double trialMove(double xnew[], int &nchanged, int[], const double[], double[]) override
         {
             // do step
-            for (int i=0; i<this->getNDim(); ++i) {
-                xnew[i] += _stepSize * _rd( *(this->getRGen()) );
+            int xidx = 0;
+            for (int tidx=0; tidx<_ntypes; ++tidx) {
+                while (xidx < _typeEnds[tidx]) {
+                    xnew[xidx] += _stepSizes[tidx] * _rd( *(_rgen) );
+                    ++xidx;
+                }
             }
-            nchanged = this->getNDim(); // if we changed all, we don't need to fill changedIdx
+            nchanged = _ndim; // if we changed all, we don't need to fill changedIdx
 
             return 1.; // uniform -> no move acceptance factor
         }
@@ -57,3 +92,4 @@ namespace mci
 } // namespace mci
 
 #endif
+

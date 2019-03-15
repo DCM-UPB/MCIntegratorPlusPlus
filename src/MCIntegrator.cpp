@@ -6,7 +6,7 @@
 #include "mci/Estimators.hpp"
 #include "mci/Factories.hpp"
 #include "mci/UniformAllMove.hpp"
-#include "mci/UniformNTypeVecMove.hpp"
+#include "mci/UniformVecMove.hpp"
 
 #include <algorithm>
 #include <functional>
@@ -421,6 +421,22 @@ namespace mci
         _targetaccrate = targetaccrate;
     }
 
+    void MCI::setMRT2Step(const double mrt2step)
+    {
+        for (int i=0; i<_trialMove->getNStepSizes(); ++i) {
+            _trialMove->setStepSize(i, mrt2step);
+        }
+    }
+
+    void MCI::setMRT2Step(const int i, const double mrt2step)
+    {
+        if (i<_trialMove->getNStepSizes()) {
+        _trialMove->setStepSize(i, mrt2step);
+        }
+        else {
+            std::cout << "[MCI::setMRT2Step] Warning: Tried to set non-existing MRT2step index." << std::endl;
+        }
+    }
 
     void MCI::setMRT2Step(const double mrt2step[])
     {

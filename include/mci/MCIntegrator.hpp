@@ -33,7 +33,6 @@ namespace mci
 
         double * _xold;  // walker position
         double * _xnew;  //walker proposed position
-        double * _mrt2step;  // M(RT)^2 random step
 
         int _NfindMRT2Iterations; // how many MRT2 step adjustment iterations to do before integrating
         int _NdecorrelationSteps; // how many decorrelation steps to do before integrating
@@ -108,7 +107,9 @@ namespace mci
         void setX(const double x[]);
         void newRandomX();  // use if you want to take a new random _xold
 
-        void setMRT2Step(const double mrt2step[]);
+        void setMRT2Step(double mrt2step); // set all identical
+        void setMRT2Step(int i, double mrt2step); // set certain element
+        void setMRT2Step(const double mrt2step[]); // set all elements
         void setTargetAcceptanceRate(double targetaccrate); // acceptance rate target used in findMRT2Step
         // how many MRT2 step adjustment iterations to do
         void setNfindMRT2Iterations(int niterations /* -1 == auto, 0 == disabled */){_NfindMRT2Iterations=niterations;}
@@ -143,8 +144,7 @@ namespace mci
 
         double getX(int i) const { return _xold[i];}
         const double * getX() const { return _xold; }
-        double getMRT2Step(int i) const { return _mrt2step[i]; }
-        const double * getMRT2Step() const { return _mrt2step; }
+        double getMRT2Step(int i) const { return (i < _trialMove->getNStepSizes()) ? _trialMove->getStepSize(i) : 0.; } // this is easy to get wrong, so we make it safer
         int getNfindMRT2Iterations() const { return _NfindMRT2Iterations; }
         int getNdecorrelationSteps() const { return _NdecorrelationSteps; }
 
