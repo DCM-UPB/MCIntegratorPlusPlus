@@ -8,6 +8,10 @@
 
 #include "mci/Estimators.hpp"
 
+#include "mci/SRRDAllMove.hpp"
+#include "mci/SRRDVecMove.hpp"
+#include "mci/TrialMoveInterface.hpp"
+
 #include <algorithm>
 #include <functional>
 #include <memory>
@@ -37,6 +41,7 @@ namespace mci
     }
 
 
+
     // --- Create Estimator Functions
 
     enum class EstimatorType {
@@ -47,6 +52,7 @@ namespace mci
                               Uncorrelated,
                               Correlated
     };
+
     inline EstimatorType selectEstimatorType(const bool flag_correlated, const bool flag_error = true)
     {
         if (flag_correlated) {
@@ -75,9 +81,102 @@ namespace mci
             throw std::domain_error("[createEstimator] Unhandled estimator enumerator.");
         }
     }
+
     inline std::function<void(int, int, const double[], double[], double[])> createEstimator(const bool flag_correlated, const bool flag_error = true)
     {
         return createEstimator(selectEstimatorType(flag_correlated, flag_error));
+    }
+
+
+
+    // --- Create Trial Moves
+
+    // Enumeration of move type classes
+    enum class MoveType {
+                         All,
+                         Vec
+    };
+    // Enumeration of usable symmetric real valued random distribution
+    enum class SRRDType {
+                         Uniform,
+                         Gaussian,
+                         Student,
+                         Cauchy
+    };
+    static const double DEFAULT_MRT2STEP = 0.05; // step size default to fall-back to
+
+    // common sanity check
+    inline void checkTrialMoveSanity(int ndim, int ntypes = 1, const int typeEnds[] = nullptr)
+    {
+        if (ndim<1) { throw std::invalid_argument("[checkTrialMoveSanity] ndim must be at least 1."); }
+        if (ntypes > 1 && typeEnds == nullptr) { throw std::invalid_argument("[checkTrialMoveSanity] ntypes>1 requires passed typeEnds array."); }
+    }
+
+    // create a all-index move with chosen SRRDType
+    inline std::unique_ptr<TrialMoveInterface> createSRRDAllMove(
+                                                                 SRRDType srrd /*from enum*/, int ndim,
+                                                                 int ntypes = 1, const int typeEnds[] = nullptr /*needs to be passed if ntypes > 1*/
+                                                                 )
+    {
+        // some sanity
+        ntypes = std::max(1, ntypes);
+        checkTrialMoveSanity(ndim, ntypes, typeEnds);
+
+        // create chosen move
+        switch (srrd) {
+        case (SRRDType::Uniform):
+            return std::unique_ptr<TrialMoveInterface>( new UniformAllMove(ndim, ntypes, typeEnds, DEFAULT_MRT2STEP) );
+        case (SRRDType::Gaussian):
+            return std::unique_ptr<TrialMoveInterface>( new GaussianAllMove(ndim, ntypes, typeEnds, DEFAULT_MRT2STEP) );
+        case (SRRDType::Student):
+            return std::unique_ptr<TrialMoveInterface>( new StudentAllMove(ndim, ntypes, typeEnds, DEFAULT_MRT2STEP) );
+        case (SRRDType::Cauchy):
+            return std::unique_ptr<TrialMoveInterface>( new CauchyAllMove(ndim, ntypes, typeEnds, DEFAULT_MRT2STEP) );
+
+        default:
+            throw std::domain_error("[createSRRDAllMove] Unhandled trial move enumerator.");
+        }
+    }
+
+    // create a single-vector move with chosen SRRDType
+    inline std::unique_ptr<TrialMoveInterface> createSRRDVecMove(
+                                                                 SRRDType srrd /*from enum*/, int nvecs, /*number of vectors*/
+                                                                 int veclen = 1 /*vec dim*/, int ntypes = 1, const int typeEnds[] = nullptr
+                                                                 )
+    {
+        // some sanity
+        veclen = std::max(1, veclen);
+        ntypes = std::max(1, ntypes);
+        checkTrialMoveSanity(nvecs*veclen, ntypes, typeEnds);
+
+        // create chosen move
+        switch (srrd) {
+        case (SRRDType::Uniform):
+            return std::unique_ptr<TrialMoveInterface>( new UniformVecMove(nvecs, veclen, ntypes, typeEnds, DEFAULT_MRT2STEP) );
+        case (SRRDType::Gaussian):
+            return std::unique_ptr<TrialMoveInterface>( new GaussianVecMove(nvecs, veclen, ntypes, typeEnds, DEFAULT_MRT2STEP) );
+        case (SRRDType::Student):
+            return std::unique_ptr<TrialMoveInterface>( new StudentVecMove(nvecs, veclen, ntypes, typeEnds, DEFAULT_MRT2STEP) );
+        case (SRRDType::Cauchy):
+            return std::unique_ptr<TrialMoveInterface>( new CauchyVecMove(nvecs, veclen, ntypes, typeEnds, DEFAULT_MRT2STEP) );
+
+        default:
+            throw std::domain_error("[createSRRDVecMove] Unhandled trial move enumerator.");
+        }
+    }
+
+    // create a default version of selected move type
+    inline std::unique_ptr<TrialMoveInterface> createMoveDefault(MoveType mtype, int ndim)
+    {
+        switch (mtype) {
+        case (MoveType::All):
+            return createSRRDAllMove(SRRDType::Uniform, ndim);
+        case (MoveType::Vec):
+            return createSRRDVecMove(SRRDType::Uniform, ndim); // default to single index moves
+
+        default:
+            throw std::domain_error("[createMoveDefault] Unhandled trial move enumerator.");
+        }
     }
 
 } // namespace mci

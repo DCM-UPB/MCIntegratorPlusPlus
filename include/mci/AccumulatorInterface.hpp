@@ -3,12 +3,21 @@
 
 #include "mci/ObservableFunctionInterface.hpp"
 #include "mci/UpdateableObservableInterface.hpp"
+#include "mci/WalkerState.hpp"
 
 #include <memory>
 
 namespace mci
 {
-    // Class to handle accumulation of data for a given observable function
+    // Interface class to handle accumulation of observable data
+    //
+    // Accumulators completely wrap around an exclusively owned Observable-
+    // FunctionInterface (or optionally UpdateableObservableInterface) and
+    // are the "communication partner" for MCI during sampling. The derived
+    // classes of this interface implement different storage/accumulation
+    // techniques. Accumulators are typically contained within an Observable-
+    // Container (see ObservaleContainer.hpp), where they are strictly paired
+    // with corresponding average/error estimation functions.
     class AccumulatorInterface
     {
     protected:
@@ -79,8 +88,8 @@ namespace mci
         // call this before a MC run of nsteps length
         void allocate(int nsteps); // will deallocate any existing allocation
 
-        // externally call these on every MC step, depending on situation
-        void accumulate(const double x[], int nchanged, const int changedIdx[] /*starts with nchanged changed indices*/); // process step with nchanged position indices
+        // externally call this on every MC step
+        void accumulate(const WalkerState &wlk /*step info*/); // process step described by WalkerState
 
         // finalize (e.g. normalize) stored data
         void finalize(); // will throw if called prematurely, but does nothing if deallocated or used repeatedly

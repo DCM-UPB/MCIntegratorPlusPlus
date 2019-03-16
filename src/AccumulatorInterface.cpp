@@ -43,15 +43,15 @@ namespace mci
     }
 
 
-    void AccumulatorInterface::accumulate(const double x[], const int nchanged, const int changedIdx[])
+    void AccumulatorInterface::accumulate(const WalkerState &wlk)
     {
         if (_stepidx >= _nsteps) { throw std::runtime_error("[AccumulatorInterface::accumulate] Number of calls to accumulate exceed the allocation."); }
 
-        if (_nchanged<_xndim && nchanged>0) { // we need to record changes
-            if (_flag_updobs && nchanged<_xndim) { // track changes by index
-                for (int i=0; i<nchanged; ++i) { // if nchange>0 (accepted step), we need to evaluate obs on next skipidx==0)
-                    if (!_flags_xchanged[changedIdx[i]]) {
-                        _flags_xchanged[changedIdx[i]] = true;
+        if (_nchanged<_xndim && wlk.nchanged>0) { // we need to record changes
+            if (_flag_updobs && wlk.nchanged<_xndim) { // track changes by index
+                for (int i=0; i<wlk.nchanged; ++i) { // if nchange>0 (accepted step), we need to evaluate obs on next skipidx==0)
+                    if (!_flags_xchanged[wlk.changedIdx[i]]) {
+                        _flags_xchanged[wlk.changedIdx[i]] = true;
                         ++_nchanged; // increase internal change counter
                     }
                 }
@@ -64,11 +64,11 @@ namespace mci
         if (++_skipidx == _nskip) { // accumulate observables
             _skipidx = 0;
 
-            if (_nchanged > 0) { // we need to compute obs
+            if (_nchanged > 0) { // we need to compute new obs
                 if (_flag_updobs && _nchanged<_xndim) { // call optimized recompute
-                    _updobs->updatedObservable(x, _nchanged, _flags_xchanged, _obs_values);
+                    _updobs->updatedObservable(wlk.xnew, _nchanged, _flags_xchanged, _obs_values);
                 } else { // call full obs compute
-                    _obs->observableFunction(x, _obs_values);
+                    _obs->observableFunction(wlk.xnew, _obs_values);
                 }
                 if (_flag_updobs) { std::fill(_flags_xchanged, _flags_xchanged+_xndim, false); }
                 _nchanged = 0;

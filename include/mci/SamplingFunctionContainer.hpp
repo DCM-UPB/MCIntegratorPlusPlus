@@ -37,9 +37,7 @@ namespace mci
         void oldToNew(); // copy old to new protovalues
         void initializeProtoValues(const double xold[]); // initialize the proto sampling values, given the old coordinates
         double getOldSamplingFunction() const; // returns the combined true sampling function value of the old step (potential use in trial moves)
-        double computeAcceptance(const double xnew[]); //compute then new sampling function and return acceptance of new coordinates
-        // perform selective update given walkerstate, return acceptance
-        double computeAcceptance(const WalkerState &wlkstate);
+        double computeAcceptance(const WalkerState &wlk); //compute then new sampling function and return acceptance of new coordinates
 
         //void printProtoValues(std::ofstream &file) const; // write last protovalues to filestream
         void clear(); // clear everything

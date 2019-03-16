@@ -26,8 +26,8 @@ namespace mci
     protected:
         const int _ndim; // dimension of the input array (walker position)
         int _nproto; // number of proto values calculated in protoFunction
-        double * _protoold; // ptr to block containing the new old values
-        double * _protonew; // ptr to block containing the new proto values
+        double * _protoold; // ptr to the old proto values
+        double * _protonew; // ptr to the new proto values
 
         // internal setters
         void setNProto(int nproto); // you may freely choose the amount of values you need

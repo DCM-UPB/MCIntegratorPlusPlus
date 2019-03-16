@@ -15,22 +15,24 @@ namespace mci
 
     ProtoFunctionInterface::~ProtoFunctionInterface()
     {
-        delete[] _protoold; // this one was used to allocate
+        delete [] _protonew;
+        delete [] _protoold;
     }
 
     void ProtoFunctionInterface::setNProto(const int nproto)
     {
-        delete[] _protoold;
+        delete [] _protonew;
+        delete [] _protoold;
         if (nproto>0) {
-
-            _protoold = new double[2*nproto];
-            _protonew = _protoold + nproto; // ptr to second half
-            std::fill(_protoold, _protoold+2*nproto, 0.);
+            _protoold = new double[nproto];
+            _protonew = new double[nproto];
+            std::fill(_protoold, _protoold+nproto, 0.);
+            std::fill(_protonew, _protonew+nproto, 0.);
             _nproto=nproto;
         }
         else {
-            _protonew = nullptr;
             _protoold = nullptr;
+            _protonew = nullptr;
             _nproto = 0;
         }
     }

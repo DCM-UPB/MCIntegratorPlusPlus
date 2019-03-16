@@ -49,9 +49,9 @@ namespace mci
 
         // Full constructor, array step init
         SRRDVecMove(int nvecs, int veclen, int ntypes, const int typeEnds[], const double initStepSizes[] /*len ntypes*/, const SRRD * rdist = nullptr):
-            SRRDVecMove(nvecs, veclen, ntypes, typeEnds, 0.) // reuse above constructor
+            SRRDVecMove(nvecs, veclen, ntypes, typeEnds, 0., rdist) // reuse above constructor
         {
-            std::copy(initStepSizes, initStepSizes+_ntypes, _stepSizes, rdist); // put the proper values in
+            std::copy(initStepSizes, initStepSizes+_ntypes, _stepSizes); // put the proper values in
         }
 
         // ntype=1 constructor
@@ -61,11 +61,11 @@ namespace mci
 
         // Methods required for auto-calibration
         double getChangeRate() const final { return 1./_nvecs; } // equivalent to _veclen/_ndim
-        void getUsedStepSizes(const WalkerState &wlkstate, int &nusedSizes, int usedSizeIdx[]) const final
+        void getUsedStepSizes(const WalkerState &wlk, int &nusedSizes, int usedSizeIdx[]) const final
         { // we know that we changed only a single vector
             nusedSizes = 1;
             for (int i=0; i<_ntypes; ++i) {
-                if (wlkstate.changedIdx[0] < _typeEnds[i]) {
+                if (wlk.changedIdx[0] < _typeEnds[i]) {
                     usedSizeIdx[0] = i;
                     return;
                 }
@@ -78,7 +78,7 @@ namespace mci
 
         void onAcceptance(const SamplingFunctionContainer&/*pdfcont*/, double/*protoold*/[]) final {} // not needed
 
-        double trialMove(WalkerState &wlkstate, const double/*protoold*/[], double/*protonew*/[]) final
+        double trialMove(WalkerState &wlk, const double/*protoold*/[], double/*protonew*/[]) final
         {
             // determine vector to change and its type
             const int vidx = _rdidx(*_rgen);
@@ -93,10 +93,10 @@ namespace mci
 
             // do step
             for (int i=0; i<_veclen; ++i) {
-                wlkstate.xnew[xidx + i] += _stepSizes[tidx] * _rdmov(*_rgen);
-                wlkstate.changedIdx[i] = xidx + i;
+                wlk.xnew[xidx + i] += _stepSizes[tidx] * _rdmov(*_rgen);
+                wlk.changedIdx[i] = xidx + i;
             }
-            wlkstate.nchanged = _veclen; // how many indices we changed
+            wlk.nchanged = _veclen; // how many indices we changed
 
             return 1.; // uniform -> no move acceptance factor
         }

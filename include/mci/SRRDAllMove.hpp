@@ -47,7 +47,7 @@ namespace mci
 
         // Methods required for auto-calibration
         double getChangeRate() const final { return 1.; } // chance for a single index to change is 1 (because they all change)
-        void getUsedStepSizes(const WalkerState&/*wlkstate*/, int &nusedSizes, int usedSizeIdx[]) const final
+        void getUsedStepSizes(const WalkerState&/*wlk*/, int &nusedSizes, int usedSizeIdx[]) const final
         { // we always use all step sizes
             nusedSizes = _ntypes;
             std::iota(usedSizeIdx, usedSizeIdx+_ntypes, 0); // fill 0..._ntypes-1
@@ -57,17 +57,17 @@ namespace mci
 
         void onAcceptance(const SamplingFunctionContainer&/*pdfcont*/, double/*protoold*/[]) final {} // not needed
 
-        double trialMove(WalkerState &wlkstate, const double/*protoold*/[], double/*protonew*/[]) final
+        double trialMove(WalkerState &wlk, const double/*protoold*/[], double/*protonew*/[]) final
         {
             // do step
             int xidx = 0;
             for (int tidx=0; tidx<_ntypes; ++tidx) {
                 while (xidx < _typeEnds[tidx]) {
-                    wlkstate.xnew[xidx] += _stepSizes[tidx] * _rd( *(_rgen) );
+                    wlk.xnew[xidx] += _stepSizes[tidx] * _rd( *(_rgen) );
                     ++xidx;
                 }
             }
-            wlkstate.nchanged = _ndim; // if we changed all, we don't need to fill changedIdx
+            wlk.nchanged = _ndim; // if we changed all, we don't need to fill changedIdx
 
             return 1.; // uniform -> no move acceptance factor
         }

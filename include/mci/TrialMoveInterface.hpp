@@ -33,7 +33,7 @@ namespace mci
         void callOnAcceptance(const SamplingFunctionContainer &pdfcont) { this->onAcceptance(pdfcont, _protoold); }
 
         // compute move, for details see below
-        double computeTrialMove(WalkerState &wlkstate) { return this->trialMove(wlkstate, _protoold, _protonew); }
+        double computeTrialMove(WalkerState &wlk) { return this->trialMove(wlk, _protoold, _protonew); }
 
         // do we have step sizes to calibrate?
         bool hasStepSizes() const { return (this->getNStepSizes() > 0); }
@@ -45,8 +45,8 @@ namespace mci
         virtual double getStepSize(int i) const = 0; // get step size with index i
         virtual void setStepSize(int i, double val) = 0; // set step size with index i to val
         virtual double getChangeRate() const = 0; // average probability of a single x index to change on move (e.g. 1./ndim on single-index moves)
-        // tell which step sizes were used in a step described by wlkstate
-        virtual void getUsedStepSizes(const WalkerState &wlkstate, int &nusedSizes, int usedSizeIdx[]) const = 0;
+        // tell which step sizes were used in a step described by wlk
+        virtual void getUsedStepSizes(const WalkerState &wlk, int &nusedSizes, int usedSizeIdx[]) const = 0;
 
         void scaleStepSize(int i, double fac) { this->setStepSize(i, this->getStepSize(i)*fac); } // scale step size with index i by fac
 
@@ -72,7 +72,7 @@ namespace mci
         // Update xnew (and your protonew), count changed indices in nchanged, store the indices in
         // ascending order in changedIdx (is allocated to length ndim) and finally return the acceptance
         // factor of your trial move.
-        virtual double trialMove(WalkerState &wlkstate, const double protoold[], double protonew[]) = 0;
+        virtual double trialMove(WalkerState &wlk, const double protoold[], double protonew[]) = 0;
     };
 
 

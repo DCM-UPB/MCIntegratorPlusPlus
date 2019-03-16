@@ -13,10 +13,10 @@ namespace mci
     struct WalkerState
     {
         const int ndim;
-        double * const xold;
-        double * const xnew;
-        int nchanged;
-        int * const changedIdx;
+        double * const xold; // ptr to old positions
+        double * const xnew; // ptr to new positions
+        int nchanged; // number of differing indices between xold and xnew
+        int * const changedIdx; // first nchanged elements are the differing indices, in order
 
         explicit WalkerState(int n_dim):
             ndim(n_dim), xold(new double[ndim]), xnew(new double[ndim]),

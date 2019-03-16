@@ -22,45 +22,48 @@ namespace mci
     class MCI
     {
     protected:
-        const double INITIAL_STEP=0.05;
-
+        // Random
         std::random_device _rdev;
         std::mt19937_64 _rgen;
         std::uniform_real_distribution<double> _rd;  //after initialization (done in the constructor) can be used with _rd(_rgen)
 
+        // Integration domain
         const int _ndim;  // number of dimensions
         double * _lbound; // integration lower bounds
         double * _ubound; // integration upper bounds
         double _vol;  // Integration volume
 
-        int _NfindMRT2Iterations; // how many MRT2 step adjustment iterations to do before integrating
-        int _NdecorrelationSteps; // how many decorrelation steps to do before integrating
-        double _targetaccrate;  // desired acceptance ratio
-
-        // main objects/vectors/containers
-
+        // Main objects/vectors/containers
         WalkerState _wlkstate; // holds the current walker state (xold/xnew), including move information
         std::unique_ptr<TrialMoveInterface> _trialMove; // holds the object to perform walker moves
-
         SamplingFunctionContainer _pdfcont; // sampling function container
+
         ObservableContainer _obscont; // observable container used during integration
-        std::vector< std::unique_ptr<CallBackOnMoveInterface> > _cbacks;  // Vector of acceptance callback functions
+        std::vector< std::unique_ptr<CallBackOnMoveInterface> > _cbacks;  // Vector of callback-on-move functions
 
-        // internal flags & counters
-        int _acc, _rej;  // internal counters
-        int _ridx;  // running index, which keeps track of the number of MC steps
-        bool _flagMC; //flag that is true only when MCI is accumulating data for the integral
+        // Settings
+        int _NfindMRT2Iterations; // how many MRT2 step adjustment iterations to do before integrating
+        int _NdecorrelationSteps; // how many decorrelation steps to do before integrating
+        double _targetaccrate; // desired acceptance ratio
 
-        // variables related to file IO
-        std::ofstream _obsfile;  //ofstream for storing obs values while sampling
+
+        // File-I/O parameters
+
+        // observables
+        std::ofstream _obsfile; //ofstream for storing obs values while sampling
         std::string _pathobsfile;
         int _freqobsfile{};
-        bool _flagobsfile;  // should write an output file with sampled obs values?
+        bool _flagobsfile; // should write an output file with sampled obs values?
 
-        std::ofstream _wlkfile;  //ofstream for storing obs values while sampling
+        // walkers
+        std::ofstream _wlkfile; //ofstream for storing obs values while sampling
         std::string _pathwlkfile;
         int _freqwlkfile{};
-        bool _flagwlkfile;  // should write an output file with sampled obs values?
+        bool _flagwlkfile; // should write an output file with sampled obs values?
+
+        // internal counters
+        int _acc, _rej; // internal counters
+        int _ridx; // running index, which keeps track of the number of MC steps
 
 
         // --- Internal methods
@@ -70,15 +73,17 @@ namespace mci
         void initialDecorrelation();
 
         // prepare new sampling run
-        void initializeSampling(ObservableContainer * obsCont);
+        void initializeSampling(ObservableContainer * obsCont /*optional*/);
 
-        //use this if there is a pdf, performs move and decides acc/rej
+        // if there is a pdf, performs move and decides acc/rej
         void doStepMRT2();
+        // else we use this to sample randomly (mostly for testing/examples)
+        void doStepRandom();
 
         // sample without taking data
         void sample(int npoints);
-        // fill data with samples
-        void sample(int npoints, ObservableContainer &container);
+        // fill data with samples and do things like file output, if flagMC (i.e. main sampling)
+        void sample(int npoints, ObservableContainer &container, bool flagMC);
 
         // call callbacks
         void callBackOnMove();
@@ -96,7 +101,8 @@ namespace mci
         ~MCI();  //Destructor
 
         // --- Setters
-        void setSeed(uint_fast64_t seed);
+
+        void setSeed(uint_fast64_t seed); // seed internal random number generator
 
         // keep walkers within these bounds during integration (defaults to full range of double floats)
         void setIRange(double lbound, double ubound); // set the same range on all dimensions
@@ -109,61 +115,78 @@ namespace mci
         void setMRT2Step(double mrt2step); // set all identical
         void setMRT2Step(int i, double mrt2step); // set certain element
         void setMRT2Step(const double mrt2step[]); // set all elements
+
         void setTargetAcceptanceRate(double targetaccrate); // acceptance rate target used in findMRT2Step
         // how many MRT2 step adjustment iterations to do
         void setNfindMRT2Iterations(int niterations /* -1 == auto, 0 == disabled */){_NfindMRT2Iterations=niterations;}
         // how many decorrelation steps to do
         void setNdecorrelationSteps(int nsteps /* -1 == auto, 0 == disabled */){_NdecorrelationSteps=nsteps;}
 
-        // --- Adding objects to MCI (everything you pass will be cloned!)
 
-        //void setTrialMove(const TrialMoveInterface &tmove);
-        //void setTrialMove(const TrialMoveInterface &tmove);
+        // --- Adding objects to MCI
+        // Note: Objects passed by raw-ref will be cloned by MCI
 
+        // Trial Moves
+        void setTrialMove(const TrialMoveInterface &tmove); // pass an existing move to be cloned by MCI
+        void setTrialMove(MoveType move /*enum, see Factories.hpp*/); // set trial move to default version of chosen builtin move
+        void setTrialMove(SRRDType srrd /*enum*/, // set builtin SRRD-class move, with distribution srrd
+                          int veclen = 0, /*0 means all-move, > 0 means single-vector move*/
+                          int ntypes = 1, int typeEnds[] = nullptr /* see TypedTrialMove.hpp */
+                          );
+
+        // Observables
         void addObservable(const ObservableFunctionInterface &obs /* MCI adds accumulator and estimator for this obs, with following options: */,
-                           int blocksize, /* if > 1, use fixed block size and assume uncorrelated samples, if <= 0, use no blocks and no error calculation */
-                           int nskip, /* evaluate observable only every n-th step NOTE: now a block consists of $blocksize non-skipped samples */
+                           int blocksize, /* if > 1, use fixed block size and assume uncorrelated samples, if 0, use no blocks and no error calculation */
+                           int nskip, /* evaluate observable only every n-th step NOTE: now one block is used for blocksize*nskip steps */
                            bool flag_equil, /* observable wants to be equilibrated when using automatic initial decorrelation (blocksize must be > 0) */
                            bool flag_correlated /* should block averages be treated as correlated samples? (blocksize must be > 0) */
                            );
         void addObservable(const ObservableFunctionInterface &obs, int blocksize = 1, int nskip = 1) {
             addObservable(obs, blocksize, nskip, blocksize>0, blocksize==1); // safe&easy defaults, appropriate for most cases
         }
-        void addObservable(const ObservableFunctionInterface &obs, int blocksize, int nskip, bool flag_equil, EstimatorType estimType /*enumerator, see Factories*/);
+        void addObservable(const ObservableFunctionInterface &obs, int blocksize, int nskip, bool flag_equil, EstimatorType estimType /*enum, see Factories-hpp*/);
         void clearObservables(); // clear
 
+        // Sampling Functions
         void addSamplingFunction(const SamplingFunctionInterface &mcisf);
         void clearSamplingFunctions();
 
-        void addCallBackOnMove(const CallBackOnMoveInterface &cback);
-        void clearCallBackOnMove();
+        // Callbacks
+        void addCallBack(const CallBackOnMoveInterface &cback);
+        void clearCallBacks();
 
+        // enable file printout to given files, with frequency freq
         void storeObservablesOnFile(const std::string &filepath, int freq);
         void storeWalkerPositionsOnFile(const std::string &filepath, int freq);
 
+
         // --- Getters
+
         int getNDim() const { return _ndim; }
         double getLBound(int i) const { return _lbound[i]; }
         double getUBound(int i) const { return _ubound[i]; }
 
         double getX(int i) const { return _wlkstate.xold[i];}
         const double * getX() const { return _wlkstate.xold; }
+
         double getMRT2Step(int i) const { return (i < _trialMove->getNStepSizes()) ? _trialMove->getStepSize(i) : 0.; } // this is easy to get wrong, so we make it safer
+        double getTargetAcceptanceRate() const { return _targetaccrate; }
+        double getAcceptanceRate() const { return (_acc>0) ? static_cast<double>(_acc)/(static_cast<double>(_acc)+_rej) : 0.; }
+
         int getNfindMRT2Iterations() const { return _NfindMRT2Iterations; }
         int getNdecorrelationSteps() const { return _NdecorrelationSteps; }
+
+        const TrialMoveInterface & getTrialMove() const { return *_trialMove; }
+
+        const SamplingFunctionInterface & getSamplingFunction(int i) const { return _pdfcont.getSamplingFunction(i); }
+        int getNPDF() const { return _pdfcont.getNPDF(); }
 
         const ObservableFunctionInterface & getObservable(int i) const { return _obscont.getObservableFunction(i); }
         int getNObs() const { return _obscont.getNObs(); }
         int getNObsDim() const { return _obscont.getNObsDim(); }
 
-        const SamplingFunctionInterface & getSamplingFunction(int i) const { return _pdfcont.getSamplingFunction(i); }
-        int getNPDF() const { return _pdfcont.getNPDF(); }
-
         const CallBackOnMoveInterface & getCallBackOnMove(int i) const { return *_cbacks[i]; }
         int getNCallBacks() const { return _cbacks.size(); }
-
-        double getTargetAcceptanceRate() const { return _targetaccrate; }
-        double getAcceptanceRate() const { return (_acc>0) ? static_cast<double>(_acc)/(static_cast<double>(_acc)+_rej) : 0.; }
 
         // --- Integrate
 

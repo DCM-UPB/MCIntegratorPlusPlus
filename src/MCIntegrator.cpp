@@ -18,6 +18,7 @@ namespace mci
 {
 
     //  --- Integrate
+
     void MCI::integrate(const int Nmc, double average[], double error[], const bool doFindMRT2step, const bool doDecorrelation)
     {
         if ( !_pdfcont.empty() ) {
@@ -34,9 +35,7 @@ namespace mci
             //sample the observables
             if (_flagobsfile) { _obsfile.open(_pathobsfile); }
             if (_flagwlkfile) { _wlkfile.open(_pathwlkfile); }
-            _flagMC = true;
-            this->sample(Nmc, _obscont); // let sample accumulate data
-            _flagMC = false;
+            this->sample(Nmc, _obscont, true); // let sample accumulate data
             if (_flagobsfile) { _obsfile.close(); }
             if (_flagwlkfile) { _wlkfile.close(); }
 
@@ -55,7 +54,6 @@ namespace mci
             _obscont.deallocate();
         }
     }
-
 
 
     // --- "High-level" internal methods
@@ -79,7 +77,7 @@ namespace mci
             obs_equil.allocate(MIN_NMC);
 
             //do a first estimate of the observables
-            this->sample(MIN_NMC, obs_equil);
+            this->sample(MIN_NMC, obs_equil, false);
             auto * oldestimate = new double[nobsdim];
             auto * olderrestim = new double[nobsdim];
             obs_equil.estimate(oldestimate, olderrestim);
@@ -90,7 +88,7 @@ namespace mci
             auto * newerrestim = new double[nobsdim];
             while ( flag_loop ) {
                 flag_loop = false;
-                this->sample(MIN_NMC, obs_equil);
+                this->sample(MIN_NMC, obs_equil, false);
                 obs_equil.estimate(newestimate, newerrestim);
 
                 for (int i=0; i<nobsdim; ++i) {
@@ -173,9 +171,29 @@ namespace mci
         }
     }
 
+
     // --- Sampling
 
-    void MCI::sample(const int npoints) // sample without taking observables, file io or callbacks
+    void MCI::initializeSampling(ObservableContainer * obsCont)
+    {
+        // reset running counters
+        _acc = 0;
+        _rej = 0;
+        _ridx = 0;
+
+        // init xnew and all protovalues
+        _wlkstate.initialize();
+        _pdfcont.initializeProtoValues(_wlkstate.xold); // initialize the pdf at x
+        _trialMove->initializeProtoValues(_wlkstate.xold); // initialize the trial mover
+
+        // init rest
+        this->callBackOnMove(); // first call of the call-back functions
+        if (obsCont != nullptr) { // optional passed observable container
+            obsCont->reset(); // reset observable accumulators
+        }
+    }
+
+    void MCI::sample(const int npoints) // sample without taking observables or printing to file
     {
         // Initialize
         this->initializeSampling(nullptr);
@@ -186,14 +204,13 @@ namespace mci
             if (flagpdf) { // use sampling function
                 this->doStepMRT2();
             }
-            else {
-                this->newRandomX();
-                ++_acc; // "accept" move
+            else { // sample randomly
+                this->doStepRandom();
             }
         }
     }
 
-    void MCI::sample(const int npoints, ObservableContainer &container)
+    void MCI::sample(const int npoints, ObservableContainer &container, const bool flagMC)
     {
         // Initialize
         this->initializeSampling(&container);
@@ -205,20 +222,16 @@ namespace mci
             if (flagpdf) { // use sampling function
                 this->doStepMRT2();
             }
-            else {
-                this->newRandomX();
-                ++_acc; // "accept" move
-                _wlkstate.nchanged = _ndim;
+            else { // sample randomly
+                this->doStepRandom();
             }
-            // call the callbacks
-            this->callBackOnMove();
 
-            // accumulate observables
-            container.accumulate(_wlkstate.xold, _wlkstate.nchanged, _wlkstate.changedIdx);
+            // accumulate obs
+            container.accumulate(_wlkstate);
 
             // file output
-            if (_flagMC && _flagobsfile) { this->storeObservables(); } // store obs on file
-            if (_flagMC && _flagwlkfile) { this->storeWalkerPositions(); } // store walkers on file
+            if (flagMC && _flagobsfile) { this->storeObservables(); } // store obs on file
+            if (flagMC && _flagwlkfile) { this->storeWalkerPositions(); } // store walkers on file
         }
 
         // finalize data
@@ -235,93 +248,78 @@ namespace mci
         applyPBC(_wlkstate.xnew);
 
         // find the corresponding sampling function value
-        const double pdfAcc = (_wlkstate.nchanged < _ndim) ?
-            _pdfcont.computeAcceptance(_wlkstate)
-            : _pdfcont.computeAcceptance(_wlkstate.xnew);
+        const double pdfAcc = _pdfcont.computeAcceptance(_wlkstate);
 
-        //determine if the proposed x is accepted or not
-        _wlkstate.nchanged = ( _rd(_rgen) <= pdfAcc * moveAcc /* maybe it must be / */ ) ? _wlkstate.nchanged : 0;
+        // determine if the proposed x is accepted or not
+        const bool accepted = (_rd(_rgen) <= pdfAcc * moveAcc); /* maybe we should use / */
+        if (accepted) {
+            ++_acc;
+        } else {
+            ++_rej;
+            _wlkstate.nchanged = 0;
+        }
 
-        //update some values according to the acceptance of the mrt2 step
-        if ( _wlkstate.nchanged > 0 ) {
-            //accepted
+        // call callbacks
+        this->callBackOnMove();
+
+        // set state according to result
+        if (accepted) {
             _wlkstate.newToOld();
             _pdfcont.newToOld();
             _trialMove->newToOld();
-            _trialMove->callOnAcceptance(_pdfcont);
-            ++_acc;
-        } else {
-            //rejected
+            _trialMove->callOnAcceptance(_pdfcont); // expects pdfcont swapped already
+        } else { // rejected
             _wlkstate.oldToNew();
             _pdfcont.oldToNew();
             _trialMove->oldToNew();
-            ++_rej;
         }
     }
 
-
-    void MCI::newRandomX()
+    void MCI::doStepRandom()
     {
-        //set xold to new random values (within the irange)
+        // set xnew to new random values (within the irange)
         for (int i=0; i<_ndim; ++i) {
-            _wlkstate.xold[i] = _lbound[i] + ( _ubound[i] - _lbound[i] ) * _rd(_rgen);
+            _wlkstate.xnew[i] = _lbound[i] + ( _ubound[i] - _lbound[i] ) * _rd(_rgen);
         }
+        // "accept" move
+        ++_acc;
+        _wlkstate.nchanged = _ndim;
+        this->callBackOnMove(); // call callbacks
+        _wlkstate.newToOld(); // to mimic doStepMRT2()
     }
 
-    void MCI::initializeSampling(ObservableContainer * obsCont)
+
+    // --- Trial Moves
+
+    void MCI::setTrialMove(const TrialMoveInterface &tmove)
     {
-        // reset running counters
-        _acc = 0;
-        _rej = 0;
-        _ridx = 0;
-
-        // init xnew and all protovalues
-        _wlkstate.initialize();
-        _pdfcont.initializeProtoValues(_wlkstate.xold); // initialize the pdf at x
-        _trialMove->initializeProtoValues(_wlkstate.xold); // initialize the trial mover
-
-        // call callbacks and initialize passed obs container
-        if (obsCont != nullptr) { // if false then we are just doing warmup sampling
-            this->callBackOnMove(); // first call of the call-back functions
-            obsCont->reset(); // reset observable data (obsCont passed per argument!)
+        if (tmove.getNDim() != _ndim) {
+            throw std::invalid_argument("[MCI::setTrialMove] Passed trial move's number of inputs is not equal to MCI's number of walkers.");
         }
+        _trialMove = tmove.clone(); // unique ptr, old move gets freed automatically
+        _trialMove->bindRGen(_rgen);
+
     }
 
-
-    // --- File Output
-
-    void MCI::storeObservablesOnFile(const std::string &filepath, const int freq)
+    void MCI::setTrialMove(MoveType move)
     {
-        _pathobsfile = filepath;
-        _freqobsfile = freq;
-        _flagobsfile = true;
+        _trialMove = createMoveDefault(move, _ndim); // use factory default function
+        _trialMove->bindRGen(_rgen);
     }
 
-    void MCI::storeObservables()
+    void MCI::setTrialMove(SRRDType srrd, int veclen, int ntypes, int typeEnds[])
     {
-        if ( _ridx%_freqobsfile == 0 ) {
-            _obscont.printObsValues(_obsfile);
-            _obsfile << std::endl;
-        }
-    }
-
-
-    void MCI::storeWalkerPositionsOnFile(const std::string &filepath, const int freq)
-    {
-        _pathwlkfile = filepath;
-        _freqwlkfile = freq;
-        _flagwlkfile = true;
-    }
-
-    void MCI::storeWalkerPositions()
-    {
-        if ( _ridx%_freqwlkfile == 0 ) {
-            _wlkfile << _ridx;
-            for (int j=0; j<_ndim; ++j) {
-                _wlkfile << "   " << _wlkstate.xold[j] ;
+        if (veclen>0) {
+            if (_ndim % veclen != 0) {
+                throw std::invalid_argument("[MCI::setTrialMove] MCI's number of walkers must be a multiple of passed veclen.");
             }
-            _wlkfile << std::endl;
+            _trialMove = createSRRDVecMove(srrd, _ndim/veclen, veclen, ntypes, typeEnds);
         }
+        else {
+            _trialMove = createSRRDAllMove(srrd, _ndim, ntypes, typeEnds);
+        }
+
+        _trialMove->bindRGen(_rgen);
     }
 
 
@@ -369,7 +367,7 @@ namespace mci
     void MCI::addSamplingFunction(const SamplingFunctionInterface &mcisf)
     {
         if (mcisf.getNDim() != _ndim) {
-            throw std::invalid_argument("[MCI::addObservable] Passed sampling function's number of inputs is not equal to MCI's number of walkers.");
+            throw std::invalid_argument("[MCI::addSamplingFunction] Passed sampling function's number of inputs is not equal to MCI's number of walkers.");
         }
         _pdfcont.addSamplingFunction( mcisf.clone() );
     }
@@ -377,14 +375,14 @@ namespace mci
 
     // --- Callbacks
 
-    void MCI::clearCallBackOnMove() {
+    void MCI::clearCallBacks() {
         _cbacks.clear();
     }
 
-    void MCI::addCallBackOnMove(const CallBackOnMoveInterface &cback)
+    void MCI::addCallBack(const CallBackOnMoveInterface &cback)
     {
         if (cback.getNDim() != _ndim) {
-            throw std::invalid_argument("[MCI::addObservable] Passed callback function's number of inputs is not equal to MCI's number of walkers.");
+            throw std::invalid_argument("[MCI::addCallBack] Passed callback function's number of inputs is not equal to MCI's number of walkers.");
         }
         _cbacks.emplace_back( std::unique_ptr<CallBackOnMoveInterface>(cback.clone()) ); // we add unique clone
     }
@@ -396,7 +394,50 @@ namespace mci
         }
     }
 
-    // setters
+
+    // --- File Output
+
+    void MCI::storeObservablesOnFile(const std::string &filepath, const int freq)
+    {
+        _pathobsfile = filepath;
+        _freqobsfile = freq;
+        _flagobsfile = true;
+    }
+
+    void MCI::storeObservables()
+    {
+        if ( _ridx%_freqobsfile == 0 ) {
+            _obscont.printObsValues(_obsfile);
+            _obsfile << std::endl;
+        }
+    }
+
+
+    void MCI::storeWalkerPositionsOnFile(const std::string &filepath, const int freq)
+    {
+        _pathwlkfile = filepath;
+        _freqwlkfile = freq;
+        _flagwlkfile = true;
+    }
+
+    void MCI::storeWalkerPositions()
+    {
+        if ( _ridx%_freqwlkfile == 0 ) {
+            _wlkfile << _ridx;
+            for (int j=0; j<_ndim; ++j) {
+                _wlkfile << "   " << _wlkstate.xold[j] ;
+            }
+            _wlkfile << std::endl;
+        }
+    }
+
+
+    // --- Setters
+
+    void MCI::setSeed(const uint_fast64_t seed) // fastest unsigned integer which is at least 64 bit (as expected by rgen)
+    {
+        _rgen.seed(seed);
+    }
 
     void MCI::setTargetAcceptanceRate(const double targetaccrate)
     {
@@ -434,12 +475,17 @@ namespace mci
         applyPBC(_wlkstate.xold);
     }
 
-    void MCI::setSeed(const uint_fast64_t seed) // fastest unsigned integer which is at least 64 bit (as expected by rgen)
+    void MCI::newRandomX() // for external user, to initialize xold randomly
     {
-        _rgen.seed(seed);
+        //set xold to new random values (within the irange)
+        for (int i=0; i<_ndim; ++i) {
+            _wlkstate.xold[i] = _lbound[i] + ( _ubound[i] - _lbound[i] ) * _rd(_rgen);
+        }
     }
 
-    // Domain
+
+    // --- Domain
+
     void MCI::updateVolume()
     {
         // Set the integration volume
@@ -498,27 +544,25 @@ namespace mci
     MCI::MCI(const int ndim): _ndim(ndim), _wlkstate(_ndim)
     {
         // initialize random generator
-        _rgen = std::mt19937_64(_rdev());
-        _rd = std::uniform_real_distribution<double>(0.,1.); // for full random moves
-
-        // default trial move
-        _trialMove = std::unique_ptr<TrialMoveInterface>(new UniformAllMove(_ndim, INITIAL_STEP));
-        //_trialMove = std::unique_ptr<TrialMoveInterface>(new GaussianAllMove(_ndim, INITIAL_STEP));
-        //_trialMove = std::unique_ptr<TrialMoveInterface>(new StudentAllMove(_ndim, INITIAL_STEP));
-        //_trialMove = std::unique_ptr<TrialMoveInterface>(new CauchyAllMove(_ndim, INITIAL_STEP));
-        _trialMove->bindRGen(_rgen);
+        _rgen = std::mt19937_64(_rdev()); // passed through to trial moves (for seed consistency)
+        _rd = std::uniform_real_distribution<double>(0.,1.); // used for full random moves
 
         // _lbound and _ubound
         _lbound = new double[_ndim];
         _ubound = new double[_ndim];
         std::fill(_lbound, _lbound+_ndim, -0.1*std::numeric_limits<double>::max()); // play it safe
         std::fill(_ubound, _ubound+_ndim, 0.1*std::numeric_limits<double>::max());
-        // _vol (will only be relevant without sampling function)
+        // _vol (will only be relevant when sampling without pdf)
         _vol=0.;
 
+        // default trial move (will be used when sampling with pdf)
+        this->setTrialMove(MoveType::All);
+
         // other controls, defaulting to auto behavior
+        _targetaccrate=0.5;
         _NfindMRT2Iterations = -1;
         _NdecorrelationSteps = -1;
+
         // initialize file flags
         _flagwlkfile=false;
         _flagobsfile=false;
@@ -527,9 +571,6 @@ namespace mci
         _ridx=0;
         _acc=0;
         _rej=0;
-        // initialize all the other variables
-        _targetaccrate=0.5;
-        _flagMC=false;
     }
 
     MCI::~MCI()

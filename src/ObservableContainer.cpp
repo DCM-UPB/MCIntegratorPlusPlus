@@ -32,10 +32,10 @@ namespace mci
     }
 
 
-    void ObservableContainer::accumulate(const double x[], const int nchanged, const int changedIdx[])
+    void ObservableContainer::accumulate(const WalkerState &wlk)
     {
         for (auto & el : _cont) {
-            el.accu->accumulate(x, nchanged, changedIdx);
+            el.accu->accumulate(wlk);
         }
     }
 

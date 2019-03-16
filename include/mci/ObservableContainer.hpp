@@ -3,6 +3,7 @@
 
 #include "mci/AccumulatorInterface.hpp"
 #include "mci/ObservableFunctionInterface.hpp"
+#include "mci/WalkerState.hpp"
 
 #include <fstream>
 #include <functional>
@@ -52,7 +53,7 @@ namespace mci
                            bool needsEquil);
 
         void allocate(int Nmc); // allocate data memory
-        void accumulate(const double x[], int nchanged, const int changedIdx[]); // process accumulation for position x, with nchanged indices changedIdx
+        void accumulate(const WalkerState &wlk); // process accumulation for new step, described by WalkerState
         void printObsValues(std::ofstream &file) const; // write last observables values to filestream
         void finalize(); // used after sampling to apply all necessary data normalization
         void estimate(double average[], double error[]) const; // eval estimators on finalized data and return average/error

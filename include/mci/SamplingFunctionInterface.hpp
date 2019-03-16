@@ -38,12 +38,16 @@ namespace mci
         // return value of old sampling function
         double getOldSamplingFunction() const { return this->samplingFunction(_protoold); }
 
-        // compute full protonew and return acceptance
-        double computeAcceptance(const double in[]);
-
         // update protonew and return acceptance, given the Walkerstate, which
         // contains the changed indices changedIdx, that differ between xold and xnew
-        double computeAcceptance(const WalkerState &wlkstate);
+        double computeAcceptance(const WalkerState &wlk) {
+            if (wlk.nchanged < _ndim) {
+                return this->updatedAcceptance(wlk, _protoold, _protonew);
+            }
+            // all elements have changed
+            this->protoFunction(wlk.xnew, _protonew);
+            return this->acceptanceFunction(_protoold, _protonew);
+        }
 
 
         // --- METHODS THAT MUST BE IMPLEMENTED
@@ -73,11 +77,11 @@ namespace mci
         // Remember that in this method you should only update the protov[] elements that need to change due
         // to the nchanged input indices in changedIdx.
         // If full recalculation is more efficient in your case, you may also choose not to overwrite this method.
-        virtual double updatedAcceptance(const WalkerState &wlkstate,
+        virtual double updatedAcceptance(const WalkerState &wlk,
                                          const double protoold[], double protonew[] /* update this! */)
         {
             // default to "calculate all"
-            this->protoFunction(wlkstate.xnew, protonew);
+            this->protoFunction(wlk.xnew, protonew);
             return this->acceptanceFunction(protoold, protonew);
         }
     };
