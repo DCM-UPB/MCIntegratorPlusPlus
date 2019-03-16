@@ -19,20 +19,20 @@ namespace mci
         int _storeidx; // storage index offset for next write
 
         // --- storage method to be implemented
-        void _allocate() override;
-        void _accumulate() override;
-        void _finalize() override {} // nothing to do
-        void _reset() override;
-        void _deallocate() override;
+        void _allocate() final;
+        void _accumulate() final;
+        void _finalize() final {} // nothing to do
+        void _reset() final;
+        void _deallocate() final;
 
     public:
         FullAccumulator(std::unique_ptr<ObservableFunctionInterface> obs, int nskip):
             AccumulatorInterface(std::move(obs), nskip), _nstore(0), _storeidx(0)
         {}
 
-        ~FullAccumulator() override { this->_deallocate(); }
+        ~FullAccumulator() final { this->_deallocate(); }
 
-        int getNStore() const override { return _nstore; }
+        int getNStore() const final { return _nstore; }
     };
 }  // namespace mci
 

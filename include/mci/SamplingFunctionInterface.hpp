@@ -16,13 +16,13 @@ namespace mci
     //
     // class MyPDF: public SamplingFunctionInterface {
     // protected:
-    //     SamplingFunctionInterface * _clone() const override {
+    //     SamplingFunctionInterface * _clone() const final {
     //         return new MyPDF(...); // create a cloned version here
     //     }
     // public:
-    //     void protoFunction(...) overwrite;
-    //     double samplingFunction(...) const overwrite;
-    //     double acceptanceFunction(...) const overwrite;
+    //     void protoFunction(...) final;
+    //     double samplingFunction(...) const final;
+    //     double acceptanceFunction(...) const final;
     //     ...
     // };
     //

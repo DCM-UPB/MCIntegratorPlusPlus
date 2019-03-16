@@ -1,5 +1,6 @@
 #include <iomanip>
 #include <iostream>
+#include <memory>
 #include <string>
 
 #include "mci/MCIntegrator.hpp"
@@ -22,22 +23,19 @@ void run_single_benchmark(const string &label, MCI &mci, const int nruns, const 
 }
 
 int main () {
-    // debug settings
-    //const int NMC[5] = {1000, 1000, 1000, 1000, 1000};
-    //const int nruns[5] = {2, 2, 2, 2, 2};
-
     // benchmark settings
     const int NMC = 50000;
-    const int ndims[6] = {1, 4, 16, 64, 256, 1024};
-    const int nruns[6] = {5120, 1280, 320, 80, 20, 5};
-    const double mrt2steps[6] = {3.0, 1.35, 0.6, 0.3, 0.15, 0.07};
+    const int nset = 6;
+    const int ndims[nset] = {1, 4, 16, 64, 256, 1024};
+    const int nruns[nset] = {5120, 1280, 320, 80, 20, 5};
+    const double mrt2steps[nset] = {3.0, 1.35, 0.6, 0.3, 0.15, 0.07};
 
     std::vector< std::unique_ptr<MCI> > mcis;
     for (int nd : ndims) {
-        mcis.push_back( std::unique_ptr<MCI>(new MCI(nd)) );
+        mcis.push_back( std::make_unique<MCI>(nd) );
     }
 
-    for (int i=0; i<6; ++i) {
+    for (int i=0; i<nset; ++i) {
         MCI * mci = mcis[i].get();
         int nd = mci->getNDim();
         ExpNDPDF pdf(nd);
@@ -51,7 +49,8 @@ int main () {
         for (int j=0; j<nd; ++j) { mci->setX(j, j%2==0 ? 0.1 : -0.05 ); }
         mci->setMRT2Step(mrt2steps[i]);
 
-        mci->integrate(500000, avg, err, false, false); // warmup&decorrelate
+        mci->setNdecorrelationSteps(500000);
+        mci->integrate(0, avg, err, false, true); // warmup&decorrelate
         cout << "acceptance rate " << mci->getAcceptanceRate() << endl;
     }
 
@@ -59,7 +58,7 @@ int main () {
     cout << "Benchmark results (time per step and dimension):" << endl;
 
     // MCIntegrate benchmark
-    for (int inmc=0; inmc<6; ++inmc) {
+    for (int inmc=0; inmc<nset; ++inmc) {
         run_single_benchmark("t/step (" + std::to_string(ndims[inmc]) + " dim)", *(mcis[inmc]), nruns[inmc], NMC);
     }
     cout << "=========================================================================================" << endl << endl << endl;

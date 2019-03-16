@@ -90,24 +90,24 @@ public:
 class ThreeDimGaussianPDF: public mci::SamplingFunctionInterface
 {
 protected:
-    mci::SamplingFunctionInterface * _clone() const override {
+    mci::SamplingFunctionInterface * _clone() const final {
         return new ThreeDimGaussianPDF();
     }
 
 public:
     ThreeDimGaussianPDF(): mci::SamplingFunctionInterface(3, 1){}
-    ~ThreeDimGaussianPDF() override= default;
+    ~ThreeDimGaussianPDF() final= default;
 
-    void protoFunction(const double in[], double protovalues[]) override{
+    void protoFunction(const double in[], double protovalues[]) final{
         protovalues[0] = (in[0]*in[0]) + (in[1]*in[1]) + (in[2]*in[2]);
     }
 
-    double samplingFunction(const double protov[]) const override
+    double samplingFunction(const double protov[]) const final
     {
         return exp(-protov[0]);
     }
 
-    double acceptanceFunction(const double protoold[], const double protonew[]) const override{
+    double acceptanceFunction(const double protoold[], const double protonew[]) const final{
         return exp(-protonew[0]+protoold[0]);
     }
 };
@@ -116,7 +116,7 @@ public:
 class Gauss: public mci::SamplingFunctionInterface
 {
 protected:
-    mci::SamplingFunctionInterface * _clone() const override {
+    mci::SamplingFunctionInterface * _clone() const final {
         return new Gauss(_ndim);
     }
 
@@ -124,26 +124,26 @@ public:
     explicit Gauss(const int ndim): mci::SamplingFunctionInterface(ndim,ndim)
     {}
 
-    void protoFunction(const double in[], double out[]) override
+    void protoFunction(const double in[], double out[]) final
     {
         for (int i=0; i<_ndim; ++i) {
             out[i] = in[i]*in[i];
         }
     }
 
-    double samplingFunction(const double protov[]) const override
+    double samplingFunction(const double protov[]) const final
     {
         return exp(-std::accumulate(protov, protov+_nproto, 0.));
     }
 
-    double acceptanceFunction(const double protoold[], const double protonew[]) const override
+    double acceptanceFunction(const double protoold[], const double protonew[]) const final
     {
         double expf = std::accumulate(protoold, protoold+_nproto, 0.);
         expf -= std::accumulate(protonew, protonew+_nproto, 0.);
         return exp(expf);
     }
 
-    double updatedAcceptance(const mci::WalkerState &wlk, const double pvold[], double pvnew[]) override
+    double updatedAcceptance(const mci::WalkerState &wlk, const double pvold[], double pvnew[]) final
     {
         double expf = 0.;
         for (int i=0; i<wlk.nchanged; ++i) {
@@ -157,24 +157,24 @@ public:
 class Exp1DPDF: public mci::SamplingFunctionInterface
 {
 protected:
-    mci::SamplingFunctionInterface * _clone() const override {
+    mci::SamplingFunctionInterface * _clone() const final {
         return new Exp1DPDF();
     }
 
 public:
     Exp1DPDF(): mci::SamplingFunctionInterface(1, 1){}
-    ~Exp1DPDF() override= default;
+    ~Exp1DPDF() final= default;
 
-    void protoFunction(const double in[], double protovalues[]) override{
+    void protoFunction(const double in[], double protovalues[]) final{
         protovalues[0] = fabs(in[0]);
     }
 
-    double samplingFunction(const double protov[]) const override
+    double samplingFunction(const double protov[]) const final
     {
         return exp(-protov[0]);
     }
 
-    double acceptanceFunction(const double protoold[], const double protonew[]) const override{
+    double acceptanceFunction(const double protoold[], const double protonew[]) const final{
         return exp(-protonew[0]+protoold[0]);
     }
 };
@@ -182,7 +182,7 @@ public:
 class ExpNDPDF: public mci::SamplingFunctionInterface
 {
 protected:
-    mci::SamplingFunctionInterface * _clone() const override {
+    mci::SamplingFunctionInterface * _clone() const final {
         return new ExpNDPDF(_ndim);
     }
 
@@ -190,24 +190,24 @@ public:
     explicit ExpNDPDF(const int ndim): mci::SamplingFunctionInterface(ndim,ndim)
     {}
 
-    void protoFunction(const double in[], double protovalues[]) override
+    void protoFunction(const double in[], double protovalues[]) final
     {
         for (int i=0; i<_ndim; ++i) { protovalues[i] = fabs(in[i]); }
     }
 
-    double samplingFunction(const double protov[]) const override
+    double samplingFunction(const double protov[]) const final
     {
         return exp(-std::accumulate(protov, protov+_nproto, 0.));
     }
 
-    double acceptanceFunction(const double protoold[], const double protonew[]) const override
+    double acceptanceFunction(const double protoold[], const double protonew[]) const final
     {
         double expf = std::accumulate(protoold, protoold+_nproto, 0.);
         expf -= std::accumulate(protonew, protonew+_nproto, 0.);
         return exp(expf);
     }
 
-    double updatedAcceptance(const mci::WalkerState &wlk, const double pvold[], double pvnew[]) override
+    double updatedAcceptance(const mci::WalkerState &wlk, const double pvold[], double pvnew[]) final
     {
         double expf = 0.;
         for (int i=0; i<wlk.nchanged; ++i) {
@@ -223,15 +223,15 @@ public:
 class XSquared: public mci::ObservableFunctionInterface
 {
 protected:
-    mci::ObservableFunctionInterface * _clone() const override {
+    mci::ObservableFunctionInterface * _clone() const final {
         return new XSquared();
     }
 
 public:
     XSquared(): mci::ObservableFunctionInterface(3, 1){}
-    ~XSquared() override= default;
+    ~XSquared() final= default;
 
-    void observableFunction(const double in[], double out[]) override{
+    void observableFunction(const double in[], double out[]) final{
         out[0] = in[0] * in[0];
     }
 };
@@ -240,15 +240,15 @@ public:
 class XYZSquared: public mci::ObservableFunctionInterface
 {
 protected:
-    mci::ObservableFunctionInterface * _clone() const override {
+    mci::ObservableFunctionInterface * _clone() const final {
         return new XYZSquared();
     }
 
 public:
     XYZSquared(): mci::ObservableFunctionInterface(3, 3){}
-    ~XYZSquared() override= default;
+    ~XYZSquared() final= default;
 
-    void observableFunction(const double in[], double out[]) override {
+    void observableFunction(const double in[], double out[]) final {
         out[0] = in[0] * in[0];
         out[1] = in[1] * in[1];
         out[2] = in[2] * in[2];
@@ -259,15 +259,15 @@ public:
 class X1D: public mci::ObservableFunctionInterface
 {
 protected:
-    mci::ObservableFunctionInterface * _clone() const override {
+    mci::ObservableFunctionInterface * _clone() const final {
         return new X1D();
     }
 
 public:
     X1D(): mci::ObservableFunctionInterface(1, 1){}
-    ~X1D() override= default;
+    ~X1D() final= default;
 
-    void observableFunction(const double in[], double out[]) override{
+    void observableFunction(const double in[], double out[]) final{
         out[0] = in[0];
     }
 };
@@ -275,18 +275,18 @@ public:
 class XND: public mci::UpdateableObservableInterface
 {
 protected:
-    mci::ObservableFunctionInterface * _clone() const override {
+    mci::ObservableFunctionInterface * _clone() const final {
         return new XND(_ndim);
     }
 
 public:
     explicit XND(int nd): mci::UpdateableObservableInterface(nd, nd){}
-    ~XND() override= default;
+    ~XND() final= default;
 
-    void observableFunction(const double in[], double out[]) override {
+    void observableFunction(const double in[], double out[]) final {
         std::copy(in, in+_ndim, out);
     }
-    void updatedObservable(const double in[], const int/*nchanged*/, const bool flags[], double out[]) override {
+    void updatedObservable(const double in[], const int/*nchanged*/, const bool flags[], double out[]) final {
         for (int i=0; i<_ndim; ++i) { // this is likely slower in any case, but used for testing
             if (flags[i]) { out[i] = in[i]; }
         }
@@ -297,14 +297,14 @@ public:
 class Constval: public mci::ObservableFunctionInterface
 {
 protected:
-    mci::ObservableFunctionInterface * _clone() const override {
+    mci::ObservableFunctionInterface * _clone() const final {
         return new Constval(_ndim);
     }
 
 public:
     explicit Constval(const int ndim): mci::ObservableFunctionInterface(ndim, 1) {}
 
-    void observableFunction(const double /*in*/[], double out[]) override
+    void observableFunction(const double /*in*/[], double out[]) final
     {
         out[0] = 1.3;
     }
@@ -314,14 +314,14 @@ public:
 class Polynom: public mci::ObservableFunctionInterface
 {
 protected:
-    mci::ObservableFunctionInterface * _clone() const override {
+    mci::ObservableFunctionInterface * _clone() const final {
         return new Polynom(_ndim);
     }
 
 public:
     explicit Polynom(const int ndim): mci::ObservableFunctionInterface(ndim, 1) {}
 
-    void observableFunction(const double in[], double out[]) override
+    void observableFunction(const double in[], double out[]) final
     {
         out[0]=0.;
         for (int i=0; i<_ndim; ++i) {
@@ -334,14 +334,14 @@ public:
 class X2Sum: public mci::ObservableFunctionInterface
 {
 protected:
-    mci::ObservableFunctionInterface * _clone() const override {
+    mci::ObservableFunctionInterface * _clone() const final {
         return new X2Sum(_ndim);
     }
 
 public:
     explicit X2Sum(const int ndim): mci::ObservableFunctionInterface(ndim,1) {}
 
-    void observableFunction(const double in[], double out[]) override
+    void observableFunction(const double in[], double out[]) final
     {
         out[0] = 0.;
         for (int i=0; i<_ndim; ++i) {
@@ -354,21 +354,21 @@ public:
 class X2: public mci::UpdateableObservableInterface
 {
 protected:
-    mci::ObservableFunctionInterface * _clone() const override {
+    mci::ObservableFunctionInterface * _clone() const final {
         return new X2Sum(_ndim);
     }
 
 public:
     explicit X2(const int ndim): mci::UpdateableObservableInterface(ndim,ndim) {}
 
-    void observableFunction(const double in[], double out[]) override
+    void observableFunction(const double in[], double out[]) final
     {
         for (int i=0; i<_ndim; ++i) {
             out[i] = in[i]*in[i];
         }
     }
 
-    void updatedObservable(const double in[], const int/*nchanged*/, const bool flags[], double out[]) override
+    void updatedObservable(const double in[], const int/*nchanged*/, const bool flags[], double out[]) final
     {
         for (int i=0; i<_ndim; ++i) {
             if (flags[i]) { // this may actually be faster for small nchanged and large _ndim

@@ -16,13 +16,13 @@ namespace mci
     //
     // class MyObservable: public UpdateableObservableInterface {
     // protected:
-    //     ObservableFunctionInterface * _clone() const override {
+    //     ObservableFunctionInterface * _clone() const final {
     //         // returns ptr of type ObservableFunctionInterface
     //         return new MyObservable(...); // create a cloned version here
     //     }
     // public:
-    //     void observableFunction(in, out) overwrite; // full update
-    //     void observableUpdate(in, nchanged, changeFlags, out) overwrite; // partial update, see below
+    //     void observableFunction(in, out) final; // full update
+    //     void observableUpdate(in, nchanged, changeFlags, out) final; // partial update, see below
     //     ...
     // };
     class UpdateableObservableInterface: public ObservableFunctionInterface

@@ -21,11 +21,11 @@ namespace mci
         int _storeidx; // storage index offset for next write
 
         // --- storage method to be implemented
-        void _allocate() override;
-        void _accumulate() override;
-        void _finalize() override;
-        void _reset() override;
-        void _deallocate() override;
+        void _allocate() final;
+        void _accumulate() final;
+        void _finalize() final;
+        void _reset() final;
+        void _deallocate() final;
 
     public:
         BlockAccumulator(std::unique_ptr<ObservableFunctionInterface> obs, int nskip, int blocksize):
@@ -34,10 +34,10 @@ namespace mci
             if (_blocksize < 1) { throw std::invalid_argument("[BlockAccumulator] Requested blocksize was < 1 ."); }
         }
 
-        ~BlockAccumulator() override { this->_deallocate(); }
+        ~BlockAccumulator() final { this->_deallocate(); }
 
         int getBlockSize() const { return _blocksize; }
-        int getNStore() const override { return _nblocks; }
+        int getNStore() const final { return _nblocks; }
     };
 }  // namespace mci
 

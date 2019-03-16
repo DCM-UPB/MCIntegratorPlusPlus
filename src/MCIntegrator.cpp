@@ -4,9 +4,9 @@
 #include "mci/Estimators.hpp"
 #include "mci/Factories.hpp"
 #include "mci/FullAccumulator.hpp"
+#include "mci/SRRDAllMove.hpp"
+#include "mci/SRRDVecMove.hpp"
 #include "mci/SimpleAccumulator.hpp"
-#include "mci/UniformAllMove.hpp"
-#include "mci/UniformVecMove.hpp"
 
 #include <algorithm>
 #include <functional>
@@ -503,6 +503,9 @@ namespace mci
 
         // default trial move
         _trialMove = std::unique_ptr<TrialMoveInterface>(new UniformAllMove(_ndim, INITIAL_STEP));
+        //_trialMove = std::unique_ptr<TrialMoveInterface>(new GaussianAllMove(_ndim, INITIAL_STEP));
+        //_trialMove = std::unique_ptr<TrialMoveInterface>(new StudentAllMove(_ndim, INITIAL_STEP));
+        //_trialMove = std::unique_ptr<TrialMoveInterface>(new CauchyAllMove(_ndim, INITIAL_STEP));
         _trialMove->bindRGen(_rgen);
 
         // _lbound and _ubound

@@ -13,20 +13,20 @@ namespace mci
         bool _flag_alloc; // to determine proper nstored/ndata
 
         // --- storage method to be implemented
-        void _allocate() override;
-        void _accumulate() override;
-        void _finalize() override;
-        void _reset() override;
-        void _deallocate() override;
+        void _allocate() final;
+        void _accumulate() final;
+        void _finalize() final;
+        void _reset() final;
+        void _deallocate() final;
 
     public:
         SimpleAccumulator(std::unique_ptr<ObservableFunctionInterface> obs, int nskip):
             AccumulatorInterface(std::move(obs), nskip), _flag_alloc(false)
         {}
 
-        ~SimpleAccumulator() override { this->_deallocate(); }
+        ~SimpleAccumulator() final { this->_deallocate(); }
 
-        int getNStore() const override {
+        int getNStore() const final {
             return _flag_alloc ? 1 : 0; // we don't store old values
         }
     };

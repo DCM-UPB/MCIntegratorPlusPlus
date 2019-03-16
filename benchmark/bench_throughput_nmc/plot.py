@@ -1,1 +1,1 @@
-../bench_integrate_nmc/plot.py
+../bench_integrate_mixed/plot.py

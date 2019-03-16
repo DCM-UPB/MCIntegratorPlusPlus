@@ -15,11 +15,11 @@ namespace mci
     //
     // class MyObservable: public ObservableFunctionInterface {
     // protected:
-    //     ObservableFunctionInterface * _clone() const override {
+    //     ObservableFunctionInterface * _clone() const final {
     //         return new MyObservable(...); // create a cloned version here
     //     }
     // public:
-    //     void observableFunction(...) overwrite;
+    //     void observableFunction(...) final;
     //     ...
     // };
     //

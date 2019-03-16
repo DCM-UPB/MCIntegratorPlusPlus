@@ -13,12 +13,12 @@ namespace mci
     //
     // class MyCallback: public CallBackOnMoveInterface {
     // protected:
-    //     CallBackOnMoveInterface * _clone() const override {
+    //     CallBackOnMoveInterface * _clone() const final {
     //         return new MyCallback(...); // create a cloned version here
     //     }
     // public:
-    //     void samplingFunction(...) overwrite;
-    //     double getAcceptance(...) const overwrite;
+    //     void samplingFunction(...) final;
+    //     double getAcceptance(...) const final;
     //     ...
     // };
     //

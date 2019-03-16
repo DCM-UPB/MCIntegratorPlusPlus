@@ -10,7 +10,10 @@
 
 namespace mci
 {
-
+    // Base interface for trial moves
+    //
+    // For details see the methods&comments below.
+    //
     class TrialMoveInterface: public ProtoFunctionInterface, public Clonable<TrialMoveInterface>
     {
     protected:
@@ -54,7 +57,7 @@ namespace mci
         // calculation of your trial move acceptance factor, by storing two sets of temporaries (new/old).
         // For details, see ProtoFunctionInterface.hpp. If you don't need that, in your constructor call
         // the TrialMoveInterface constructor with nproto set to 0 and and implement protoFunction as:
-        //     double protoFunction(const double[], double[]) const override {}
+        //     double protoFunction(const double[], double[]) const final {}
 
         // Callback on acceptance
         // If your trial move requires knowledge of the previous sampling function value,
@@ -71,6 +74,40 @@ namespace mci
         // factor of your trial move.
         virtual double trialMove(WalkerState &wlkstate, const double protoold[], double protonew[]) = 0;
     };
+
+
+    // Useful helper for generic derived classes
+    // A helper template used to default-initialize real random distributions from the standard library,
+    // to be symmetric around 0 and, if possible, standard deviation 1 (except: interval dists are [-1,1]).
+    // The template is made to compile only for the standard-library distributions that allow to have
+    // these properties. If such distributions are used for MC moves, the detailed balance condition
+    // is fullfilled automatically.
+    template < class SRRD >/* should be applicable stdlib random dist <double> */
+    auto createSymNormalRRD() = delete; // cannot be used without specialization
+
+    // Specialization for uniform
+    template<>
+    inline auto createSymNormalRRD< std::uniform_real_distribution<double> >() {
+        return std::uniform_real_distribution<double>(-1., 1.); // the odd case with sigma!=1
+    }
+
+    // Specialization for gaussian
+    template<>
+    inline auto createSymNormalRRD< std::normal_distribution<double> >() {
+        return std::normal_distribution<double>(); // defaults to mean 0 std 1
+    }
+
+    // Specialization for student-t
+    template<>
+    inline auto createSymNormalRRD< std::student_t_distribution<double> >() {
+        return std::student_t_distribution<double>(); // default is symmetric around 0, but stddev undefined
+    }
+
+    // Specialization for cauchy
+    template<>
+    inline auto createSymNormalRRD< std::cauchy_distribution<double> >() {
+        return std::cauchy_distribution<double>(); // default is symmetric around 0, but mean&stddev undefined
+    }
 
 }; // namespace mci
 
