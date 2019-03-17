@@ -18,7 +18,7 @@ class TestWalk1s
 protected:
     int _acc, _rej; // counters to calculate acceptance ratio
 
-    bool _isStepAccepted(const double oldWFVal, double newWFVal)
+    bool _isStepAccepted(const double oldWFVal, double newWFVal) const
     {   // standard VMC acceptance criterion
         if (oldWFVal == 0) {
             return true;
@@ -33,7 +33,7 @@ protected:
         return ( rand()*(1.0 / RAND_MAX) <= threshold );
     }
 
-    double _calcWFVal(const double position[])
+    double _calcWFVal(const double position[]) const
     {   // product of 1s orbitals in 1D
         double wfval = 0.;
         for (int i=0; i<_ndim; ++i) {
@@ -42,13 +42,17 @@ protected:
         return exp(-wfval);
     }
 
-    bool _generatePosition(const double oldPosition[], double newPosition[], int * nchanged, int changedIdx[])
+    bool _generatePosition(const double oldPosition[], double newPosition[], int * nchanged, int changedIdx[]) const
     {
         double oldWFVal = _calcWFVal(oldPosition);
 
         if (nchanged != nullptr) { *nchanged = 0; }
         for (int i=0; i<_ndim; ++i) {
-            if (rand()*(1.0 / RAND_MAX) <= _changeProb) {
+            bool doMove = true;
+            if (_changeProb<1.) {
+                doMove = ( rand()*(1.0 / RAND_MAX) <= _changeProb );
+            }
+            if (doMove) {
                 newPosition[i] = oldPosition[i] + 2.*_stepSize*(rand()*(1.0 / RAND_MAX) - 0.5);
                 if (changedIdx != nullptr) { changedIdx[*nchanged] = i; }
                 if (nchanged != nullptr) { *nchanged += 1; }
@@ -68,7 +72,7 @@ public:
     double _stepSize;
     double _changeProb; // 0..1, probability for single index to change on move
 
-    TestWalk1s(int NMC, int ndim, double stepSize = 0.1, double changeProb = 0.5):
+    TestWalk1s(int NMC, int ndim, double stepSize = 0.1, double changeProb = 1.):
         _acc(0), _rej(0), _NMC(NMC), _ndim(ndim), _stepSize(stepSize), _changeProb(changeProb)
     {}
 
@@ -87,7 +91,8 @@ public:
         if (changedIdx != nullptr) { std::iota(changedIdx, changedIdx+_ndim, 0); } // fill 0..ndim-1 on first step
 
         for (int i=1; i<_NMC; ++i) {
-            const bool accepted = _generatePosition(datax+(i-1)*_ndim, datax+i*_ndim, nchanged+i, changedIdx+i*_ndim);
+            const bool accepted = _generatePosition(datax+(i-1)*_ndim, datax+i*_ndim,
+                                                    nchanged ? nchanged+i : nullptr, changedIdx ? changedIdx+i*_ndim : nullptr);
             if (accepted) {
                 ++_acc;
             } else {

@@ -32,6 +32,10 @@ namespace mci
             return new SRRDAllMove(_ndim, _ntypes, _typeEnds, _stepSizes, &_rd);
         }
 
+        // not used, make final for that extra performance
+        void _newToOld() final {}
+        void _oldToNew() final {}
+
     public:
         // Full constructor with scalar step init and optionally passed pre-made random dist
         SRRDAllMove(int ndim, int ntypes, const int typeEnds[] /*len ntypes*/, double initStepSize /*scalar init*/, const SRRD * rdist = nullptr):

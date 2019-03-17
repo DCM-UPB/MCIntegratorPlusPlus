@@ -28,7 +28,9 @@ void run_single_benchmark(const string &label, const double datax[],
 
 int main ()
 {
-    const int NMC = 10000000;
+    const bool flag_debug = false;
+    const bool verbose = flag_debug; // some debug printout
+    const int NMC = flag_debug ? 5000 : 10000000;
     const int nruns = 10;
     const int estimatorTypes[6] = {1, 2, 3, 4, 5, 6};
     const int ndims[3] = {1, 10, 100};
@@ -45,23 +47,23 @@ int main ()
     for (int i=0; i<3; ++i) { // go through ndims/stepSizes
         const int trueNMC = NMC/ndims[i];
         auto * datax = new double[trueNMC*ndims[i]];
-        TestWalk1s testWalk(trueNMC, ndims[i], stepSizes[i]);
+        TestWalk1s testWalk(trueNMC, ndims[i], stepSizes[i], 1. /*all-particle steps*/);
         testWalk.generateWalk(datax);
+
+        if (verbose) { // verbose stuff (better decrease NMC to 1000)
+           cout << "Acceptance ratio was " << testWalk.getAcceptanceRate() << endl;
+           cout << "datax:" << endl;
+           for (int imc=0; imc<trueNMC; ++imc) {
+               cout << "imc " << imc << endl;
+               cout << "x ";
+           for (int idm=0; idm<ndims[i]; ++idm) { cout << " " << datax[imc*ndims[i] + idm]; }
+           cout << endl;
+           }
+        }
 
         // the steps sizes were tuned for 0.5+-0.001 acceptance rate (on 1337 seed)
         // so this serves as a little check that nothing was messed up in TestMCIFunctions
         assert(fabs(testWalk.getAcceptanceRate()-0.5) < 0.001); // the steps sizes were tuned for 0.5+-0.001 acceptance rate (on 1337 seed)
-
-        /* // verbose stuff (better decrease NMC to 1000)
-           cout << "Acceptance ratio was " << testWalk.getAcceptanceRate() << endl;
-           cout << "datax:" << endl;
-           for (int imc=0; imc<trueNMC; ++imc) {
-           cout << "imc " << imc << endl;
-           cout << "x ";
-           for (int idm=0; idm<ndims[i]; ++idm) { cout << " " << datax[imc*ndims[i] + idm]; }
-           cout << endl;
-           }
-        */
 
         for (const int &etype : estimatorTypes) {
             if ( !(ndims[i]>1 && etype<4) ) {

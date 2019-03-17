@@ -246,13 +246,19 @@ namespace mci
         // propose a new position x and get move acceptance
         _wlkstate.nchanged=0; // better don't rely on this!
         const double moveAcc = _trialMove->computeTrialMove(_wlkstate);
-        applyPBC(_wlkstate.xnew);
+
+        // apply PBC update
+        if (_wlkstate.nchanged < _ndim) {
+            this->applyPBCUpdate();
+        } else {
+            this->applyPBC(_wlkstate.xnew);
+        }
 
         // find the corresponding sampling function acceptance
         const double pdfAcc = _pdfcont.computeAcceptance(_wlkstate);
 
         // determine if the proposed x is accepted or not
-        _wlkstate.accepted = (_rd(_rgen) <= pdfAcc * moveAcc); /* maybe we should use / */
+        _wlkstate.accepted = ( _rd(_rgen) <= pdfAcc*moveAcc );
         _wlkstate.accepted ? ++_acc : ++_rej; // increase counters
 
         // call callbacks
@@ -298,7 +304,6 @@ namespace mci
         }
         _trialMove = tmove.clone(); // unique ptr, old move gets freed automatically
         _trialMove->bindRGen(_rgen);
-
     }
 
     void MCI::setTrialMove(MoveType move)
@@ -506,7 +511,7 @@ namespace mci
         return minboxlen;
     }
 
-    void MCI::applyPBC(double v[]) const
+    void MCI::applyPBC(double v[]) const // apply PBC to passed array of len ndim (used for allp-moves)
     {
         for (int i=0; i<_ndim; ++i) {
             while ( v[i] < _lbound[i] ) {
@@ -518,14 +523,37 @@ namespace mci
         }
     }
 
+    void MCI::applyPBCUpdate() // apply PBC elementary update to internal walker state
+    {
+        for (int i=0; i<_wlkstate.nchanged; ++i) {
+            const int idx = _wlkstate.changedIdx[i];
+            while ( _wlkstate.xnew[idx] < _lbound[idx] ) {
+                _wlkstate.xnew[idx] += _ubound[idx] - _lbound[idx];
+            }
+            while ( _wlkstate.xnew[idx] > _ubound[idx] ) {
+                _wlkstate.xnew[idx] -= _ubound[idx] - _lbound[idx];
+            }
+        }
+    }
+
+    void MCI::checkIRange() const
+    {
+        for (int i=0; i<_ndim; ++i) {
+            if (_ubound[i]<=_lbound[i]) {
+                throw std::invalid_argument("[MCI::checkIRange] All upper bounds must be truly greater than their corresponding lower bounds.");
+            }
+        }
+    }
+
     void MCI::setIRange(const double lbound, const double ubound)
     {
         // Set irange and apply PBC to the initial walker position _x
         std::fill(_lbound, _lbound+_ndim, lbound);
         std::fill(_ubound, _ubound+_ndim, ubound);
-        updateVolume();
+        this->checkIRange(); // throws if ranges invalid
+        this->updateVolume();
 
-        applyPBC(_wlkstate.xold);
+        this->applyPBC(_wlkstate.xold);
     }
 
     void MCI::setIRange(const double lbound[], const double ubound[])
@@ -533,9 +561,10 @@ namespace mci
         // Set irange and apply PBC to the initial walker position _x
         std::copy(lbound, lbound+_ndim, _lbound);
         std::copy(ubound, ubound+_ndim, _ubound);
-        updateVolume();
+        this->checkIRange(); // throws if ranges invalid
+        this->updateVolume();
 
-        applyPBC(_wlkstate.xold);
+        this->applyPBC(_wlkstate.xold);
     }
 
 

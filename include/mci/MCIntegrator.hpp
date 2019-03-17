@@ -92,9 +92,11 @@ namespace mci
         void storeObservables();
         void storeWalkerPositions();
 
+        void checkIRange() const; // throws if internal ranges are invalid
         void updateVolume();
         double getMinBoxLen() const; // min(ubound[i]-lbound[i])
-        void applyPBC(double v[]) const;
+        void applyPBC(double v[]) const; // apply PBC to passed vector (len dim)
+        void applyPBCUpdate(); // apply elementary PBC update to xnew of internal walker state
 
     public:
         explicit MCI(int ndim);  //Constructor, need the number of dimensions

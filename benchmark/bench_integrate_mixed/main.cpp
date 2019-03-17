@@ -40,7 +40,7 @@ int main () {
     mci.addObservable(obs3, 5, 2); // fixed blocksize 5, eval every 2nd step (i.e. "effective" block size of 10)
 
     double avg[mci.getNObsDim()],err[mci.getNObsDim()];
-    mci.setMRT2Step(1.0);
+    mci.setMRT2Step(1.0); // stepSize 1.0 yields quite exactly 0.5 acceptance
     
     mci.integrate(100000, avg, err, false, false); // warmup&decorrelate
     cout << "avg ";

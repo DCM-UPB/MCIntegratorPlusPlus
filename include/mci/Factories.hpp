@@ -141,7 +141,7 @@ namespace mci
             return std::unique_ptr<TrialMoveInterface>( new CauchyAllMove(ndim, ntypes, typeEnds, DEFAULT_MRT2STEP) );
 
         default:
-            throw std::domain_error("[createSRRDAllMove] Unhandled trial move enumerator.");
+            throw std::domain_error("[createSRRDAllMove] Unhandled SRRDType enumerator.");
         }
     }
 
@@ -168,7 +168,7 @@ namespace mci
             return std::unique_ptr<TrialMoveInterface>( new CauchyVecMove(nvecs, veclen, ntypes, typeEnds, DEFAULT_MRT2STEP) );
 
         default:
-            throw std::domain_error("[createSRRDVecMove] Unhandled trial move enumerator.");
+            throw std::domain_error("[createSRRDVecMove] Unhandled SRRDType enumerator.");
         }
     }
 
@@ -182,7 +182,7 @@ namespace mci
             return createSRRDVecMove(SRRDType::Uniform, ndim); // default to single index moves
 
         default:
-            throw std::domain_error("[createMoveDefault] Unhandled trial move enumerator.");
+            throw std::domain_error("[createMoveDefault] Unhandled MoveType enumerator.");
         }
     }
 

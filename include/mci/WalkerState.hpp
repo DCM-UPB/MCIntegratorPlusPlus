@@ -15,7 +15,9 @@ namespace mci
         const int ndim;
         double * const xold; // ptr to old positions
         double * const xnew; // ptr to new positions
+
         int nchanged{}; // number of differing indices between xold and xnew
+        /* NOTE: If nchanged=ndim, changedIdx is allowed to be invalid! You must check for that case (i.e. all-particle moves)!!) */
         int * const changedIdx; // first nchanged elements are the differing indices, in order
         bool accepted{}; // is the step accepted?
 

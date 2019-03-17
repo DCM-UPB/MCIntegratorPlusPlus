@@ -26,10 +26,13 @@ namespace mci
         std::uniform_int_distribution<int> _rdidx; // uniform integer distribution to choose vector index
         SRRD _rdmov; // symmetric double-typed distribution to move vector
 
-    protected:
         TrialMoveInterface * _clone() const final {
             return new SRRDVecMove(_nvecs, _veclen, _ntypes, _typeEnds, _stepSizes);
         }
+
+        // not used, make final for that extra performance
+        void _newToOld() final {}
+        void _oldToNew() final {}
 
     public:
         // Full constructor with scalar step init and optionally passed pre-made random dist
