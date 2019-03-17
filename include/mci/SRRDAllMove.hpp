@@ -7,8 +7,14 @@
 
 namespace mci
 {
-    // Generic all-particle move (instantiations for standard distributions at the end of file)
+    // Generic all-particle move that can be instantiated for any type SSRD for which
+    // a specialization of the createSymNormalRRD function exists (e.g. in TrialMoveInterface.hpp).
+    // In any case, SRRD type must be callable and, when called  with passed stdlib
+    // random generator, return a random doubles from a symmetric distribution aroudn 0.
+    // By including this header you automatically "use" instantiations for types that
+    // have builtin support (see end of file).
     //
+    // About the all-particle move:
     // Probably the simplest kind of move, which requires the least effort in your
     // sampling functions/observables, since you do not need to provide single-particle
     // update methods for efficiency.
@@ -49,8 +55,7 @@ namespace mci
         double getChangeRate() const final { return 1.; } // chance for a single index to change is 1 (because they all change)
         void getUsedStepSizes(const WalkerState&/*wlk*/, int &nusedSizes, int usedSizeIdx[]) const final
         { // we always use all step sizes
-            nusedSizes = _ntypes;
-            std::iota(usedSizeIdx, usedSizeIdx+_ntypes, 0); // fill 0..._ntypes-1
+            nusedSizes = _ntypes; // we don't need to fill usedSizeIdx then
         }
 
         void protoFunction(const double/*in*/[], double/*protovalues*/[]) final {} // not needed

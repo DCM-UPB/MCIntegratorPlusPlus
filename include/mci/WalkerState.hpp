@@ -15,12 +15,13 @@ namespace mci
         const int ndim;
         double * const xold; // ptr to old positions
         double * const xnew; // ptr to new positions
-        int nchanged; // number of differing indices between xold and xnew
+        int nchanged{}; // number of differing indices between xold and xnew
         int * const changedIdx; // first nchanged elements are the differing indices, in order
+        bool accepted{}; // is the step accepted?
 
-        explicit WalkerState(int n_dim):
-            ndim(n_dim), xold(new double[ndim]), xnew(new double[ndim]),
-            nchanged(ndim), changedIdx(new int[ndim])
+        explicit WalkerState(int n_dim): // initialize
+            ndim(n_dim), xold(new double[ndim]),
+            xnew(new double[ndim]), changedIdx(new int[ndim])
         {
             std::fill(xold, xold+ndim, 0.);
             this->initialize();
@@ -33,10 +34,11 @@ namespace mci
         }
 
         void initialize() {
-            // prepare sampling run
+            // prepare sampling run (initial state is "accepted")
             std::copy(xold, xold+ndim, xnew);
             nchanged = ndim;
             std::iota(changedIdx, changedIdx+ndim, 0); // fill 0..ndim-1
+            accepted = true;
         }
 
         void newToOld() { std::copy(xnew, xnew+ndim, xold); } // on acceptance

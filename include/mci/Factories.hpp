@@ -96,6 +96,9 @@ namespace mci
                          All,
                          Vec
     };
+    static constexpr std::initializer_list<MoveType> list_all_MoveType = {MoveType::All,
+                                                                          MoveType::Vec};
+
     // Enumeration of usable symmetric real valued random distribution
     enum class SRRDType {
                          Uniform,
@@ -103,7 +106,11 @@ namespace mci
                          Student,
                          Cauchy
     };
-    static const double DEFAULT_MRT2STEP = 0.05; // step size default to fall-back to
+    static constexpr std::initializer_list<SRRDType> list_all_SRRDType = {SRRDType::Uniform,
+                                                                          SRRDType::Gaussian,
+                                                                          SRRDType::Student,
+                                                                          SRRDType::Cauchy};
+    static constexpr double DEFAULT_MRT2STEP = 0.05; // step size default to fall-back to
 
     // common sanity check
     inline void checkTrialMoveSanity(int ndim, int ntypes = 1, const int typeEnds[] = nullptr)

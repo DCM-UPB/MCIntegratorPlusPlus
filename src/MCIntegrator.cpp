@@ -120,7 +120,7 @@ namespace mci
         if (!_trialMove->hasStepSizes()) { return; } // in the odd case that our mover has no adjustable step sizes
 
         //constants
-        const int MIN_STAT=200;  //minimum statistic: number of M(RT)^2 steps done before deciding if the step must be increased or decreased
+        const int MIN_STAT=200*_trialMove->getNStepSizes(); // minimum statistic: number of M(RT)^2 steps done to decide on step size change
         const int MIN_CONS=5;   //minimum consecutive: minimum number of consecutive loops without need of changing mrt2step
         const double TOLERANCE=0.05;  //tolerance: tolerance for the acceptance rate
         const int MAX_NUM_ATTEMPTS=50;  //maximum number of attempts: maximum number of time that the main loop can be executed
@@ -243,27 +243,23 @@ namespace mci
 
     void MCI::doStepMRT2()
     {
-        // propose a new position x
+        // propose a new position x and get move acceptance
+        _wlkstate.nchanged=0; // better don't rely on this!
         const double moveAcc = _trialMove->computeTrialMove(_wlkstate);
         applyPBC(_wlkstate.xnew);
 
-        // find the corresponding sampling function value
+        // find the corresponding sampling function acceptance
         const double pdfAcc = _pdfcont.computeAcceptance(_wlkstate);
 
         // determine if the proposed x is accepted or not
-        const bool accepted = (_rd(_rgen) <= pdfAcc * moveAcc); /* maybe we should use / */
-        if (accepted) {
-            ++_acc;
-        } else {
-            ++_rej;
-            _wlkstate.nchanged = 0;
-        }
+        _wlkstate.accepted = (_rd(_rgen) <= pdfAcc * moveAcc); /* maybe we should use / */
+        _wlkstate.accepted ? ++_acc : ++_rej; // increase counters
 
         // call callbacks
         this->callBackOnMove();
 
         // set state according to result
-        if (accepted) {
+        if (_wlkstate.accepted) {
             _wlkstate.newToOld();
             _pdfcont.newToOld();
             _trialMove->newToOld();
@@ -281,9 +277,13 @@ namespace mci
         for (int i=0; i<_ndim; ++i) {
             _wlkstate.xnew[i] = _lbound[i] + ( _ubound[i] - _lbound[i] ) * _rd(_rgen);
         }
-        // "accept" move
-        ++_acc;
         _wlkstate.nchanged = _ndim;
+
+        // "accept" move
+        _wlkstate.accepted = true;
+        ++_acc;
+
+        // rest
         this->callBackOnMove(); // call callbacks
         _wlkstate.newToOld(); // to mimic doStepMRT2()
     }
@@ -390,7 +390,7 @@ namespace mci
     void MCI::callBackOnMove()
     {
         for (auto & cback : _cbacks){
-            cback->callBackFunction(_wlkstate.xnew, (_wlkstate.nchanged > 0));
+            cback->callBackFunction(_wlkstate);
         }
     }
 

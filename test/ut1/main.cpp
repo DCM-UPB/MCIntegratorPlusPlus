@@ -102,17 +102,33 @@ void assertAccuFinalized(const AccumulatorInterface &accu, int Nmc)
 }
 
 
-void accumulateData(AccumulatorInterface &accu, int Nmc, int ndim, const double datax[], const bool datacc[])
+void accumulateData(AccumulatorInterface &accu, int Nmc, int ndim, const double datax[],
+                    const bool datacc[], const int nchanged[], const int changedIdx[])
 {   // simulated MC observable accumulation
-    int changedIdx[ndim];
-    std::iota(changedIdx, changedIdx+ndim, 0); // fill with all indices
+    WalkerState wlk(ndim);
     for (int i=0; i<Nmc; ++i) {
-        accu.accumulate(datax+i*ndim, datacc[i] ? ndim : 0, changedIdx);
+        std::copy(datax+i*ndim, datax+(i+1)*ndim, wlk.xnew);
+        wlk.nchanged = nchanged[i];
+        std::copy(changedIdx+i*ndim, changedIdx+(i+1)*ndim, wlk.changedIdx);
+        wlk.accepted = datacc[i];
+        /*
+        std::cout << "Step " << i << ":" << std::endl;
+        std::cout << "accepted: " << wlk.accepted << ", nchanged: " << wlk.nchanged << std::endl;
+        std::cout << "changedIdx: ";
+        for (int j=0; j<ndim; ++j) { std::cout << wlk.changedIdx[j] << " "; }
+        std::cout << std::endl << "xnew: ";
+        for (int j=0; j<ndim; ++j) {
+            std::cout << wlk.xnew[j] << " ";
+        }
+        std::cout << std::endl;
+        */
+        accu.accumulate(wlk);
     }
     accu.finalize();
 }
 
-void checkAccumulator(AccumulatorInterface &accu, int Nmc, int ndim, const double datax[], const bool datacc[],
+void checkAccumulator(AccumulatorInterface &accu, int Nmc, int ndim, const double datax[],
+                      const bool datacc[], const int nchanged[], const int changedIdx[],
                       double tol /* tolerance for avg */, bool verbose = false /* to enable printout */)
 {
     // we expect walker-dim == obs-dim
@@ -129,7 +145,7 @@ void checkAccumulator(AccumulatorInterface &accu, int Nmc, int ndim, const doubl
 
     // accumulate the data in pseudo MC loop
     double storedData[accu.getNData()]; // to store away obs data
-    accumulateData(accu, Nmc, ndim, datax, datacc);
+    accumulateData(accu, Nmc, ndim, datax, datacc, nchanged, changedIdx);
     assertAccuFinalized(accu, Nmc);
 
     // copy the stored data
@@ -139,7 +155,7 @@ void checkAccumulator(AccumulatorInterface &accu, int Nmc, int ndim, const doubl
     // now do the same after reset
     accu.reset();
     assertAccuResetted(accu);
-    accumulateData(accu, Nmc, ndim, datax, datacc);
+    accumulateData(accu, Nmc, ndim, datax, datacc, nchanged, changedIdx);
     assertArraysEqual(accu.getNData(), storedData, accu.getData()); // check that we get the same result
 
     // now do the same after reallocation
@@ -148,7 +164,7 @@ void checkAccumulator(AccumulatorInterface &accu, int Nmc, int ndim, const doubl
     accu.allocate(Nmc);
     assertAccuAllocated(accu, Nmc);
     accu.allocate(Nmc); // do it twice on purpose
-    accumulateData(accu, Nmc, ndim, datax, datacc);
+    accumulateData(accu, Nmc, ndim, datax, datacc, nchanged, changedIdx);
     assertArraysEqual(accu.getNData(), storedData, accu.getData()); // check that we get the same result
 
     // finally check that average calculated from the data in
@@ -194,9 +210,11 @@ int main(){
     // generate random walk
     double xND[ndata];
     bool accepted[Nmc]; // tells us which steps are new ones
+    int nchanged[Nmc]; // tells us how many indices changed
+    int changedIdx[ndata]; // tells us which indices changed
     srand(1337); // seed standard random engine
-    TestWalk1s testWalk(Nmc, nd, 1.0); // 2-particle walk in 1-dim 1s orbital
-    testWalk.generateWalk(xND, accepted);
+    TestWalk1s testWalk(Nmc, nd, 1.0, 0.5); // 2-particle walk in 1-dim 1s orbital
+    testWalk.generateWalk(xND, accepted, nchanged, changedIdx);
     if (verbose) { cout << testWalk.getAcceptanceRate() << endl; }
 
     // calculate reference averages
@@ -284,7 +302,7 @@ int main(){
 
     for (auto & accuTup : accuList) {
         if (verbose) { cout << endl << "Checking accumulator " << accuTup.second << " ..." << endl; }
-        checkAccumulator(*accuTup.first, Nmc, nd, xND, accepted, SMALL, verbose);
+        checkAccumulator(*accuTup.first, Nmc, nd, xND, accepted, nchanged, changedIdx, SMALL, verbose);
     }
 
     // check that values with same skip level are very equal

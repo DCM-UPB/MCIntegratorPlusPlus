@@ -20,4 +20,9 @@ with valgrind or use `make test` inside the build directory, to run unit tests w
 
 ## Unit Test 4
 
-`ut4/`: Like ut2, but checking with fixed number of findMRT2step/decorrelation steps and fixed blocking technique
+`ut4/`: Like ut2, but checking with fixed number of findMRT2step/decorrelation steps and fixed blocking.
+
+
+## Unit Test 5
+
+`ut5/`: Like ut3, but testing with all the available trial moves (including elementary updates in sampling fun).

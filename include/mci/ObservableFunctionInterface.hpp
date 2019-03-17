@@ -24,7 +24,6 @@ namespace mci
     // };
     //
     // Your class will have a public clone() method returning std::unique_ptr<ObservableFunctionInterface> .
-    // If you want/need it, also create a non-overriding clone() method returning a pointer of type MyObservable.
     class ObservableFunctionInterface: public Clonable<ObservableFunctionInterface>
     {
     protected:

@@ -42,12 +42,20 @@ protected:
         return exp(-wfval);
     }
 
-    bool _generatePosition(const double oldPosition[], double newPosition[])
+    bool _generatePosition(const double oldPosition[], double newPosition[], int * nchanged, int changedIdx[])
     {
         double oldWFVal = _calcWFVal(oldPosition);
 
+        if (nchanged != nullptr) { *nchanged = 0; }
         for (int i=0; i<_ndim; ++i) {
-            newPosition[i] = oldPosition[i] + 2.*_stepSize*(rand()*(1.0 / RAND_MAX) - 0.5);
+            if (rand()*(1.0 / RAND_MAX) <= _changeProb) {
+                newPosition[i] = oldPosition[i] + 2.*_stepSize*(rand()*(1.0 / RAND_MAX) - 0.5);
+                if (changedIdx != nullptr) { changedIdx[*nchanged] = i; }
+                if (nchanged != nullptr) { *nchanged += 1; }
+            }
+            else {
+                newPosition[i] = oldPosition[i];
+            }
         }
         const double newWFVal = _calcWFVal(newPosition);
 
@@ -58,19 +66,28 @@ public:
     int _NMC;
     int _ndim;
     double _stepSize;
+    double _changeProb; // 0..1, probability for single index to change on move
 
-    TestWalk1s(int NMC, int ndim, double stepSize = 0.1):
-        _acc(0), _rej(0), _NMC(NMC), _ndim(ndim), _stepSize(stepSize) {}
+    TestWalk1s(int NMC, int ndim, double stepSize = 0.1, double changeProb = 0.5):
+        _acc(0), _rej(0), _NMC(NMC), _ndim(ndim), _stepSize(stepSize), _changeProb(changeProb)
+    {}
 
-    void generateWalk(double datax[] /*NMC*ndim shape*/, bool datacc[] = nullptr /*if passed (NMC length), remember which steps where new ones*/)
+    void generateWalk(double datax[] /*NMC*ndim length*/,
+                      bool datacc[] = nullptr, /*if passed (NMC length), remember which steps were accepted*/
+                      int nchanged[] = nullptr, /*if passed (NMC length), remember how many indices were changed at each step*/
+                      int changedIdx[] = nullptr /*if passed (NMC*ndim length), remember which indices were changed*/
+                      )
+
     {
         _acc = 0;
         _rej = 0;
         for (int j=0; j<_ndim; ++j) { datax[j] = rand()*(1.0 / RAND_MAX) - 0.5; } // set initial pos in [-0.5, 0.5)
         if (datacc != nullptr) { datacc[0] = true; }
+        if (nchanged != nullptr) { nchanged[0] = _ndim; }
+        if (changedIdx != nullptr) { std::iota(changedIdx, changedIdx+_ndim, 0); } // fill 0..ndim-1 on first step
 
         for (int i=1; i<_NMC; ++i) {
-            const bool accepted = _generatePosition(datax+(i-1)*_ndim, datax+i*_ndim);
+            const bool accepted = _generatePosition(datax+(i-1)*_ndim, datax+i*_ndim, nchanged+i, changedIdx+i*_ndim);
             if (accepted) {
                 ++_acc;
             } else {

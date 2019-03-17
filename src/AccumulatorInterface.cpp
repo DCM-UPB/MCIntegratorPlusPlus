@@ -47,7 +47,7 @@ namespace mci
     {
         if (_stepidx >= _nsteps) { throw std::runtime_error("[AccumulatorInterface::accumulate] Number of calls to accumulate exceed the allocation."); }
 
-        if (_nchanged<_xndim && wlk.nchanged>0) { // we need to record changes
+        if (_nchanged<_xndim && wlk.accepted) { // we need to record changes
             if (_flag_updobs && wlk.nchanged<_xndim) { // track changes by index
                 for (int i=0; i<wlk.nchanged; ++i) { // if nchange>0 (accepted step), we need to evaluate obs on next skipidx==0)
                     if (!_flags_xchanged[wlk.changedIdx[i]]) {

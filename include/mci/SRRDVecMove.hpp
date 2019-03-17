@@ -8,7 +8,9 @@
 
 namespace mci
 {
-    // Generic single-vector move (instantiations for standard distributions at the end of file)
+    // Generic single-vector move template. For more information about the template aspect,
+    // see SRRDAllMove.hpp. By including this header you automatically "use" instantiations
+    // for types that have builtin support (see end of file).
     //
     // Use this if your input x consists of vectors of length _veclen and you want to move a
     // random one of them on each step. Just use veclen=1, if you want single-index moves.

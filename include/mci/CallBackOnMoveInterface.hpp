@@ -2,10 +2,14 @@
 #define MCI_CALLBACKONMOVEINTERFACE_HPP
 
 #include "mci/Clonable.hpp"
+#include "mci/WalkerState.hpp"
 
 namespace mci
 {
-    // Base class for adding callbacks to MCI. When added to MCI, they will be invoked on every walker move.
+    // Base class for adding callbacks to MCI. When added to MCI, they will be invoked directly
+    // after every walker move & acceptance/rejection. You will get passed the WalkerState struct,
+    // containing old positions, new positions (which might be rejected), which and how many indices
+    // are changed, and finally if the step was accepted.
     //
     // Derive from this and implement the virtual callBackFunction(...) method.
     // You also need to provide a protected _clone method returning a raw pointer of
@@ -17,13 +21,11 @@ namespace mci
     //         return new MyCallback(...); // create a cloned version here
     //     }
     // public:
-    //     void samplingFunction(...) final;
-    //     double getAcceptance(...) const final;
+    //     void callBackFunction(...) final;
     //     ...
     // };
     //
     // Your class will have a public clone() method returning std::unique_ptr<CallBackOnMoveInterface> .
-    // If you want/need it, also create a non-overriding clone() method returning a pointer of type MyCallback.
     class CallBackOnMoveInterface: public Clonable<CallBackOnMoveInterface>
     {
     protected:
@@ -38,9 +40,9 @@ namespace mci
 
         // --- METHODS THAT MUST BE IMPLEMENTED
 
-        // Call-back function, called if a move is accepted by the MCI Integrator
-        virtual void callBackFunction(const double in[], bool flag_observation) = 0;
-        //                                   ^walker position
+        // Call-back function, called by the MCI Integrator at every step
+        virtual void callBackFunction(const WalkerState &wlkstate) = 0;
+        //                                              ^walker state struct
     };
 }  // namespace mci
 
