@@ -78,7 +78,7 @@ namespace mci
             }
             wlk.nchanged = _ndim; // if we changed all, we don't need to fill changedIdx
 
-            return 1.; // uniform -> no move acceptance factor
+            return 1.; // symmetric distribution -> no move acceptance factor
         }
     };
 

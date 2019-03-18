@@ -16,7 +16,7 @@ int main(){
 
     Gauss pdf(3);
     XSquared obs1d;
-    XYZSquared obs3d;
+    X2 obs3d(3); // effectively an updateable XYZSquared
 
     MCI mci(3);
     mci.setSeed(5649871);
@@ -67,10 +67,11 @@ int main(){
         mci.integrate(NMC*nskip, average, error, true, true);
         for (int i=0; i<mci.getNObsDim(); ++i) {
             //std::cout << "i " << i << ", average[i] " << average[i] << ", error[i] " << error[i] << ", CORRECT_RESULT" << CORRECT_RESULT << std::endl;
-            assert( fabs(average[i]-CORRECT_RESULT) < 2.5*error[i] ); // for all these (and below) tests to pass safely, factor 2 is a bit small
+            assert( fabs(average[i]-CORRECT_RESULT) < 2.*error[i] );
         }
         //std::cout << std::endl;
     }
+
 
     // Now using all/vec moves with all builtin distributions and multiple settings
     for (auto srrd : list_all_SRRDType) { // from Factories.hpp
@@ -97,12 +98,30 @@ int main(){
                 mci.integrate(NMC*nskip, average, error, true, true);
                 for (int i=0; i<mci.getNObsDim(); ++i) {
                     //std::cout << "i " << i << ", average[i] " << average[i] << ", error[i] " << error[i] << ", CORRECT_RESULT" << CORRECT_RESULT << std::endl;
-                    assert( fabs(average[i]-CORRECT_RESULT) < 2.5*error[i] );
+                    assert( fabs(average[i]-CORRECT_RESULT) < 3.*error[i] ); // for all these tests to pass safely, factor 2 is a bit small
                 }
                 //std::cout << std::endl;
             }
         }
     }
+
+
+    // now try to use (as example) a customized student-t move
+    auto customStudentDist = std::student_t_distribution<double>(2);
+    StudentAllMove customMove(mci.getNDim(), 0.05, &customStudentDist);
+    mci.setTrialMove(customMove);
+
+    mci.clearObservables();
+    mci.addObservable(obs1d, 1, 1);
+    mci.addObservable(obs3d, 1, 1);
+    mci.integrate(NMC, average, error, true, true);
+    for (int i=0; i<mci.getNObsDim(); ++i) {
+        std::cout << "i " << i << ", average[i] " << average[i] << ", error[i] " << error[i] << ", CORRECT_RESULT" << CORRECT_RESULT << std::endl;
+        std::cout << "i " << i << ", fabs(average[i]-CORRECT_RESULT) " << fabs(average[i]-CORRECT_RESULT) << ", 2.5*error[i] " << 2.5*error[i] << std::endl;
+        assert( fabs(average[i]-CORRECT_RESULT) < 2.*error[i] );
+    }
+    std::cout << std::endl;
+
 
     return 0;
 }

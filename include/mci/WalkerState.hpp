@@ -6,10 +6,10 @@
 
 namespace mci
 {
-
     // Holds together information about the current walker move,
     // which needs to be passed around a lot. Passing the struct
-    // instead of multiple parameters reduces function call overhead.
+    // instead of multiple parameters is cleaner and seems to
+    // reduce function call overhead.
     struct WalkerState
     {
         const int ndim;

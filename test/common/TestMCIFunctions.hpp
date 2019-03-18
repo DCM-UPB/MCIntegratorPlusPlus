@@ -118,7 +118,6 @@ protected:
 
 public:
     ThreeDimGaussianPDF(): mci::SamplingFunctionInterface(3, 1){}
-    ~ThreeDimGaussianPDF() final= default;
 
     void protoFunction(const double in[], double protovalues[]) final{
         protovalues[0] = (in[0]*in[0]) + (in[1]*in[1]) + (in[2]*in[2]);
@@ -185,7 +184,6 @@ protected:
 
 public:
     Exp1DPDF(): mci::SamplingFunctionInterface(1, 1){}
-    ~Exp1DPDF() final= default;
 
     void protoFunction(const double in[], double protovalues[]) final{
         protovalues[0] = fabs(in[0]);
@@ -233,7 +231,7 @@ public:
     {
         double expf = 0.;
         for (int i=0; i<wlk.nchanged; ++i) {
-            pvnew[wlk.changedIdx[i]] = wlk.xnew[wlk.changedIdx[i]];
+            pvnew[wlk.changedIdx[i]] = fabs(wlk.xnew[wlk.changedIdx[i]]);
             expf += pvnew[wlk.changedIdx[i]] - pvold[wlk.changedIdx[i]];
         }
         return exp(-expf);
@@ -251,7 +249,6 @@ protected:
 
 public:
     XSquared(): mci::ObservableFunctionInterface(3, 1){}
-    ~XSquared() final= default;
 
     void observableFunction(const double in[], double out[]) final{
         out[0] = in[0] * in[0];
@@ -268,7 +265,6 @@ protected:
 
 public:
     XYZSquared(): mci::ObservableFunctionInterface(3, 3){}
-    ~XYZSquared() final= default;
 
     void observableFunction(const double in[], double out[]) final {
         out[0] = in[0] * in[0];
@@ -287,14 +283,14 @@ protected:
 
 public:
     X1D(): mci::ObservableFunctionInterface(1, 1){}
-    ~X1D() final= default;
 
     void observableFunction(const double in[], double out[]) final{
         out[0] = in[0];
     }
 };
 
-class XND: public mci::UpdateableObservableInterface
+
+class XND: public mci::ObservableFunctionInterface
 {
 protected:
     mci::ObservableFunctionInterface * _clone() const final {
@@ -302,8 +298,22 @@ protected:
     }
 
 public:
-    explicit XND(int nd): mci::UpdateableObservableInterface(nd, nd){}
-    ~XND() final= default;
+    explicit XND(int nd): mci::ObservableFunctionInterface(nd, nd){}
+
+    void observableFunction(const double in[], double out[]) final {
+        std::copy(in, in+_ndim, out);
+    }
+};
+
+class UpdateableXND: public mci::UpdateableObservableInterface
+{
+protected:
+    mci::ObservableFunctionInterface * _clone() const final {
+        return new UpdateableXND(_ndim);
+    }
+
+public:
+    explicit UpdateableXND(int nd): mci::UpdateableObservableInterface(nd, nd){}
 
     void observableFunction(const double in[], double out[]) final {
         std::copy(in, in+_ndim, out);
@@ -377,7 +387,7 @@ class X2: public mci::UpdateableObservableInterface
 {
 protected:
     mci::ObservableFunctionInterface * _clone() const final {
-        return new X2Sum(_ndim);
+        return new X2(_ndim);
     }
 
 public:

@@ -103,7 +103,7 @@ namespace mci
             }
             wlk.nchanged = _veclen; // how many indices we changed
 
-            return 1.; // uniform -> no move acceptance factor
+            return 1.; // symmetric distribution -> no move acceptance factor
         }
     };
 

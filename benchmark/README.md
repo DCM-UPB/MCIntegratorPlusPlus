@@ -10,8 +10,9 @@ Currently there are the following benchmarks:
    `bench_estimators`: Benchmark of MCI's estimator implementations, for different settings.
    `bench_integrate_mixed`: Benchmark of MC integration (uni-all-moves) in 3D, for a fast PDF and a small mix of observables.
    `bench_throughput_nmc`: Benchmark of maximal MC sampling throughput in 1D, depending on NMC, using near-zero cost PDF&observable.
-   `bench_throughput_ndim`: Like the previous, but with fixed NMC and varying number of dimensions.
-   `bench_throughput_3G`: Like the first throughput bench, but a single run of 3 Giga-Samples (also a test regarding integer overflow).
+   `bench_throughput_3G`: Like the previous, but a single run of 3 Giga-Samples (also a test regarding integer overflow).
+   `bench_throughput_ndim_all`: Like bench_throughput_nmc, but with fixed NMC and varying number of dimensions, using all-index moves.
+   `bench_throughput_ndim_single`: Like the previous, but using single-index moves.
 
 # Using the benchmarks
 

@@ -65,5 +65,22 @@ int main(){
     //std::cout << "average " << average << ", error " << error << ", CORRECT_RESULT" << CORRECT_RESULT << std::endl;
     assert( fabs(average-CORRECT_RESULT) < 2.*error );
 
+    // The last version implicitly used UncorrelatedEstimator (because blocksize>1). CorrelatedEstimator should yield similar result.
+
+    // first set it by boolean arguments
+    mci.clearObservables();
+    mci.addObservable(obs, 5, 2, false /*flag_equil*/, true /*flag_correlated*/); // forcing correlated estimator, although the other settings would "imply" uncorrelated samples
+    mci.integrate(NMC, &average, &error, false, false);
+    //std::cout << "average " << average << ", error " << error << ", CORRECT_RESULT" << CORRECT_RESULT << std::endl;
+    assert( fabs(average-CORRECT_RESULT) < 2.*error );
+
+    // now via enumerator
+    mci.clearObservables();
+    mci.addObservable(obs, 5, 2, false /*flag_equil*/, EstimatorType::Correlated);
+    mci.integrate(NMC, &average, &error, false, false);
+    //std::cout << "average " << average << ", error " << error << ", CORRECT_RESULT" << CORRECT_RESULT << std::endl;
+    assert( fabs(average-CORRECT_RESULT) < 2.*error );
+
+
     return 0;
 }
