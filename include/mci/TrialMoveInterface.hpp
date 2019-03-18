@@ -6,6 +6,7 @@
 #include "mci/SamplingFunctionContainer.hpp"
 #include "mci/WalkerState.hpp"
 
+#include <functional>
 #include <random>
 
 namespace mci
@@ -76,14 +77,42 @@ namespace mci
     };
 
 
-    // Useful helper for generic derived classes
+    // --- Useful stuff for derived classes
+    // NOTE: Below we consider std::mt19937_64 as the only possible random generator.
+
+
+    // Template to turn non-symmetric distributions generating x>0 into
+    // distributions which are symmetric around 0. This is done by first
+    // generating a x>0 from the given distribution, and then decide on
+    // the sign by a draw from bernoulli-distribution.
+    template < class PRRD > /* should be positive-real-valued stdlib random dist <double>*/
+    struct SymmetrizedPRRD
+    {
+    private:
+        std::bernoulli_distribution bd; // bernoulli dist, yielding true and false with equal probability (default)
+
+    public:
+        PRRD prrd; // externally passed positive-real-valued random distribution
+
+        SymmetrizedPRRD() = default;
+        explicit SymmetrizedPRRD(PRRD myPRRD) { prrd = myPRRD; }
+
+        double operator()(std::mt19937_64 &rgen) { // this overload allows it to be used like other random distributions
+            const double val = prrd(rgen);
+            return (bd(rgen)) ? val : -val; // return + or - val, with same probability
+        }
+    };
+
+
+    // Default initialization template for supported symmetric distributions
     // A helper template used to default-initialize real random distributions from the standard library,
     // to be symmetric around 0 and, if possible, standard deviation 1 (except: interval dists are [-1,1]).
     // The template is made to compile only for the standard-library distributions that allow to have
-    // these properties. If such distributions are used for MC moves, the detailed balance condition
+    // these properties, or other distributions made symmetric by using the SymmetrizedPRRD class.
+    // If symmetric distributions are used for MC moves, the detailed balance condition
     // is fullfilled automatically.
     template < class SRRD >/* should be applicable stdlib random dist <double> */
-    auto createSymNormalRRD() = delete; // cannot be used without specialization
+    inline auto createSymNormalRRD() = delete; // cannot be used without specialization
 
     // Specialization for uniform
     template<>
@@ -107,6 +136,42 @@ namespace mci
     template<>
     inline auto createSymNormalRRD< std::cauchy_distribution<double> >() {
         return std::cauchy_distribution<double>(); // default is symmetric around 0, but mean&stddev undefined
+    }
+
+    // Specialization for symmetrized exponential distribution
+    template<>
+    inline auto createSymNormalRRD< SymmetrizedPRRD< std::exponential_distribution<double> > >() {
+        return SymmetrizedPRRD< std::exponential_distribution<double> >(); // use default (lambda=1.)
+    }
+
+    // Specialization for symmetrized gamma distribution
+    template<>
+    inline auto createSymNormalRRD< SymmetrizedPRRD< std::gamma_distribution<double> > >() {
+        return SymmetrizedPRRD< std::gamma_distribution<double> >(); // use default (alpha=1., beta=1.)
+    }
+
+    // Specialization for symmetrized weibull distribution
+    template<>
+    inline auto createSymNormalRRD< SymmetrizedPRRD< std::weibull_distribution<double> > >() {
+        return SymmetrizedPRRD< std::weibull_distribution<double> >(); // use default (alpha=1., beta=1.)
+    }
+
+    // Specialization for symmetrized lognormal distribution
+    template<>
+    inline auto createSymNormalRRD< SymmetrizedPRRD< std::lognormal_distribution<double> > >() {
+        return SymmetrizedPRRD< std::lognormal_distribution<double> >(); // use default (mu=0., s=1.)
+    }
+
+    // Specialization for symmetrized chi squared distribution
+    template<>
+    inline auto createSymNormalRRD< SymmetrizedPRRD< std::chi_squared_distribution<double> > >() {
+        return SymmetrizedPRRD< std::chi_squared_distribution<double> >(); // use default n=1
+    }
+
+    // Specialization for symmetrized fisher-f distribution
+    template<>
+    inline auto createSymNormalRRD< SymmetrizedPRRD< std::fisher_f_distribution<double> > >() {
+        return SymmetrizedPRRD< std::fisher_f_distribution<double> >(); // use default m=1, n=1
     }
 
 }; // namespace mci

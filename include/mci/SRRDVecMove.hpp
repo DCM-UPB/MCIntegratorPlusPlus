@@ -113,6 +113,14 @@ namespace mci
     using StudentVecMove = SRRDVecMove<std::student_t_distribution<double>>;
     using CauchyVecMove = SRRDVecMove<std::cauchy_distribution<double>>;
 
+    // the following ones use the symmetrized wrapper
+    using ExponentialVecMove = SRRDVecMove< SymmetrizedPRRD< std::exponential_distribution<double> > >;
+    using GammaVecMove = SRRDVecMove< SymmetrizedPRRD< std::gamma_distribution<double> > >;
+    using WeibullVecMove = SRRDVecMove< SymmetrizedPRRD< std::weibull_distribution<double> > >;
+    using LognormalVecMove = SRRDVecMove< SymmetrizedPRRD< std::lognormal_distribution<double> > >;
+    using ChisqVecMove =  SRRDVecMove< SymmetrizedPRRD< std::chi_squared_distribution<double> > >;
+    using FisherVecMove =  SRRDVecMove< SymmetrizedPRRD< std::fisher_f_distribution<double> > >;
+
 } // namespace mci
 
 #endif

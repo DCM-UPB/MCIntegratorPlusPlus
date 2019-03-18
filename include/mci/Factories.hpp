@@ -102,15 +102,30 @@ namespace mci
 
     // Enumeration of usable symmetric real valued random distribution
     enum class SRRDType {
+                         // inherently symmetric distributions
                          Uniform,
                          Gaussian,
                          Student,
-                         Cauchy
+                         Cauchy,
+                         // symmetrized distributions
+                         Exponential,
+                         Gamma,
+                         Weibull,
+                         Lognormal,
+                         Chisq,
+                         Fisher
     };
     static constexpr std::initializer_list<SRRDType> list_all_SRRDType = {SRRDType::Uniform,
                                                                           SRRDType::Gaussian,
                                                                           SRRDType::Student,
-                                                                          SRRDType::Cauchy};
+                                                                          SRRDType::Cauchy,
+                                                                          SRRDType::Exponential,
+                                                                          SRRDType::Gamma,
+                                                                          SRRDType::Weibull,
+                                                                          SRRDType::Lognormal,
+                                                                          SRRDType::Chisq,
+                                                                          SRRDType::Fisher};
+
     static constexpr double DEFAULT_MRT2STEP = 0.05; // step size default to fall-back to
 
     // common sanity check
@@ -140,6 +155,18 @@ namespace mci
             return std::unique_ptr<TrialMoveInterface>( new StudentAllMove(ndim, ntypes, typeEnds, DEFAULT_MRT2STEP) );
         case (SRRDType::Cauchy):
             return std::unique_ptr<TrialMoveInterface>( new CauchyAllMove(ndim, ntypes, typeEnds, DEFAULT_MRT2STEP) );
+        case (SRRDType::Exponential):
+            return std::unique_ptr<TrialMoveInterface>( new ExponentialAllMove(ndim, ntypes, typeEnds, DEFAULT_MRT2STEP) );
+        case (SRRDType::Gamma):
+            return std::unique_ptr<TrialMoveInterface>( new GammaAllMove(ndim, ntypes, typeEnds, DEFAULT_MRT2STEP) );
+        case (SRRDType::Weibull):
+            return std::unique_ptr<TrialMoveInterface>( new WeibullAllMove(ndim, ntypes, typeEnds, DEFAULT_MRT2STEP) );
+        case (SRRDType::Lognormal):
+            return std::unique_ptr<TrialMoveInterface>( new LognormalAllMove(ndim, ntypes, typeEnds, DEFAULT_MRT2STEP) );
+        case (SRRDType::Chisq):
+            return std::unique_ptr<TrialMoveInterface>( new ChisqAllMove(ndim, ntypes, typeEnds, DEFAULT_MRT2STEP) );
+        case (SRRDType::Fisher):
+            return std::unique_ptr<TrialMoveInterface>( new FisherAllMove(ndim, ntypes, typeEnds, DEFAULT_MRT2STEP) );
 
         default:
             throw std::domain_error("[createSRRDAllMove] Unhandled SRRDType enumerator.");
@@ -167,6 +194,18 @@ namespace mci
             return std::unique_ptr<TrialMoveInterface>( new StudentVecMove(nvecs, veclen, ntypes, typeEnds, DEFAULT_MRT2STEP) );
         case (SRRDType::Cauchy):
             return std::unique_ptr<TrialMoveInterface>( new CauchyVecMove(nvecs, veclen, ntypes, typeEnds, DEFAULT_MRT2STEP) );
+        case (SRRDType::Exponential):
+            return std::unique_ptr<TrialMoveInterface>( new ExponentialVecMove(nvecs, veclen, ntypes, typeEnds, DEFAULT_MRT2STEP) );
+        case (SRRDType::Gamma):
+            return std::unique_ptr<TrialMoveInterface>( new GammaVecMove(nvecs, veclen, ntypes, typeEnds, DEFAULT_MRT2STEP) );
+        case (SRRDType::Weibull):
+            return std::unique_ptr<TrialMoveInterface>( new WeibullVecMove(nvecs, veclen, ntypes, typeEnds, DEFAULT_MRT2STEP) );
+        case (SRRDType::Lognormal):
+            return std::unique_ptr<TrialMoveInterface>( new LognormalVecMove(nvecs, veclen, ntypes, typeEnds, DEFAULT_MRT2STEP) );
+        case (SRRDType::Chisq):
+            return std::unique_ptr<TrialMoveInterface>( new ChisqVecMove(nvecs, veclen, ntypes, typeEnds, DEFAULT_MRT2STEP) );
+        case (SRRDType::Fisher):
+            return std::unique_ptr<TrialMoveInterface>( new FisherVecMove(nvecs, veclen, ntypes, typeEnds, DEFAULT_MRT2STEP) );
 
         default:
             throw std::domain_error("[createSRRDVecMove] Unhandled SRRDType enumerator.");

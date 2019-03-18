@@ -9,8 +9,8 @@ namespace mci
 {
     // Generic all-particle move that can be instantiated for any type SSRD for which
     // a specialization of the createSymNormalRRD function exists (e.g. in TrialMoveInterface.hpp).
-    // In any case, SRRD type must be callable and, when called  with passed stdlib
-    // random generator, return a random doubles from a symmetric distribution aroudn 0.
+    // In any case, SRRD type must be callable and, when called with passed stdlib
+    // random generator, return a random double from a symmetric distribution around 0.
     // By including this header you automatically "use" instantiations for types that
     // have builtin support (see end of file).
     //
@@ -87,6 +87,14 @@ namespace mci
     using GaussianAllMove = SRRDAllMove<std::normal_distribution<double>>;
     using StudentAllMove = SRRDAllMove<std::student_t_distribution<double>>;
     using CauchyAllMove = SRRDAllMove<std::cauchy_distribution<double>>;
+
+    // the following ones use the symmetrized wrapper
+    using ExponentialAllMove = SRRDAllMove< SymmetrizedPRRD< std::exponential_distribution<double> > >;
+    using GammaAllMove = SRRDAllMove< SymmetrizedPRRD< std::gamma_distribution<double> > >;
+    using WeibullAllMove = SRRDAllMove< SymmetrizedPRRD< std::weibull_distribution<double> > >;
+    using LognormalAllMove = SRRDAllMove< SymmetrizedPRRD< std::lognormal_distribution<double> > >;
+    using ChisqAllMove = SRRDAllMove< SymmetrizedPRRD< std::chi_squared_distribution<double> > >;
+    using FisherAllMove = SRRDAllMove< SymmetrizedPRRD< std::fisher_f_distribution<double> > >;
 
 } // namespace mci
 
