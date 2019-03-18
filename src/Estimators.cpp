@@ -32,18 +32,16 @@ double calcErrDelta(const int mode, const double err[9])
 
 namespace mci
 {
-    void OneDimUncorrelatedEstimator(const int n, const double x[], double & average, double & error)
+    void OneDimUncorrelatedEstimator(const int64_t n, const double x[], double & average, double & error)
     {
-        using namespace std;
-
-        const double SMALLEST_ERROR=1.e-300;
-
         if ( n < 2) {
             throw std::invalid_argument("[OneDimUncorrelatedEstimator] n must be larger than 1");
         }
 
-        average = accumulate(x, x+n, 0.);
-        error = inner_product(x, x+n, x, 0.);
+        const double SMALLEST_ERROR=1.e-300;
+
+        average = std::accumulate(x, x+n, 0.);
+        error = std::inner_product(x, x+n, x, 0.);
 
         const double norm = 1./n;
         average*=norm;
@@ -56,33 +54,30 @@ namespace mci
     }
 
 
-    void OneDimBlockEstimator(const int n, const double x[], const int nblocks, double & average, double & error)
+    void OneDimBlockEstimator(const int64_t n, const double x[], const int64_t nblocks, double & average, double & error)
     {
-        using namespace std;
-
         if ( n < nblocks) {
             throw std::invalid_argument("[OneDimBlockEstimator] n must be >= nblocks");
         }
 
-        const int nperblock=n/nblocks; // if there is a rest, it is ignored
+        const int64_t nperblock=n/nblocks; // if there is a rest, it is ignored
         const double norm = 1./nperblock;
 
-        double av[nblocks]; // nblocks wont be huge number, so we can just stack-allocate
-        for (int i1=0; i1<nblocks; ++i1) {
-            av[i1] = accumulate(x+i1*nperblock, x+(i1+1)*nperblock, 0.);
+        auto av = new double[nblocks];
+        for (int64_t i1=0; i1<nblocks; ++i1) {
+            av[i1] = std::accumulate(x+i1*nperblock, x+(i1+1)*nperblock, 0.);
             av[i1] *= norm;
         }
 
         OneDimUncorrelatedEstimator(nblocks, av, average, error);
+        delete [] av;
     }
 
 
-    void OneDimCorrelatedEstimator(const int n, const double x[], double & average, double & error)
+    void OneDimCorrelatedEstimator(const int64_t n, const double x[], double & average, double & error)
     {
         const int MIN_BLOCKS=6, MAX_BLOCKS=50;
         const int MAX_PLATEAU_AVERAGE=4;
-
-        using namespace std;
 
         if ( n < MAX_BLOCKS) {
             throw std::invalid_argument("[OneDimCorrelatedEstimator] n must be >= " + std::to_string(MAX_BLOCKS));
@@ -94,12 +89,12 @@ namespace mci
         for (int i1=0; i1<nav; ++i1) {
             const int nblocks=i1+MIN_BLOCKS;
             OneDimBlockEstimator(n, x, nblocks, av[i1], err[i1]);
-            //cout << "Nblocks = " << nblocks << "   average = " << av[i1] << "   error = " << err[i1] << endl;
+            //std::cout << "Nblocks = " << nblocks << "   average = " << av[i1] << "   error = " << err[i1] << std::endl;
         }
 
         const int naccd = nav-2*MAX_PLATEAU_AVERAGE;
         double accdelta[naccd];
-        fill(accdelta, accdelta+naccd, 0.);
+        std::fill(accdelta, accdelta+naccd, 0.);
         for (int i2=MAX_PLATEAU_AVERAGE; i2<naccd+MAX_PLATEAU_AVERAGE; ++i2) {
             for (int i1=1; i1<=MAX_PLATEAU_AVERAGE; ++i1) {
                 accdelta[i2-MAX_PLATEAU_AVERAGE] += calcErrDelta(i1, err+i2-4);
@@ -107,7 +102,7 @@ namespace mci
         }
 
         /*for (int i2=MAX_PLATEAU_AVERAGE; i2<MAX_BLOCKS-MIN_BLOCKS+1-MAX_PLATEAU_AVERAGE; ++i2) {
-          cout << "i = " << i2+MIN_BLOCKS << "   accdelta = " << accdelta[i2-MAX_PLATEAU_AVERAGE] << endl;
+          std::cout << "i = " << i2+MIN_BLOCKS << "   accdelta = " << accdelta[i2-MAX_PLATEAU_AVERAGE] << std::endl;
           }*/
 
         int i_min = 0;
@@ -116,26 +111,24 @@ namespace mci
         }
 
         i_min+=MAX_PLATEAU_AVERAGE;
-        //cout << "The plateau has been detected at nblocks = " << i_min+MIN_BLOCKS << endl;
+        //std::cout << "The plateau has been detected at nblocks = " << i_min+MIN_BLOCKS << std::endl;
         average = 0.2*( av[i_min-2] + av[i_min-1] + av[i_min] + av[i_min+1] + av[i_min+2] );
         error = 0.2*( err[i_min-2] + err[i_min-1] + err[i_min] + err[i_min+1] + err[i_min+2] );
     }
 
 
-    void MultiDimUncorrelatedEstimator(const int n, const int ndim, const double x[], double average[], double error[])
+    void MultiDimUncorrelatedEstimator(const int64_t n, const int ndim, const double x[], double average[], double error[])
     {   // we create an explicit multidimensional implementation, for better efficiency
-        using namespace std;
-
-        const double SMALLEST_ERROR=1.e-300;
-
         if ( n < 2) {
             throw std::invalid_argument("[MultiDimUncorrelatedEstimator] n must be larger than 1");
         }
 
-        fill(average, average+ndim, 0.);
-        fill(error, error+ndim, 0.);
+        const double SMALLEST_ERROR=1.e-300;
 
-        for (int i=0; i<n; ++i) {
+        std::fill(average, average+ndim, 0.);
+        std::fill(error, error+ndim, 0.);
+
+        for (int64_t i=0; i<n; ++i) {
             for (int j=0; j<ndim; ++j) {
                 average[j] += x[i*ndim+j];
                 error[j] += x[i*ndim+j]*x[i*ndim+j];
@@ -156,29 +149,27 @@ namespace mci
     }
 
 
-    void MultiDimBlockEstimator(const int n, const int ndim, const double x[], const int nblocks, double average[], double error[])
+    void MultiDimBlockEstimator(const int64_t n, const int ndim, const double x[], const int64_t nblocks, double average[], double error[])
     {   // we create an explicit multidimensional implementation, for better efficiency
-        using namespace std;
-
         if ( n < nblocks) {
             throw std::invalid_argument("MCI error MultiDimBlockEstimator() : n must be >= nblocks");
         }
 
-        const int nperblock=n/nblocks; // if there is a rest, it is ignored
+        const int64_t nperblock=n/nblocks; // if there is a rest, it is ignored
         const double norm = 1./nperblock;
-        const int ndata = nblocks*ndim;
+        const int64_t ndata = nblocks*ndim;
 
         auto * av = new double[ndata]; // let's play it safe and heap-allocate
-        fill(av, av+ndata, 0.);
+        std::fill(av, av+ndata, 0.);
 
-        for (int i1=0; i1<nblocks; ++i1) {
-            for (int i2=i1*nperblock; i2<(i1+1)*nperblock; ++i2) {
+        for (int64_t i1=0; i1<nblocks; ++i1) {
+            for (int64_t i2=i1*nperblock; i2<(i1+1)*nperblock; ++i2) {
                 for (int j=0; j<ndim; ++j) {
                     av[i1*ndim+j] += x[i2*ndim+j];
                 }
             }
         }
-        for (int i=0; i<ndata; ++i) {
+        for (int64_t i=0; i<ndata; ++i) {
             av[i] *= norm;
         }
 
@@ -188,12 +179,10 @@ namespace mci
     }
 
 
-    void MultiDimCorrelatedEstimator(const int n, const int ndim, const double x[], double average[], double error[])
+    void MultiDimCorrelatedEstimator(const int64_t n, const int ndim, const double x[], double average[], double error[])
     {   // we create an explicit multidimensional implementation, for better efficiency
         const int MIN_BLOCKS=6, MAX_BLOCKS=50;
         const int MAX_PLATEAU_AVERAGE=4;
-
-        using namespace std;
 
         if ( n < MAX_BLOCKS) {
             throw std::invalid_argument("MCI error MultiDimCorrelatedEstimator() : n must be >= " + std::to_string(MAX_BLOCKS));
@@ -210,12 +199,12 @@ namespace mci
         }
 
         double delta[ndim];
-        fill(delta, delta+ndim, 0.);
+        std::fill(delta, delta+ndim, 0.);
 
         const int naccd = nav-2*MAX_PLATEAU_AVERAGE;
         const int naccd_total = naccd*ndim;
         auto * accdelta = new double[naccd_total];
-        fill(accdelta, accdelta+naccd_total, 0.);
+        std::fill(accdelta, accdelta+naccd_total, 0.);
 
         double errh[9]; // unfortunately we need to copy some values for passing
         for (int i2=MAX_PLATEAU_AVERAGE; i2<naccd+MAX_PLATEAU_AVERAGE; ++i2) {
@@ -228,7 +217,7 @@ namespace mci
         }
 
         int i_min[ndim];
-        fill(i_min, i_min+ndim, 0);
+        std::fill(i_min, i_min+ndim, 0);
         for (int i2=1; i2<MAX_BLOCKS-MIN_BLOCKS+1-2*MAX_PLATEAU_AVERAGE; ++i2) {
             for (int j=0; j<ndim; ++j) {
                 if ( fabs( accdelta[i2*ndim+j] ) < fabs( accdelta[i_min[j]*ndim+j] ) ) {
@@ -249,7 +238,7 @@ namespace mci
 
 
     // wrappers for any dim
-    void UncorrelatedEstimator(const int n, const int ndim, const double x[], double average[], double error[])
+    void UncorrelatedEstimator(const int64_t n, const int ndim, const double x[], double average[], double error[])
     {
         if (ndim>1) {
             MultiDimUncorrelatedEstimator(n, ndim, x, average, error);
@@ -258,7 +247,7 @@ namespace mci
         }
     }
 
-    void BlockEstimator(const int n, const int ndim, const double x[], const int nblocks, double average[], double error[])
+    void BlockEstimator(const int64_t n, const int ndim, const double x[], const int64_t nblocks, double average[], double error[])
     {
         if (ndim>1) {
             MultiDimBlockEstimator(n, ndim, x, nblocks, average, error);
@@ -267,7 +256,7 @@ namespace mci
         }
     }
 
-    void CorrelatedEstimator(const int n, const int ndim, const double x[], double average[], double error[])
+    void CorrelatedEstimator(const int64_t n, const int ndim, const double x[], double average[], double error[])
     {
         if (ndim>1) {
             MultiDimCorrelatedEstimator(n, ndim, x, average, error);
@@ -278,7 +267,7 @@ namespace mci
 
 
     // Noop Estimator
-    void NoopEstimator(int/*n*/, int nobs, const double data[], double avg[], double err[]) {
+    void NoopEstimator(int64_t/*n*/, int nobs, const double data[], double avg[], double err[]) {
         std::copy(data, data+nobs, avg);
         std::fill(err, err+nobs, 0.);
     }

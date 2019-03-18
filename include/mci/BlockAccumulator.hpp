@@ -15,10 +15,10 @@ namespace mci
     {
     protected:
         const int _blocksize; // how many samples to accumulate per block
-        int _nblocks; // this will be set properly on allocation
+        int64_t _nblocks; // this will be set properly on allocation
 
         int _bidx; // counter to determine when block is finished
-        int _storeidx; // storage index offset for next write
+        int64_t _storeidx; // storage index offset for next write
 
         // --- storage method to be implemented
         void _allocate() final;
@@ -37,7 +37,7 @@ namespace mci
         ~BlockAccumulator() final { this->_deallocate(); }
 
         int getBlockSize() const { return _blocksize; }
-        int getNStore() const final { return _nblocks; }
+        int64_t getNStore() const final { return _nblocks; }
     };
 }  // namespace mci
 

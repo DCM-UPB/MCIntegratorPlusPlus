@@ -69,7 +69,7 @@ namespace MPIMCI
     }
 
 
-    void integrate(MCI &mci, const int Nmc, double average[], double error[], const bool doFindMRT2Step, const bool doDecorrelation)
+    void integrate(MCI &mci, const int64_t Nmc, double average[], double error[], const bool doFindMRT2Step, const bool doDecorrelation)
     {
         // make sure the user has MPI in the correct state
         int isinit, isfinal;

@@ -57,7 +57,7 @@ namespace mci
 
         // Methods required for auto-calibration
         double getChangeRate() const final { return 1.; } // chance for a single index to change is 1 (because they all change)
-        void getUsedStepSizes(const WalkerState&/*wlk*/, int &nusedSizes, int usedSizeIdx[]) const final
+        void getUsedStepSizes(const WalkerState&/*wlk*/, int &nusedSizes, int/*usedSizeIdx*/[]) const final
         { // we always use all step sizes
             nusedSizes = _ntypes; // we don't need to fill usedSizeIdx then
         }

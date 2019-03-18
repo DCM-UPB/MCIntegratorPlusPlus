@@ -26,7 +26,7 @@ namespace mci
 
         ~SimpleAccumulator() final { this->_deallocate(); }
 
-        int getNStore() const final {
+        int64_t getNStore() const final {
             return _flag_alloc ? 1 : 0; // we don't store old values
         }
     };

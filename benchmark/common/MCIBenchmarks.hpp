@@ -2,6 +2,7 @@
 #define MCI_MCIBENCHMARKS_HPP
 
 #include <cmath>
+#include <cstdint>
 #include <functional>
 #include <iostream>
 #include <stdexcept>
@@ -21,14 +22,16 @@ inline std::pair<double, double> sample_benchmark(const std::function< double ()
         mean += times[i];
     }
     mean /= nruns;
-    for (int i=0; i<nruns; ++i) { err += pow(times[i]-mean, 2); }
-    err /= (nruns-1.)*nruns; // variance of the mean
-    err = sqrt(err); // standard error of the mean
+    if (nruns>1) {
+        for (int i=0; i<nruns; ++i) { err += pow(times[i]-mean, 2); }
+        err /= (nruns-1.)*nruns; // variance of the mean
+        err = sqrt(err); // standard error of the mean
+    }
 
     return std::pair<double, double>(mean, err);
 }
 
-inline double benchmark_MCIntegrate(mci::MCI &mci, const int NMC) {
+inline double benchmark_MCIntegrate(mci::MCI &mci, const int64_t NMC) {
     Timer timer(1.);
     double average[mci.getNObsDim()];
     double error[mci.getNObsDim()];
@@ -40,14 +43,14 @@ inline double benchmark_MCIntegrate(mci::MCI &mci, const int NMC) {
     return timer.elapsed();
 }
 
-inline std::pair<double, double> sample_benchmark_MCIntegrate(mci::MCI & mci, const int nruns, const int NMC) {
+inline std::pair<double, double> sample_benchmark_MCIntegrate(mci::MCI & mci, const int nruns, const int64_t NMC) {
     return sample_benchmark([&] { return benchmark_MCIntegrate(mci, NMC); }, nruns);
 }
 
 
 inline double benchmark_estimators(const double datax[],
                             const int estimatorType /* 1 uncorr-1d, 2 block-1d, 3 corr-1d, 4 uncorr-nd, 5 block-nd, 6 corr-nd */,
-                            const int NMC, const int ndim)
+                            const int64_t NMC, const int ndim)
 {
     const int nblocks = 20;
     Timer timer(1.);
@@ -96,7 +99,7 @@ inline double benchmark_estimators(const double datax[],
 }
 
 
-inline std::pair<double, double> sample_benchmark_estimators(const double datax[], const int estimatorType, const int NMC, const int ndim, const int nruns) {
+inline std::pair<double, double> sample_benchmark_estimators(const double datax[], const int estimatorType, const int64_t NMC, const int ndim, const int nruns) {
     return sample_benchmark([&] { return benchmark_estimators(datax, estimatorType, NMC, ndim); }, nruns);
 }
 

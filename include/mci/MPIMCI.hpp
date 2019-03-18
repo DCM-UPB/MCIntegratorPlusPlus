@@ -5,6 +5,7 @@
 
 #include "mci/MCIntegrator.hpp"
 
+#include <cstdint>
 #include <string>
 
 namespace MPIMCI
@@ -22,7 +23,7 @@ namespace MPIMCI
     void setSeed(mci::MCI &mci, const std::string &filename, int offset = 0); // with offset you can control how many seeds to skip initially
 
     // integrate in parallel and accumulate results
-    void integrate(mci::MCI &mci, int Nmc, double average[], double error[], bool doFindMRT2Step = true, bool doDecorrelation = true);
+    void integrate(mci::MCI &mci, int64_t Nmc, double average[], double error[], bool doFindMRT2Step = true, bool doDecorrelation = true);
 
     // finalize MPI
     void finalize();

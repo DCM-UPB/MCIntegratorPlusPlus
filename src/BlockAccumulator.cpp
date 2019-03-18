@@ -36,7 +36,7 @@ namespace mci
     void BlockAccumulator::_finalize()
     {
         const double normf = 1./_blocksize;
-        for (int i=0; i<_nblocks; ++i) {
+        for (int64_t i=0; i<_nblocks; ++i) {
             for (int j=0; j<_nobs; ++j) {
                 _data[i*_nobs + j] *= normf;
             }

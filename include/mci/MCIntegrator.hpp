@@ -11,6 +11,7 @@
 #include "mci/TrialMoveInterface.hpp"
 #include "mci/WalkerState.hpp"
 
+#include <cstdint>
 #include <fstream>
 #include <memory>
 #include <random>
@@ -43,7 +44,7 @@ namespace mci
 
         // Settings
         int _NfindMRT2Iterations; // how many MRT2 step adjustment iterations to do before integrating
-        int _NdecorrelationSteps; // how many decorrelation steps to do before integrating
+        int64_t _NdecorrelationSteps; // how many decorrelation steps to do before integrating
         double _targetaccrate; // desired acceptance ratio
 
 
@@ -62,8 +63,10 @@ namespace mci
         bool _flagwlkfile; // should write an output file with sampled obs values?
 
         // internal counters
-        int _acc, _rej; // internal counters
-        int _ridx; // running index, which keeps track of the number of MC steps
+        // NOTE: All integers are int, except if they are directly counting MC steps (int64_t then)
+        // or are required to be of a different integer type for external reasons.
+        int64_t _acc, _rej; // internal counters
+        int64_t _ridx; // running index, which keeps track of the number of MC steps
 
 
         // --- Internal methods
@@ -81,9 +84,9 @@ namespace mci
         void doStepRandom();
 
         // sample without taking data
-        void sample(int npoints);
+        void sample(int64_t npoints);
         // fill data with samples and do things like file output, if flagMC (i.e. main sampling)
-        void sample(int npoints, ObservableContainer &container, bool flagMC);
+        void sample(int64_t npoints, ObservableContainer &container, bool flagMC);
 
         // call callbacks
         void callBackOnMove();
@@ -122,7 +125,7 @@ namespace mci
         // how many MRT2 step adjustment iterations to do
         void setNfindMRT2Iterations(int niterations /* -1 == auto, 0 == disabled */){_NfindMRT2Iterations=niterations;}
         // how many decorrelation steps to do
-        void setNdecorrelationSteps(int nsteps /* -1 == auto, 0 == disabled */){_NdecorrelationSteps=nsteps;}
+        void setNdecorrelationSteps(int64_t nsteps /* -1 == auto, 0 == disabled */){_NdecorrelationSteps=nsteps;}
 
 
         // --- Adding objects to MCI
@@ -193,7 +196,7 @@ namespace mci
         // --- Integrate
 
         // Actual integrate implemention. With flags to skip the configured step adjustment/decorrelation.
-        void integrate(int Nmc, double average[], double error[], bool doFindMRT2step = true, bool doDecorrelation = true);
+        void integrate(int64_t Nmc, double average[], double error[], bool doFindMRT2step = true, bool doDecorrelation = true);
     };
 }  // namespace mci
 

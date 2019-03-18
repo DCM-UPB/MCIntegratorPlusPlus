@@ -15,8 +15,8 @@ namespace mci
     class FullAccumulator: public AccumulatorInterface
     {
     protected:
-        int _nstore; // number of allocated storage elements with _nobs length each
-        int _storeidx; // storage index offset for next write
+        int64_t _nstore; // number of allocated storage elements with _nobs length each
+        int64_t _storeidx; // storage index offset for next write
 
         // --- storage method to be implemented
         void _allocate() final;
@@ -32,7 +32,7 @@ namespace mci
 
         ~FullAccumulator() final { this->_deallocate(); }
 
-        int getNStore() const final { return _nstore; }
+        int64_t getNStore() const final { return _nstore; }
     };
 }  // namespace mci
 

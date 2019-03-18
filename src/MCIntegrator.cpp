@@ -19,7 +19,7 @@ namespace mci
 
     //  --- Integrate
 
-    void MCI::integrate(const int Nmc, double average[], double error[], const bool doFindMRT2step, const bool doDecorrelation)
+    void MCI::integrate(const int64_t Nmc, double average[], double error[], const bool doFindMRT2step, const bool doDecorrelation)
     {
         if ( !_pdfcont.empty() ) {
             //find the optimal mrt2 step
@@ -71,7 +71,7 @@ namespace mci
                                             mci::CorrelatedEstimator, true);
                 }
             }
-            const int MIN_NMC=100;
+            const int64_t MIN_NMC=100;
             const int nobsdim = obs_equil.getNObsDim();
             // allocate memory for observables
             obs_equil.allocate(MIN_NMC);
@@ -120,7 +120,7 @@ namespace mci
         if (!_trialMove->hasStepSizes()) { return; } // in the odd case that our mover has no adjustable step sizes
 
         //constants
-        const int MIN_STAT=200*_trialMove->getNStepSizes(); // minimum statistic: number of M(RT)^2 steps done to decide on step size change
+        const int64_t MIN_STAT=200*_trialMove->getNStepSizes(); // minimum statistic: number of M(RT)^2 steps done to decide on step size change
         const int MIN_CONS=5;   //minimum consecutive: minimum number of consecutive loops without need of changing mrt2step
         const double TOLERANCE=0.05;  //tolerance: tolerance for the acceptance rate
         const int MAX_NUM_ATTEMPTS=50;  //maximum number of attempts: maximum number of time that the main loop can be executed
@@ -193,7 +193,7 @@ namespace mci
         }
     }
 
-    void MCI::sample(const int npoints) // sample without taking observables or printing to file
+    void MCI::sample(const int64_t npoints) // sample without taking observables or printing to file
     {
         // Initialize
         this->initializeSampling(nullptr);
@@ -210,7 +210,7 @@ namespace mci
         }
     }
 
-    void MCI::sample(const int npoints, ObservableContainer &container, const bool flagMC)
+    void MCI::sample(const int64_t npoints, ObservableContainer &container, const bool flagMC)
     {
         // Initialize
         this->initializeSampling(&container);

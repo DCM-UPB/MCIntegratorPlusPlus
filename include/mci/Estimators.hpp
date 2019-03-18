@@ -1,16 +1,18 @@
 #ifndef MCI_ESTIMATORS_HPP
 #define MCI_ESTIMATORS_HPP
 
+#include <cstdint>
+
 namespace mci
 {
     // Compute average and standard deviation (error) of a set of data x[N], assuming that they are not correlated
-    void OneDimUncorrelatedEstimator(int n, const double x[], double & average, double & error);
+    void OneDimUncorrelatedEstimator(int64_t n, const double x[], double & average, double & error);
 
     // Compute average and error, using the blocking technique
-    void OneDimBlockEstimator(int n, const double x[], int nblocks, double & average, double & error);
+    void OneDimBlockEstimator(int64_t n, const double x[], int64_t nblocks, double & average, double & error);
 
     // Compute average and error for correlated data, using the blocking technique
-    void OneDimCorrelatedEstimator(int n, const double x[], double & average, double & error);
+    void OneDimCorrelatedEstimator(int64_t n, const double x[], double & average, double & error);
 
 
     // Estimators for multidimensional observable data
@@ -22,22 +24,22 @@ namespace mci
     // The output will be given by arrays: average[ndim] and error[ndim]
 
     // Compute average and standard deviation (error) of a set of data x[N], assuming that they are not correlated
-    void MultiDimUncorrelatedEstimator(int n, int ndim, const double x[], double average[], double error[]);
+    void MultiDimUncorrelatedEstimator(int64_t n, int ndim, const double x[], double average[], double error[]);
 
     // Compute average and error, using the blocking technique
-    void MultiDimBlockEstimator(int n, int ndim, const double x[], int nblocks, double average[], double error[]);
+    void MultiDimBlockEstimator(int64_t n, int ndim, const double x[], int64_t nblocks, double average[], double error[]);
 
     // Compute average and error for correlated data, using the blocking technique
-    void MultiDimCorrelatedEstimator(int n, int ndim, const double x[], double average[], double error[]);
+    void MultiDimCorrelatedEstimator(int64_t n, int ndim, const double x[], double average[], double error[]);
 
 
     // wrappers for any dim
-    void UncorrelatedEstimator(int n, int ndim, const double x[], double average[], double error[]);
-    void BlockEstimator(int n, int ndim, const double x[], int nblocks, double average[], double error[]);
-    void CorrelatedEstimator(int n, int ndim, const double x[], double average[], double error[]);
+    void UncorrelatedEstimator(int64_t n, int ndim, const double x[], double average[], double error[]);
+    void BlockEstimator(int64_t n, int ndim, const double x[], int64_t nblocks, double average[], double error[]);
+    void CorrelatedEstimator(int64_t n, int ndim, const double x[], double average[], double error[]);
 
     // no-op estimator (used when data contains the averages already and error is irrelevant)
-    void NoopEstimator(int/*n*/, int nobs, const double data[], double avg[], double err[]);
+    void NoopEstimator(int64_t/*n*/, int nobs, const double data[], double avg[], double err[]);
 
 } // namespace mci
 

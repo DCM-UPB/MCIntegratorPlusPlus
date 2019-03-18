@@ -32,7 +32,7 @@ namespace mci
     }
 
 
-    void AccumulatorInterface::allocate(const int nsteps)
+    void AccumulatorInterface::allocate(const int64_t nsteps)
     {
         this->deallocate(); // for safety, also calls reset
 

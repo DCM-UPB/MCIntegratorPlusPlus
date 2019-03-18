@@ -13,6 +13,7 @@
 #include "mci/TrialMoveInterface.hpp"
 
 #include <algorithm>
+#include <cstdint>
 #include <functional>
 #include <memory>
 #include <stdexcept>
@@ -65,7 +66,7 @@ namespace mci
         return flag_error? EstimatorType::Uncorrelated : EstimatorType::Noop;
     }
 
-    inline std::function<void(int/*nstore*/, int/*nobs*/, const double[]/*data*/, double[]/*avg*/, double[]/*error*/)> createEstimator(EstimatorType estimType /*from Estimators enumeration*/)
+    inline std::function<void(int64_t/*nstore*/, int/*nobs*/, const double[]/*data*/, double[]/*avg*/, double[]/*error*/)> createEstimator(EstimatorType estimType /*from Estimators enumeration*/)
     {
         switch (estimType) {
         case EstimatorType::Noop:
@@ -82,7 +83,7 @@ namespace mci
         }
     }
 
-    inline std::function<void(int, int, const double[], double[], double[])> createEstimator(const bool flag_correlated, const bool flag_error = true)
+    inline std::function<void(int64_t, int, const double[], double[], double[])> createEstimator(const bool flag_correlated, const bool flag_error = true)
     {
         return createEstimator(selectEstimatorType(flag_correlated, flag_error));
     }

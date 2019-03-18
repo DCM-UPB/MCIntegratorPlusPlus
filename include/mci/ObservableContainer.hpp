@@ -5,6 +5,7 @@
 #include "mci/ObservableFunctionInterface.hpp"
 #include "mci/WalkerState.hpp"
 
+#include <cstdint>
 #include <fstream>
 #include <functional>
 #include <memory>
@@ -49,10 +50,10 @@ namespace mci
         // operational methods
         // add accumulator&estimator for an observable
         void addObservable(std::unique_ptr<AccumulatorInterface> accumulator, // we acquire ownerhsip
-                           const std::function< void (int /*nstored*/, int /*nobs*/, const double [] /*data*/, double [] /*avg*/, double [] /*error*/) > &estimator,
+                           const std::function< void (int64_t /*nstored*/, int /*nobs*/, const double [] /*data*/, double [] /*avg*/, double [] /*error*/) > &estimator,
                            bool needsEquil);
 
-        void allocate(int Nmc); // allocate data memory
+        void allocate(int64_t Nmc); // allocate data memory
         void accumulate(const WalkerState &wlk); // process accumulation for new step, described by WalkerState
         void printObsValues(std::ofstream &file) const; // write last observables values to filestream
         void finalize(); // used after sampling to apply all necessary data normalization

@@ -92,7 +92,7 @@ public:
 
         for (int i=1; i<_NMC; ++i) {
             const bool accepted = _generatePosition(datax+(i-1)*_ndim, datax+i*_ndim,
-                                                    nchanged ? nchanged+i : nullptr, changedIdx ? changedIdx+i*_ndim : nullptr);
+                                                    nchanged != nullptr ? nchanged+i : nullptr, changedIdx != nullptr ? changedIdx+i*_ndim : nullptr);
             if (accepted) {
                 ++_acc;
             } else {

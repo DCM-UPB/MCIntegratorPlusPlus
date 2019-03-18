@@ -6,7 +6,7 @@ namespace mci
 {
 
     void ObservableContainer::addObservable(std::unique_ptr<AccumulatorInterface> accumulator,
-                                            const std::function< void (int, int, const double [], double [], double []) > &estimator,
+                                            const std::function< void (int64_t, int, const double [], double [], double []) > &estimator,
                                             bool needsEquil)
     {
         _nobsdim+=accumulator->getNObs();
@@ -24,7 +24,7 @@ namespace mci
     }
 
 
-    void ObservableContainer::allocate(const int Nmc)
+    void ObservableContainer::allocate(const int64_t Nmc)
     {
         for (auto & el : _cont) {
             el.accu->allocate(Nmc);

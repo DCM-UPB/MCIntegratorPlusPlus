@@ -5,6 +5,7 @@
 #include "mci/UpdateableObservableInterface.hpp"
 #include "mci/WalkerState.hpp"
 
+#include <cstdint>
 #include <memory>
 
 namespace mci
@@ -34,11 +35,11 @@ namespace mci
         bool * const _flags_xchanged; // remembers which x have changed since last obs evaluation (length _xndim)
 
         // variables
-        int _nsteps; // total number of sampling steps (set on allocate() to planned number of calls to accumulateObservables)
+        int64_t _nsteps; // total number of sampling steps (set on allocate() to planned number of calls to accumulateObservables)
         double * _data; // childs use this to store data
 
         int _nchanged{}; // counter of how many x have changed since last obs evaluation
-        int _stepidx{}; // running step index
+        int64_t _stepidx{}; // running step index
         int _skipidx{}; // to determine when to skip accumulation
         bool _flag_final{}; // was finalized called (without throwing error) ?
 
@@ -63,11 +64,11 @@ namespace mci
         int getNDim() const { return _xndim; } // dimension of walkers
 
         int getNSkip() const { return _nskip; }
-        int getNSteps() const { return _nsteps; }
-        int getNAccu() const { return (_nsteps>0) ? 1 + (_nsteps-1)/_nskip : 0; } // actual number of steps to accumulate
-        int getNData() const { return this->getNStore()*_nobs; } // total length of allocated data
+        int64_t getNSteps() const { return _nsteps; }
+        int64_t getNAccu() const { return (_nsteps>0) ? 1 + (_nsteps-1)/_nskip : 0; } // actual number of steps to accumulate
+        int64_t getNData() const { return this->getNStore()*_nobs; } // total length of allocated data
 
-        int getStepIndex() const { return _stepidx; }
+        int64_t getStepIndex() const { return _stepidx; }
         bool isAllocated() const { return (_nsteps>0); }
         bool isClean() const { return (_stepidx == 0); }
         bool isFinalized() const { return _flag_final; }
@@ -79,14 +80,14 @@ namespace mci
         double getObsValue(int i) const { return _obs_values[i]; } // element-wise access to last values
 
         // TO BE IMPLEMENTED BY CHILD
-        virtual int getNStore() const = 0; // get number of allocated data elements with _nobs length each
+        virtual int64_t getNStore() const = 0; // get number of allocated data elements with _nobs length each
 
 
         // methods to call externally, in the following pattern:
         // allocate -> nsteps * accumulate -> finalize -> getData ( -> reset -> accumulate ...) -> delete/deallocate
 
         // call this before a MC run of nsteps length
-        void allocate(int nsteps); // will deallocate any existing allocation
+        void allocate(int64_t nsteps); // will deallocate any existing allocation
 
         // externally call this on every MC step
         void accumulate(const WalkerState &wlk /*step info*/); // process step described by WalkerState
