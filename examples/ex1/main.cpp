@@ -90,7 +90,7 @@ int main() {
     // set the integration range to [-1:3]
     mci.setIRange(-1, 3);
 
-    cout << "irange = [ " << mci.getLBound(0) << " ; " << mci.getUBound(0) << " ]" << endl;
+    cout << "irange = [ " << -1 << " ; " << 3 << " ]" << endl;
 
 
     // initial walker position

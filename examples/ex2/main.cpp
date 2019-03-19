@@ -93,7 +93,7 @@ int main() {
     // set the integration range to [-1:3]
     mci.setIRange(-1., 3.);
 
-    if (myrank == 0) { cout << "irange = [ " << mci.getLBound(0) << " ; " << mci.getUBound(0) << " ]" << endl;}
+    if (myrank == 0) { cout << "irange = [ " << -1 << " ; " << 3 << " ]" << endl;}
 
     // initial walker position
     double initpos[ndim];

@@ -74,10 +74,7 @@ int main(){
     cout << "Initialized a MCI object for an integration in a space with ndim=" << mci.getNDim() << endl;
 
     mci.setIRange(0., 1.);
-    cout << "Integration range: " << mci.getLBound(0) << "   " << mci.getUBound(0) << endl;
-    for (int i=1; i<nd; ++i){
-        cout << "                   " << mci.getLBound(i) << "   " << mci.getUBound(i) << endl;
-    }
+    cout << "Integration range: " << 0 << "   " << 1 << endl;
 
     double r[nd];
     for (int i=0; i<nd; ++i){ r[i]=0.5;}//-1.*i; }

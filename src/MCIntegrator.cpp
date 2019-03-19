@@ -7,6 +7,8 @@
 #include "mci/SRRDAllMove.hpp"
 #include "mci/SRRDVecMove.hpp"
 #include "mci/SimpleAccumulator.hpp"
+#include "mci/UnboundDomain.hpp"
+#include "mci/OrthoPeriodicDomain.hpp"
 
 #include <algorithm>
 #include <functional>
@@ -21,6 +23,10 @@ namespace mci
 
     void MCI::integrate(const int64_t Nmc, double average[], double error[], const bool doFindMRT2step, const bool doDecorrelation)
     {
+        if ( _pdfcont.empty() && !_domain->isFinite() ) {
+            throw std::domain_error("[MCI::integrate] Integrating over an infinite domain requires a sampling function.");
+        }
+
         if ( !_pdfcont.empty() ) {
             //find the optimal mrt2 step
             if (doFindMRT2step) { this->findMRT2Step(); }
@@ -44,9 +50,10 @@ namespace mci
 
             // if we sampled randomly, scale results by volume
             if (_pdfcont.empty()) {
+                const double vol = _domain->getVolume();
                 for (int i=0; i<_obscont.getNObsDim(); ++i) {
-                    average[i] *=_vol;
-                    error[i] *=_vol;
+                    average[i] *= vol;
+                    error[i] *= vol;
                 }
             }
 
@@ -131,7 +138,7 @@ namespace mci
         int counter = 0;  //counter of loops
         while ( ( _NfindMRT2Iterations < 0 && cons_count < MIN_CONS ) || counter < _NfindMRT2Iterations ) {
             const int nsizes = _trialMove->getNStepSizes();
-            const double minboxlen = this->getMinBoxLen();
+            const double maxstepsize = _domain->getMaxStepSize();
 
             //do MIN_STAT M(RT)^2 steps
             this->sample(MIN_STAT);
@@ -152,8 +159,8 @@ namespace mci
 
                 // sanity checks
                 for (int j=0; j<nsizes; ++j) { //mrt2step = Infinity
-                    if ( _trialMove->getStepSize(j) > minboxlen ) {
-                        _trialMove->setStepSize(j, minboxlen);
+                    if ( _trialMove->getStepSize(j) > maxstepsize ) {
+                        _trialMove->setStepSize(j, maxstepsize);
                     }
                 }
                 for (int j=0; j<nsizes; ++j) { //mrt2step ~ 0
@@ -249,9 +256,9 @@ namespace mci
 
         // apply PBC update
         if (_wlkstate.nchanged < _ndim) {
-            this->applyPBCUpdate();
+            _domain->applyDomain(_wlkstate); // selective update
         } else {
-            this->applyPBC(_wlkstate.xnew);
+            _domain->applyDomain(_wlkstate.xnew);
         }
 
         // find the corresponding sampling function acceptance
@@ -280,10 +287,14 @@ namespace mci
     void MCI::doStepRandom()
     {
         // set xnew to new random values (within the irange)
+        // use fixed uniform all-moves on maxStep*[-0.5, 0.5],
+        // which means effectively uncorrelated samples
+        const double stepSize = _domain->getMaxStepSize();
         for (int i=0; i<_ndim; ++i) {
-            _wlkstate.xnew[i] = _lbound[i] + ( _ubound[i] - _lbound[i] ) * _rd(_rgen);
+            _wlkstate.xnew[i] += stepSize*(_rd(_rgen) - 0.5);
         }
         _wlkstate.nchanged = _ndim;
+        _domain->applyDomain(_wlkstate.xnew);
 
         // "accept" move
         _wlkstate.accepted = true;
@@ -292,6 +303,32 @@ namespace mci
         // rest
         this->callBackOnMove(); // call callbacks
         _wlkstate.newToOld(); // to mimic doStepMRT2()
+    }
+
+    // --- Domain
+
+    void MCI::setDomain(const DomainInterface &domain)
+    {
+        if (domain.ndim != _ndim) {
+            throw std::invalid_argument("[MCI::setDomain] Passed domain's number of dimensions is not equal to MCI's number of walkers.");
+        }
+        _domain = domain.clone();
+    }
+
+    void MCI::resetDomain() {
+        _domain = std::unique_ptr<DomainInterface>(new UnboundDomain(_ndim));
+    }
+
+    void MCI::setIRange(const double lbound, const double ubound)
+    {
+        _domain = std::unique_ptr<DomainInterface>(new OrthoPeriodicDomain(_ndim, lbound, ubound));
+        _domain->applyDomain(_wlkstate.xold);
+    }
+
+    void MCI::setIRange(const double lbounds[], const double ubounds[])
+    {
+        _domain = std::unique_ptr<DomainInterface>(new OrthoPeriodicDomain(_ndim, lbounds, ubounds));
+        _domain->applyDomain(_wlkstate.xold);
     }
 
 
@@ -477,96 +514,15 @@ namespace mci
     void MCI::setX(const double x[])
     {
         std::copy(x, x+_ndim, _wlkstate.xold);
-        applyPBC(_wlkstate.xold);
+        _domain->applyDomain(_wlkstate.xold);
     }
 
-    void MCI::newRandomX() // for external user, to initialize xold randomly
+    void MCI::moveX() // for external user, to manually use trialMove on xold
     {
-        //set xold to new random values (within the irange)
-        for (int i=0; i<_ndim; ++i) {
-            _wlkstate.xold[i] = _lbound[i] + ( _ubound[i] - _lbound[i] ) * _rd(_rgen);
-        }
+        _trialMove->computeTrialMove(_wlkstate);
+        _wlkstate.newToOld();
+        _domain->applyDomain(_wlkstate.xold);
     }
-
-
-    // --- Domain
-
-    void MCI::updateVolume()
-    {
-        // Set the integration volume
-        _vol=1.;
-        for (int i=0; i<_ndim; ++i) {
-            _vol = _vol*( _ubound[i] - _lbound[i] );
-        }
-    }
-
-    double MCI::getMinBoxLen() const {
-        // find minimal box length
-        double minboxlen = _ubound[0] - _lbound[0];
-        for (int i=1; i<_ndim; ++i) {
-            if ( (_ubound[i] - _lbound[i]) < minboxlen ) {
-                minboxlen = _ubound[i] - _lbound[i];
-            }
-        }
-        return minboxlen;
-    }
-
-    void MCI::applyPBC(double v[]) const // apply PBC to passed array of len ndim (used for allp-moves)
-    {
-        for (int i=0; i<_ndim; ++i) {
-            while ( v[i] < _lbound[i] ) {
-                v[i] += _ubound[i] - _lbound[i];
-            }
-            while ( v[i] > _ubound[i] ) {
-                v[i] -= _ubound[i] - _lbound[i];
-            }
-        }
-    }
-
-    void MCI::applyPBCUpdate() // apply PBC elementary update to internal walker state
-    {
-        for (int i=0; i<_wlkstate.nchanged; ++i) {
-            const int idx = _wlkstate.changedIdx[i];
-            while ( _wlkstate.xnew[idx] < _lbound[idx] ) {
-                _wlkstate.xnew[idx] += _ubound[idx] - _lbound[idx];
-            }
-            while ( _wlkstate.xnew[idx] > _ubound[idx] ) {
-                _wlkstate.xnew[idx] -= _ubound[idx] - _lbound[idx];
-            }
-        }
-    }
-
-    void MCI::checkIRange() const
-    {
-        for (int i=0; i<_ndim; ++i) {
-            if (_ubound[i]<=_lbound[i]) {
-                throw std::invalid_argument("[MCI::checkIRange] All upper bounds must be truly greater than their corresponding lower bounds.");
-            }
-        }
-    }
-
-    void MCI::setIRange(const double lbound, const double ubound)
-    {
-        // Set irange and apply PBC to the initial walker position _x
-        std::fill(_lbound, _lbound+_ndim, lbound);
-        std::fill(_ubound, _ubound+_ndim, ubound);
-        this->checkIRange(); // throws if ranges invalid
-        this->updateVolume();
-
-        this->applyPBC(_wlkstate.xold);
-    }
-
-    void MCI::setIRange(const double lbound[], const double ubound[])
-    {
-        // Set irange and apply PBC to the initial walker position _x
-        std::copy(lbound, lbound+_ndim, _lbound);
-        std::copy(ubound, ubound+_ndim, _ubound);
-        this->checkIRange(); // throws if ranges invalid
-        this->updateVolume();
-
-        this->applyPBC(_wlkstate.xold);
-    }
-
 
     //   --- Constructor and Destructor
 
@@ -574,15 +530,10 @@ namespace mci
     {
         // initialize random generator
         _rgen = std::mt19937_64(_rdev()); // passed through to trial moves (for seed consistency)
-        _rd = std::uniform_real_distribution<double>(0.,1.); // used for full random moves
+        _rd = std::uniform_real_distribution<double>(0.,1.); // used for acceptance (and random moves without pdf)
 
-        // _lbound and _ubound
-        _lbound = new double[_ndim];
-        _ubound = new double[_ndim];
-        std::fill(_lbound, _lbound+_ndim, -0.1*std::numeric_limits<double>::max()); // play it safe
-        std::fill(_ubound, _ubound+_ndim, 0.1*std::numeric_limits<double>::max());
-        // _vol (will only be relevant when sampling without pdf)
-        _vol=0.;
+        // domain
+        this->resetDomain();
 
         // default trial move (will be used when sampling with pdf)
         this->setTrialMove(MoveType::All);
@@ -600,13 +551,6 @@ namespace mci
         _ridx=0;
         _acc=0;
         _rej=0;
-    }
-
-    MCI::~MCI()
-    {
-        // lbound and ubound
-        delete [] _ubound;
-        delete [] _lbound;
     }
 
 }  // namespace mci
