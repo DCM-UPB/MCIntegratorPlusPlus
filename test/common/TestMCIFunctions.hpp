@@ -120,7 +120,7 @@ public:
     ThreeDimGaussianPDF(): mci::SamplingFunctionInterface(3, 1){}
 
     void protoFunction(const double in[], double protovalues[]) final{
-        protovalues[0] = (in[0]*in[0]) + (in[1]*in[1]) + (in[2]*in[2]);
+        protovalues[0] = in[0]*in[0] + in[1]*in[1] + in[2]*in[2];
     }
 
     double samplingFunction(const double protov[]) const final
@@ -251,7 +251,24 @@ public:
     XSquared(): mci::ObservableFunctionInterface(3, 1){}
 
     void observableFunction(const double in[], double out[]) final{
-        out[0] = in[0] * in[0];
+        out[0] = (in[0]*in[0] + in[1]*in[1] + in[2]*in[2]) / 3.;
+    }
+};
+
+// like XSquared, but multiplied by normalized Gaussian
+class GaussXSquared: public mci::ObservableFunctionInterface
+{
+protected:
+    mci::ObservableFunctionInterface * _clone() const final {
+        return new GaussXSquared();
+    }
+    const double _normf = 1./sqrt(M_PI*M_PI*M_PI) / 3.; // /3. comes from the xsquared
+public:
+    GaussXSquared(): mci::ObservableFunctionInterface(3, 1){}
+
+    void observableFunction(const double in[], double out[]) final{
+        const double x2 = in[0]*in[0] + in[1]*in[1] + in[2]*in[2];
+        out[0] = exp(-x2) * x2 * _normf;
     }
 };
 

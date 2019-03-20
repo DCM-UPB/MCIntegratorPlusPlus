@@ -64,24 +64,11 @@ namespace mci
             SRRDVecMove(nvecs, veclen, 1, nullptr, initStepSize, rdist) // it is safe to use the constructor like this
         {}
 
-        // Methods required for auto-calibration
+        // Method required for auto-calibration
         double getChangeRate() const final { return 1./_nvecs; } // equivalent to _veclen/_ndim
-        void getUsedStepSizes(const WalkerState &wlk, int &nusedSizes, int usedSizeIdx[]) const final
-        { // we know that we changed only a single vector
-            nusedSizes = 1;
-            for (int i=0; i<_ntypes; ++i) {
-                if (wlk.changedIdx[0] < _typeEnds[i]) {
-                    usedSizeIdx[0] = i;
-                    return;
-                }
-            }
-            // this method is not performance-critical, so let's check for this
-            throw std::runtime_error("[SRRDVecMove::getUsedStepSizes] End of method reached, without result.");
-        }
+
 
         void protoFunction(const double/*in*/[], double/*protovalues*/[]) final {} // not needed
-
-        void onAcceptance(const SamplingFunctionContainer&/*pdfcont*/, double/*protoold*/[]) final {} // not needed
 
         double trialMove(WalkerState &wlk, const double/*protoold*/[], double/*protonew*/[]) final
         {

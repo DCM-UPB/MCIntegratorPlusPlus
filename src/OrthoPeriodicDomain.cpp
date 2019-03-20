@@ -38,33 +38,6 @@ namespace mci
     }
 
 
-    double OrthoPeriodicDomain::getMaxStepSize() const
-    {
-        double minboxlen = ubounds[0] - lbounds[0];
-        for (int i=1; i<ndim; ++i) {
-            if ( (ubounds[i] - lbounds[i]) < minboxlen ) {
-                minboxlen = ubounds[i] - lbounds[i];
-            }
-        }
-        return minboxlen;
-    }
-
-    void OrthoPeriodicDomain::getCenter(double centerX[]) const
-    {
-        for (int i=0; i<ndim; ++i) {
-            centerX[i] = 0.5*(lbounds[i] + ubounds[i]);
-        }
-    }
-
-    double OrthoPeriodicDomain::getVolume() const
-    {
-        double vol=1.;
-        for (int i=0; i<ndim; ++i) {
-            vol *= ( ubounds[i] - lbounds[i] );
-        }
-        return vol;
-    }
-
     void OrthoPeriodicDomain::applyDomain(double x[]) const
     {
         for (int i=0; i<ndim; ++i) {
@@ -88,6 +61,29 @@ namespace mci
                 wlk.xnew[idx] -= ubounds[idx] - lbounds[idx];
             }
         }
+    }
+
+    void OrthoPeriodicDomain::scaleToDomain(double normX[]) const
+    {
+        for (int i=0; i<ndim; ++i) {
+            normX[i] = lbounds[i] + normX[i] * (ubounds[i]-lbounds[i]);
+        }
+    }
+
+    void OrthoPeriodicDomain::getSizes(double dimSizes[]) const
+    {
+        for (int i=0; i<ndim; ++i) {
+            dimSizes[i] = ubounds[i] - lbounds[i];
+        }
+    }
+
+    double OrthoPeriodicDomain::getVolume() const
+    {
+        double vol=1.;
+        for (int i=0; i<ndim; ++i) {
+            vol *= ( ubounds[i] - lbounds[i] );
+        }
+        return vol;
     }
 
 } // namespace mci

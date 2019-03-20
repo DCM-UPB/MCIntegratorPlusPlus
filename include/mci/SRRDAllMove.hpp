@@ -55,16 +55,11 @@ namespace mci
             SRRDAllMove(ndim, 1, nullptr, initStepSize, rdist) // it is safe to use the constructor like this
         {}
 
-        // Methods required for auto-calibration
+        // Method required for auto-calibration
         double getChangeRate() const final { return 1.; } // chance for a single index to change is 1 (because they all change)
-        void getUsedStepSizes(const WalkerState&/*wlk*/, int &nusedSizes, int/*usedSizeIdx*/[]) const final
-        { // we always use all step sizes
-            nusedSizes = _ntypes; // we don't need to fill usedSizeIdx then
-        }
+
 
         void protoFunction(const double/*in*/[], double/*protovalues*/[]) final {} // not needed
-
-        void onAcceptance(const SamplingFunctionContainer&/*pdfcont*/, double/*protoold*/[]) final {} // not needed
 
         double trialMove(WalkerState &wlk, const double/*protoold*/[], double/*protonew*/[]) final
         {

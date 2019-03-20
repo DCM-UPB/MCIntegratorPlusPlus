@@ -3,8 +3,8 @@
 
 #include "mci/DomainInterface.hpp"
 
-#include <limits>
 #include <algorithm>
+#include <limits>
 
 namespace mci
 {
@@ -17,16 +17,21 @@ namespace mci
         }
 
     public:
-        UnboundDomain(int n_dim): DomainInterface(n_dim) {}
+        explicit UnboundDomain(int n_dim): DomainInterface(n_dim) {}
+        ~UnboundDomain() final = default;
 
-        // return somewhat safe value that should never be reached anyway
-        double getMaxStepSize() const final { return 0.1*std::numeric_limits<double>::max(); }
-
-        // these are trivial
-        void getCenter(double centerX[]) const final { std::fill(centerX, centerX+ndim, 0.); }
-        double getVolume() const final { return 0.; } // infinite volume -> convention is 0
+        // most are trivial
         void applyDomain(double x[]) const final {} // do nothing
         void applyDomain(WalkerState &wlk) const final {} // still nothing
+
+        void scaleToDomain(double normX[]) const final {
+            for (int i=0; i<ndim; ++i) {
+                normX[i] = -domain_conv::infinity + normX[i]*domain_conv::infinityX2; // we use the infinity conventions
+            }
+        }
+
+        void getSizes(double dimSizes[]) const final { std::fill(dimSizes, dimSizes+ndim, domain_conv::infinityX2); }
+        double getVolume() const final { return domain_conv::infiniteVol; } // infinite volume convention
     };
 
 } // namespace mci

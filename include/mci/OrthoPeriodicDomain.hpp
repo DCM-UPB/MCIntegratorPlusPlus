@@ -23,29 +23,27 @@ namespace mci
         void _checkBounds() const; // make sure the set bounds are reasonable
 
     public:
-        OrthoPeriodicDomain(int n_dim, // use some huge default boundaries, but far less than the boundaries of doubles
-                            double l_bound = -std::numeric_limits<float>::max(),
-                            double u_bound =  std::numeric_limits<float>::max());
+        explicit OrthoPeriodicDomain(int n_dim, // use the infinity conventions
+                                     double l_bound = -domain_conv::infinity,
+                                     double u_bound =  domain_conv::infinity );
 
         OrthoPeriodicDomain(int n_dim, const double l_bounds[], const double u_bounds[]); // use arrays to set bounds
-
-        ~OrthoPeriodicDomain() override;
-
-
-        // return smallest box dimension
-        double getMaxStepSize() const final;
-
-        // center is in the middle between boundaries
-        void getCenter(double centerX[]) const final;
-
-        // volume is product of dimension lengths
-        double getVolume() const final;
+        ~OrthoPeriodicDomain() final;
 
         // apply PBC to full x
         void applyDomain(double x[]) const final;
 
         // apply PBC to updated walkerstate
         void applyDomain(WalkerState &wlk) const final;
+
+        // transform normX in (0,1)^N to true box coordinates
+        void scaleToDomain(double normX[]) const final;
+
+        // fill with ubound - lbound
+        void getSizes(double dimSizes[]) const final;
+
+        // volume is product of dimension lengths
+        double getVolume() const final;
     };
 
 } // namespace mci

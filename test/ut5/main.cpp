@@ -109,7 +109,7 @@ int main(){
     // Now try to (just) set all/vec moves with all possible distributions
     // No need to run integration again, if we trust the standard library
     for (auto srrd : list_all_SRRDType) { // from Factories.hpp
-        for (int veclen=0; veclen<1; ++veclen) { // vector length 0 (all) / 1 (vec)
+        for (int veclen=0; veclen<2; ++veclen) { // vector length 0 (all) / 1 (vec)
             // set move
             //std::cout << "Setting SRRDType " << static_cast<size_t>(srrd) << ", veclen " << veclen << std::endl;
             mci.setTrialMove(srrd, veclen);

@@ -7,6 +7,6 @@ ${VALGRIND} ./check
 for exe in ./ut*.exe; do
     echo
     echo "Running test ${exe}..."
-    ${VALGRIND} ${exe} | exit 1
+    ${VALGRIND} ${exe} || exit 1
     echo
 done

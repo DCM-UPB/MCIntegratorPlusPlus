@@ -48,6 +48,15 @@ namespace mci
         int getNStepSizes() const final { return _ntypes; }
         void setStepSize(int i, double val) final { _stepSizes[i] = val; }
         double getStepSize(int i) const final { return _stepSizes[i]; }
+
+        int getStepSizeIndex(int xidx) const final {
+            for (int i=0; i<_ntypes; ++i) {
+                if (xidx < _typeEnds[i]) {
+                    return i;
+                }
+            }
+            throw std::runtime_error("[TypedMoveInterface::getUsedStepSize] Passed xidx exceeds expected range.");
+        }
     };
 
 } // namespace mci

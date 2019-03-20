@@ -3,7 +3,6 @@
 
 #include "mci/Clonable.hpp"
 #include "mci/ProtoFunctionInterface.hpp"
-#include "mci/SamplingFunctionContainer.hpp"
 #include "mci/WalkerState.hpp"
 
 #include <functional>
@@ -30,9 +29,6 @@ namespace mci
             _rgen = &rgen;
         }
 
-        // Called after step accepted (after newToOld)
-        void callOnAcceptance(const SamplingFunctionContainer &pdfcont) { this->onAcceptance(pdfcont, _protoold); }
-
         // compute move, for details see below
         double computeTrialMove(WalkerState &wlk) { return this->trialMove(wlk, _protoold, _protonew); }
 
@@ -46,10 +42,12 @@ namespace mci
         virtual double getStepSize(int i) const = 0; // get step size with index i
         virtual void setStepSize(int i, double val) = 0; // set step size with index i to val
         virtual double getChangeRate() const = 0; // average probability of a single x index to change on move (e.g. 1./ndim on single-index moves)
-        // tell which step sizes were used in a step described by wlk
-        virtual void getUsedStepSizes(const WalkerState &wlk, int &nusedSizes, int usedSizeIdx[]) const = 0;
+        virtual int getStepSizeIndex(int xidx) const = 0; // return the step size index that corresponds to given position index xidx
 
         void scaleStepSize(int i, double fac) { this->setStepSize(i, this->getStepSize(i)*fac); } // scale step size with index i by fac
+        void scaleStepSizes(double fac) { // scale all step sizes by fac
+            for (int i=0; i<this->getNStepSizes(); ++i) { this->scaleStepSize(i, fac); }
+        }
 
         // Methods used during sampling:
 
@@ -60,12 +58,6 @@ namespace mci
         // the TrialMoveInterface constructor with nproto set to 0 and and implement protoFunction as:
         //     double protoFunction(const double[], double[]) const final {}
 
-        // Callback on acceptance
-        // If your trial move requires knowledge of the previous sampling function value,
-        // you may extract it on acceptance and store it into a designated proto value element.
-        // Otherwise, leave the method empty.
-        // Note: This method will also be called before the first step, to initialize.
-        virtual void onAcceptance(const SamplingFunctionContainer &pdfcont, double protoold[]) = 0; // e.g. protoold[0] = pdfcont.getOldSamplingFunction();
 
         // Propose a trial move
         // For performance reasons, this method does everything related to a new trial move, at once.

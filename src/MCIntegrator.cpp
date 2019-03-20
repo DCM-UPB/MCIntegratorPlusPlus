@@ -4,11 +4,11 @@
 #include "mci/Estimators.hpp"
 #include "mci/Factories.hpp"
 #include "mci/FullAccumulator.hpp"
+#include "mci/OrthoPeriodicDomain.hpp"
 #include "mci/SRRDAllMove.hpp"
 #include "mci/SRRDVecMove.hpp"
 #include "mci/SimpleAccumulator.hpp"
 #include "mci/UnboundDomain.hpp"
-#include "mci/OrthoPeriodicDomain.hpp"
 
 #include <algorithm>
 #include <functional>
@@ -23,11 +23,11 @@ namespace mci
 
     void MCI::integrate(const int64_t Nmc, double average[], double error[], const bool doFindMRT2step, const bool doDecorrelation)
     {
-        if ( _pdfcont.empty() && !_domain->isFinite() ) {
+        if ( !_pdfcont.hasPDF() && !_domain->isFinite() ) {
             throw std::domain_error("[MCI::integrate] Integrating over an infinite domain requires a sampling function.");
         }
 
-        if ( !_pdfcont.empty() ) {
+        if ( _pdfcont.hasPDF() ) {
             //find the optimal mrt2 step
             if (doFindMRT2step) { this->findMRT2Step(); }
             // take care to do the initial decorrelation of the walker
@@ -49,7 +49,7 @@ namespace mci
             _obscont.estimate(average, error);
 
             // if we sampled randomly, scale results by volume
-            if (_pdfcont.empty()) {
+            if (!_pdfcont.hasPDF()) {
                 const double vol = _domain->getVolume();
                 for (int i=0; i<_obscont.getNObsDim(); ++i) {
                     average[i] *= vol;
@@ -65,6 +65,67 @@ namespace mci
 
     // --- "High-level" internal methods
 
+    void MCI::findMRT2Step()
+    {
+        if (!_trialMove->hasStepSizes()) { return; } // in the odd case that our mover has no adjustable step sizes
+
+        //constants
+        const int nStepSizes = _trialMove->getNStepSizes();
+        //const double changeRate = _trialMove->getChangeRate();
+        const int64_t MIN_STAT=200LL*nStepSizes; // minimum statistic: number of M(RT)^2 steps done to decide on step size change
+        const int MIN_CONS=5;   //minimum consecutive: minimum number of consecutive loops without need of changing mrt2step
+        const double TOLERANCE=0.05;  //tolerance: tolerance for the acceptance rate
+        const double SMALLEST_ACCEPTABLE_DOUBLE=std::numeric_limits<float>::min(); // use smallest float value as limit for double
+
+        // fill temporary vectors
+        std::vector<double> dimSizes(_ndim); // vector holding dimension sizes
+        _domain->getSizes(dimSizes.data());
+
+        std::vector<int> stepSizeIdx(_ndim); // mapping from x indices to used step size indices
+        for (int i=0; i<_ndim; ++i) {
+            stepSizeIdx[i] = _trialMove->getStepSizeIndex(i);
+        }
+
+        //initialize index
+        int cons_count = 0;  //number of consecutive loops without need of changing mrt2step
+        int counter = 0;  //counter of loops
+        while ( ( _NfindMRT2Iterations < 0 && cons_count < MIN_CONS ) || counter < _NfindMRT2Iterations ) {
+            //do MIN_STAT M(RT)^2 steps
+            this->sample(MIN_STAT);
+
+            //increase or decrease mrt2step depending on the acceptance rate
+            const double rate = this->getAcceptanceRate();
+            if ( fabs(rate-_targetaccrate) < TOLERANCE ) {
+                ++cons_count; // acceptance was within tolerance
+            } else {
+                cons_count = 0; // we reset consecutive counter
+            }
+
+            const double fact = std::min(2., std::max(0.5, rate/_targetaccrate) );
+            _trialMove->scaleStepSizes(fact); // scale move according to ratio
+
+            // keep large step sizes in check
+            for (int i=0; i<_ndim; ++i) {
+                if (_trialMove->getStepSize(stepSizeIdx[i]) > 0.5*dimSizes[i]) {
+                    _trialMove->setStepSize(stepSizeIdx[i], 0.5*dimSizes[i]);
+                }
+            }
+            // keep small step sizes in check
+            for (int j=0; j<nStepSizes; ++j) { //mrt2step ~ 0
+                if ( _trialMove->getStepSize(j) < SMALLEST_ACCEPTABLE_DOUBLE ) {
+                    _trialMove->setStepSize(j, SMALLEST_ACCEPTABLE_DOUBLE);
+                }
+            }
+
+            ++counter;
+            if ( _NfindMRT2Iterations < 0 && counter >= std::abs(_NfindMRT2Iterations) ) {
+                std::cout << "Warning [MCI::findMRT2Step]: Max number of attempts reached without convergence." << std::endl;
+                break;
+            }
+        }
+    }
+
+
     void MCI::initialDecorrelation()
     {
         if (_NdecorrelationSteps < 0) {
@@ -78,103 +139,47 @@ namespace mci
                                             mci::CorrelatedEstimator, true);
                 }
             }
-            const int64_t MIN_NMC=100;
+            const auto MIN_NMC=static_cast<int64_t>( sqrt(10000.*_ndim) ); // a guess on how many steps we need
             const int nobsdim = obs_equil.getNObsDim();
             // allocate memory for observables
             obs_equil.allocate(MIN_NMC);
 
             //do a first estimate of the observables
             this->sample(MIN_NMC, obs_equil, false);
-            auto * oldestimate = new double[nobsdim];
-            auto * olderrestim = new double[nobsdim];
+            double oldestimate[nobsdim];
+            double olderrestim[nobsdim];
             obs_equil.estimate(oldestimate, olderrestim);
 
             //start a loop which will stop when the observables are stabilized
             bool flag_loop=true;
-            auto * newestimate = new double[nobsdim];
-            auto * newerrestim = new double[nobsdim];
+            double newestimate[nobsdim];
+            double newerrestim[nobsdim];
+            int64_t countNMC = 0;
             while ( flag_loop ) {
                 flag_loop = false;
                 this->sample(MIN_NMC, obs_equil, false);
-                obs_equil.estimate(newestimate, newerrestim);
+                countNMC += MIN_NMC;
 
+                if (countNMC >= std::abs(_NdecorrelationSteps)) {
+                    std::cout << "Warning [MCI::initialDecorrelation]: Max number of MC steps reached without equilibration." << std::endl;
+                    break;
+                }
+
+                obs_equil.estimate(newestimate, newerrestim);
                 for (int i=0; i<nobsdim; ++i) {
                     if ( fabs( oldestimate[i] - newestimate[i] ) > 2*sqrt( olderrestim[i]*olderrestim[i] + newerrestim[i]*newerrestim[i] ) ) {
                         flag_loop=true; // if any difference is too large, continue the loop
                         break; // break the inner for loop
                     }
                 }
-                // swap array pointers
-                std::swap(oldestimate, newestimate);
-                std::swap(olderrestim, newerrestim);
+                // copy new to old
+                std::copy(newestimate, newestimate+nobsdim, oldestimate);
+                std::copy(newerrestim, newerrestim+nobsdim, olderrestim);
             }
-
-            //memory deallocation
-            delete [] newerrestim;
-            delete [] newestimate;
-            delete [] olderrestim;
-            delete [] oldestimate;
-            obs_equil.clear();
+            //memory deallocated automatically
         }
         else if (_NdecorrelationSteps > 0) {
             this->sample(_NdecorrelationSteps);
-        }
-    }
-
-
-    void MCI::findMRT2Step()
-    {
-        if (!_trialMove->hasStepSizes()) { return; } // in the odd case that our mover has no adjustable step sizes
-
-        //constants
-        const int64_t MIN_STAT=200*_trialMove->getNStepSizes(); // minimum statistic: number of M(RT)^2 steps done to decide on step size change
-        const int MIN_CONS=5;   //minimum consecutive: minimum number of consecutive loops without need of changing mrt2step
-        const double TOLERANCE=0.05;  //tolerance: tolerance for the acceptance rate
-        const int MAX_NUM_ATTEMPTS=50;  //maximum number of attempts: maximum number of time that the main loop can be executed
-        const double SMALLEST_ACCEPTABLE_DOUBLE=1.e-50;
-
-        //initialize index
-        int cons_count = 0;  //number of consecutive loops without need of changing mrt2step
-        int counter = 0;  //counter of loops
-        while ( ( _NfindMRT2Iterations < 0 && cons_count < MIN_CONS ) || counter < _NfindMRT2Iterations ) {
-            const int nsizes = _trialMove->getNStepSizes();
-            const double maxstepsize = _domain->getMaxStepSize();
-
-            //do MIN_STAT M(RT)^2 steps
-            this->sample(MIN_STAT);
-
-            //increase or decrease mrt2step depending on the acceptance rate
-            const double rate = this->getAcceptanceRate();
-            if ( fabs(rate-_targetaccrate) < TOLERANCE ) {
-                //mrt2step was ok
-                cons_count++;
-            }
-            else {
-                //need to change mrt2step
-                cons_count=0;
-                const double fact = std::min(2., std::max(0.5, rate/_targetaccrate) );
-                for (int j=0; j<nsizes; ++j) {
-                    _trialMove->scaleStepSize(j, fact);
-                }
-
-                // sanity checks
-                for (int j=0; j<nsizes; ++j) { //mrt2step = Infinity
-                    if ( _trialMove->getStepSize(j) > maxstepsize ) {
-                        _trialMove->setStepSize(j, maxstepsize);
-                    }
-                }
-                for (int j=0; j<nsizes; ++j) { //mrt2step ~ 0
-                    if ( _trialMove->getStepSize(j) < SMALLEST_ACCEPTABLE_DOUBLE ) {
-                        _trialMove->setStepSize(j, SMALLEST_ACCEPTABLE_DOUBLE);
-                    }
-                }
-            }
-            counter++;
-
-            if ( _NfindMRT2Iterations < 0 && counter >= MAX_NUM_ATTEMPTS ) {
-                std::cout << "Warning [MCI::findMRT2Step]: Max number of attempts reached without convergence." << std::endl;
-                break;
-            }
         }
     }
 
@@ -248,10 +253,9 @@ namespace mci
 
     // --- Walking
 
-    void MCI::doStepMRT2()
+    void MCI::doStepMRT2() // do MC step, sampling from _pdfcont
     {
         // propose a new position x and get move acceptance
-        _wlkstate.nchanged=0; // better don't rely on this!
         const double moveAcc = _trialMove->computeTrialMove(_wlkstate);
 
         // apply PBC update
@@ -276,7 +280,6 @@ namespace mci
             _wlkstate.newToOld();
             _pdfcont.newToOld();
             _trialMove->newToOld();
-            _trialMove->callOnAcceptance(_pdfcont); // expects pdfcont swapped already
         } else { // rejected
             _wlkstate.oldToNew();
             _pdfcont.oldToNew();
@@ -284,17 +287,12 @@ namespace mci
         }
     }
 
-    void MCI::doStepRandom()
+    void MCI::doStepRandom() // do MC step, sampling randomly (used when _pdfcont is empty)
     {
-        // set xnew to new random values (within the irange)
-        // use fixed uniform all-moves on maxStep*[-0.5, 0.5],
-        // which means effectively uncorrelated samples
-        const double stepSize = _domain->getMaxStepSize();
-        for (int i=0; i<_ndim; ++i) {
-            _wlkstate.xnew[i] += stepSize*(_rd(_rgen) - 0.5);
-        }
+        // set xnew to new random values within the domain
+        for (int i=0; i<_ndim; ++i) { _wlkstate.xnew[i] = _rd(_rgen); } // between 0 and 1
+        _domain->scaleToDomain(_wlkstate.xnew); // make it proper coordinates
         _wlkstate.nchanged = _ndim;
-        _domain->applyDomain(_wlkstate.xnew);
 
         // "accept" move
         _wlkstate.accepted = true;
@@ -313,10 +311,12 @@ namespace mci
             throw std::invalid_argument("[MCI::setDomain] Passed domain's number of dimensions is not equal to MCI's number of walkers.");
         }
         _domain = domain.clone();
+        _domain->applyDomain(_wlkstate.xold);
     }
 
     void MCI::resetDomain() {
         _domain = std::unique_ptr<DomainInterface>(new UnboundDomain(_ndim));
+        _domain->applyDomain(_wlkstate.xold); // just in case
     }
 
     void MCI::setIRange(const double lbound, const double ubound)
@@ -449,6 +449,7 @@ namespace mci
     void MCI::storeObservables()
     {
         if ( _ridx%_freqobsfile == 0 ) {
+            _obsfile << _ridx;
             _obscont.printObsValues(_obsfile);
             _obsfile << std::endl;
         }
@@ -510,6 +511,11 @@ namespace mci
         }
     }
 
+    void MCI::setX(const int i, const double val)
+    {
+        _wlkstate.xold[i] = val;
+        _domain->applyDomain(_wlkstate.xold);
+    }
 
     void MCI::setX(const double x[])
     {
@@ -519,9 +525,17 @@ namespace mci
 
     void MCI::moveX() // for external user, to manually use trialMove on xold
     {
+        _wlkstate.oldToNew(); // our trial moves expect proper xnew
         _trialMove->computeTrialMove(_wlkstate);
+        _domain->applyDomain(_wlkstate);
+        _wlkstate.newToOld(); // but here we want to set xold
+    }
+
+    void MCI::newRandomX() // also meant for the user
+    {
+        for (int i=0; i<_ndim; ++i) { _wlkstate.xnew[i] = _rd(_rgen); } // draw random numbers between 0 and 1
+        _domain->scaleToDomain(_wlkstate.xnew); // shift/scale to proper domain coordinates
         _wlkstate.newToOld();
-        _domain->applyDomain(_wlkstate.xold);
     }
 
     //   --- Constructor and Destructor
@@ -533,15 +547,15 @@ namespace mci
         _rd = std::uniform_real_distribution<double>(0.,1.); // used for acceptance (and random moves without pdf)
 
         // domain
-        this->resetDomain();
+        this->resetDomain(); // default to unbound domain
 
-        // default trial move (will be used when sampling with pdf)
-        this->setTrialMove(MoveType::All);
+        // trial move (will be used when sampling with pdf)
+        this->setTrialMove(MoveType::All); // default to uniform all-move
 
         // other controls, defaulting to auto behavior
         _targetaccrate=0.5;
-        _NfindMRT2Iterations = -1;
-        _NdecorrelationSteps = -1;
+        _NfindMRT2Iterations = -50; // default to max 50 auto-iterations
+        _NdecorrelationSteps = -10000; // default to max 10k auto-steps
 
         // initialize file flags
         _flagwlkfile=false;

@@ -1,16 +1,16 @@
 #ifndef MCI_MCINTEGRATOR_HPP
 #define MCI_MCINTEGRATOR_HPP
 
-#include "mci/WalkerState.hpp"
-#include "mci/DomainInterface.hpp"
-#include "mci/TrialMoveInterface.hpp"
-#include "mci/SamplingFunctionInterface.hpp"
-#include "mci/SamplingFunctionContainer.hpp"
-#include "mci/ObservableFunctionInterface.hpp"
 #include "mci/AccumulatorInterface.hpp"
-#include "mci/ObservableContainer.hpp"
 #include "mci/CallBackOnMoveInterface.hpp"
+#include "mci/DomainInterface.hpp"
 #include "mci/Factories.hpp"
+#include "mci/ObservableContainer.hpp"
+#include "mci/ObservableFunctionInterface.hpp"
+#include "mci/SamplingFunctionContainer.hpp"
+#include "mci/SamplingFunctionInterface.hpp"
+#include "mci/TrialMoveInterface.hpp"
+#include "mci/WalkerState.hpp"
 
 
 #include <cstdint>
@@ -22,15 +22,17 @@
 
 namespace mci
 {
+    // Main class of the MCI library
+    // Holds all objects and provides the user interface for MC integration.
     class MCI
     {
-    protected:
+    private:
         const int _ndim;  // number of dimensions
 
         // Random
         std::random_device _rdev;
         std::mt19937_64 _rgen;
-        std::uniform_real_distribution<double> _rd;  //after initialization (done in the constructor) can be used with _rd(_rgen)
+        std::uniform_real_distribution<double> _rd; // used to decide on acceptance (and for full random moves)
 
         // Main objects/vectors/containers
         WalkerState _wlkstate; // holds the current walker state (xold/xnew), including move information
@@ -98,21 +100,28 @@ namespace mci
 
         void setSeed(uint_fast64_t seed); // seed internal random number generator
 
-
-
-        void setX(int i, const double val) { _wlkstate.xold[i] = val; }
+        // - manipulate initial position
+        void setX(int i, double val);
         void setX(const double x[]);
-        void moveX();  // use if you want to do a single move manually
+        void moveX(); // use if you want to do a single move manually (uses configured trial move)
+        void newRandomX(); // use to set a new random x within the configured domain
+        void centerX() { _domain->getCenter(_wlkstate.xold); } // reset x back to domain center
 
+        // - manipulate move stepsizes
         void setMRT2Step(double mrt2step); // set all identical
         void setMRT2Step(int i, double mrt2step); // set certain element
         void setMRT2Step(const double mrt2step[]); // set all elements
 
+        // - manipulate automatic routines
         void setTargetAcceptanceRate(double targetaccrate); // acceptance rate target used in findMRT2Step
         // how many MRT2 step adjustment iterations to do
-        void setNfindMRT2Iterations(int niterations /* -1 == auto, 0 == disabled */){_NfindMRT2Iterations=niterations;}
+        void setNfindMRT2Iterations(int niterations /*N<0 -> auto with max abs(N) iterations, 0 -> off, N>0 -> fixed N iterations*/) {
+            _NfindMRT2Iterations=niterations;
+        }
         // how many decorrelation steps to do
-        void setNdecorrelationSteps(int64_t nsteps /* -1 == auto, 0 == disabled */){_NdecorrelationSteps=nsteps;}
+        void setNdecorrelationSteps(int64_t nsteps /*N<0 -> auto with max abs(N) MC steps, 0 -> off, N>0 -> fixed N MC steps */) {
+            _NdecorrelationSteps=nsteps;
+        }
 
 
         // --- Adding objects to MCI

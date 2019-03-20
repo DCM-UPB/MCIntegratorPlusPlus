@@ -28,6 +28,11 @@ namespace mci
     //
     // Now your class has a public clone() method returning std::unique_ptr<SamplingFunctionInterface> .
     //
+    // IMPORTANT: Formally, we require normalized PDFs, i.e. the integral of the PDF over the integration
+    // domain should be 1. However, in our program any (normalizable) PDF behaves as if it was normalized.
+    // This is usually very desirable behavior, but may lead to confusion when this "auto-normalization" is
+    // not expected or desired. So remember: We assume the PDF is either normalized by you or you want the
+    // integral with the normalized version anyway.
     class SamplingFunctionInterface: public ProtoFunctionInterface, public Clonable<SamplingFunctionInterface>
     {
     public:
