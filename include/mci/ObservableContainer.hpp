@@ -44,7 +44,7 @@ namespace mci
         bool empty() const { return _cont.empty(); }
         bool hasObs() const { return !this->empty(); }
 
-        const ObservableFunctionInterface & getObservableFunction(int i) const { return _cont[i].accu->getObservableFunction(); }
+        ObservableFunctionInterface & getObservableFunction(int i) const { return _cont[i].accu->getObservableFunction(); }
         bool getFlagEquil(int i) const { return _cont[i].flag_equil; }
 
         // operational methods

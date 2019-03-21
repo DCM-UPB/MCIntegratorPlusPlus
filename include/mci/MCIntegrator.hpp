@@ -185,16 +185,16 @@ namespace mci
         int getNdecorrelationSteps() const { return _NdecorrelationSteps; }
 
         const DomainInterface & getDomain() const { return *_domain; }
-        const TrialMoveInterface & getTrialMove() const { return *_trialMove; }
+        TrialMoveInterface & getTrialMove() const { return *_trialMove; }
 
-        const SamplingFunctionInterface & getSamplingFunction(int i) const { return _pdfcont.getSamplingFunction(i); }
+        SamplingFunctionInterface & getSamplingFunction(int i) const { return _pdfcont.getSamplingFunction(i); }
         int getNPDF() const { return _pdfcont.getNPDF(); }
 
-        const ObservableFunctionInterface & getObservable(int i) const { return _obscont.getObservableFunction(i); }
+        ObservableFunctionInterface & getObservable(int i) const { return _obscont.getObservableFunction(i); }
         int getNObs() const { return _obscont.getNObs(); }
         int getNObsDim() const { return _obscont.getNObsDim(); }
 
-        const CallBackOnMoveInterface & getCallBackOnMove(int i) const { return *_cbacks[i]; }
+        CallBackOnMoveInterface & getCallBackOnMove(int i) const { return *_cbacks[i]; }
         int getNCallBacks() const { return _cbacks.size(); }
 
         // --- Integrate

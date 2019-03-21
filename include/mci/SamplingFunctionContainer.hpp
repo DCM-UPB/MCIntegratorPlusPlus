@@ -27,7 +27,7 @@ namespace mci
         bool empty() const { return _pdfs.empty(); }
         bool hasPDF() const { return !this->empty(); }
 
-        const SamplingFunctionInterface & getSamplingFunction(int i) const { return *_pdfs[i]; }
+        SamplingFunctionInterface & getSamplingFunction(int i) const { return *_pdfs[i]; }
 
         // operational methods
 

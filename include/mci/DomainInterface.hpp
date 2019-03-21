@@ -48,7 +48,6 @@ namespace mci
         virtual void scaleToDomain(double normX[]/*inout*/) const = 0; // transform positions normX (in (0,1)^N) to actual positions in domain
         virtual void getSizes(double dimSizes[]) const = 0; // lengths of the ndim dimensions (if infinite, use domain_conv::infinityX2)
         virtual double getVolume() const = 0; // volume of the domain (if infinite, return domain_conv::infiniteVol)
-
     };
 
 } // namespace mci

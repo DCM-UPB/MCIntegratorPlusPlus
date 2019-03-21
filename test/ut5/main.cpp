@@ -118,13 +118,24 @@ int main(){
     //std::cout << std::endl;
 
 
-    // now try to use (as example) a customized student-t move
+    // now try to use (as example) customized student-t move and a multi-step move
     auto customStudentDist = std::student_t_distribution<double>(2);
+    auto defaultUniformDist = std::uniform_real_distribution<double>(-1., 1.); // because we can
     StudentAllMove customAllMove(mci.getNDim(), 0.05, &customStudentDist);
-    StudentVecMove customVecMove(mci.getNDim(), 1, 0.05, &customStudentDist);
+    UniformVecMove customVecMove(mci.getNDim(), 1, 0.1, &defaultUniformDist);
+    MultiStepMove customMultiMove(mci.getNDim());
+    customMultiMove.setTrialMove(customVecMove); // add custom sub-move
+    customMultiMove.addSamplingFunction( ExpNDPDF(mci.getNDim()) ); // add exponential sub-pdf (not the same as gauss!)
 
+    const double origTargetRate = mci.getTargetAcceptanceRate();
     for (int i=0; i<2; ++i) {
-        i == 0 ? mci.setTrialMove(customAllMove) : mci.setTrialMove(customVecMove);
+        mci.setTargetAcceptanceRate(origTargetRate);
+        if (i==0) {
+            mci.setTrialMove(customAllMove);
+        } else {
+            mci.setTrialMove(customMultiMove);
+            mci.setTargetAcceptanceRate(0.85); // should be higher for multi-step move
+        }
         const int nskip = floor(1./mci.getTrialMove().getChangeRate());
 
         mci.clearObservables();
@@ -135,6 +146,7 @@ int main(){
             //std::cout << "i " << i << ", average[i] " << average[i] << ", error[i] " << error[i] << ", CORRECT_RESULT" << CORRECT_RESULT << std::endl;
             assert( fabs(average[i]-CORRECT_RESULT) < 3.*error[i] );
         }
+        //std::cout << "acceptance " << mci.getAcceptanceRate() << std::endl;
         //std::cout << std::endl;
     }
 

@@ -8,9 +8,10 @@
 
 #include "mci/Estimators.hpp"
 
+#include "mci/TrialMoveInterface.hpp"
 #include "mci/SRRDAllMove.hpp"
 #include "mci/SRRDVecMove.hpp"
-#include "mci/TrialMoveInterface.hpp"
+#include "mci/MultiStepMove.hpp"
 
 #include <algorithm>
 #include <cstdint>
@@ -95,10 +96,12 @@ namespace mci
     // Enumeration of move type classes
     enum class MoveType {
                          All,
-                         Vec
+                         Vec,
+                         MultiStep
     };
     static constexpr std::initializer_list<MoveType> list_all_MoveType = {MoveType::All,
-                                                                          MoveType::Vec};
+                                                                          MoveType::Vec,
+                                                                          MoveType::MultiStep};
 
     // Enumeration of usable symmetric real valued random distribution
     enum class SRRDType {
@@ -220,6 +223,8 @@ namespace mci
             return createSRRDAllMove(SRRDType::Uniform, ndim);
         case (MoveType::Vec):
             return createSRRDVecMove(SRRDType::Uniform, ndim); // default to single index moves
+        case (MoveType::MultiStep):
+            return std::unique_ptr<TrialMoveInterface>( new MultiStepMove(ndim) ); // contains no pdf per default, so that should be set before use
 
         default:
             throw std::domain_error("[createMoveDefault] Unhandled MoveType enumerator.");

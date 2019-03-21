@@ -57,7 +57,7 @@ namespace mci
         AccumulatorInterface(std::unique_ptr<ObservableFunctionInterface> obs, int nskip);
         virtual ~AccumulatorInterface();
 
-        const ObservableFunctionInterface & getObservableFunction() const { return *_obs; } // acquire raw read-only ref
+        ObservableFunctionInterface & getObservableFunction() const { return *_obs; } // acquire raw read-only ref
 
         // Getters
         int getNObs() const { return _nobs; } // dimension of observable

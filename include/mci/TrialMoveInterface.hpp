@@ -5,7 +5,6 @@
 #include "mci/ProtoFunctionInterface.hpp"
 #include "mci/WalkerState.hpp"
 
-#include <functional>
 #include <random>
 
 namespace mci
@@ -56,7 +55,7 @@ namespace mci
         // calculation of your trial move acceptance factor, by storing two sets of temporaries (new/old).
         // For details, see ProtoFunctionInterface.hpp. If you don't need that, in your constructor call
         // the TrialMoveInterface constructor with nproto set to 0 and and implement protoFunction as:
-        //     double protoFunction(const double[], double[]) const final {}
+        //     void protoFunction(const double[], double[]) final {}
 
 
         // Propose a trial move
