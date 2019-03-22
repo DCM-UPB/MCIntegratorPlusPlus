@@ -75,18 +75,19 @@ namespace mci
         // prepare new sampling run
         void initializeSampling(ObservableContainer * obsCont /*optional*/);
 
+        // call callbacks
+        void callBackOnMove(bool flag_obs/*are we sampling observables?*/);
+
         // if there is a pdf, performs move and decides acc/rej
-        void doStepMRT2();
+        void doStepMRT2(bool flag_obs); // passes flag_obs to callBackOnMove
         // else we use this to sample randomly (mostly for testing/examples)
-        void doStepRandom();
+        void doStepRandom(bool flag_obs); // same as above
 
         // sample without taking data
         void sample(int64_t npoints);
         // fill data with samples and do things like file output, if flagMC (i.e. main sampling)
         void sample(int64_t npoints, ObservableContainer &container, bool flagMC);
 
-        // call callbacks
-        void callBackOnMove();
 
         // store to file
         void storeObservables();

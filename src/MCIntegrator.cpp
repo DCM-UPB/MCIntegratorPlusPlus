@@ -199,7 +199,7 @@ namespace mci
         _trialMove->initializeProtoValues(_wlkstate.xold); // initialize the trial mover
 
         // init rest
-        this->callBackOnMove(); // first call of the call-back functions
+        this->callBackOnMove(obsCont != nullptr); // first call of the call-back functions
         if (obsCont != nullptr) { // optional passed observable container
             obsCont->reset(); // reset observable accumulators
         }
@@ -214,10 +214,10 @@ namespace mci
         const bool flagpdf = _pdfcont.hasPDF();
         for (_ridx=0; _ridx<npoints; ++_ridx) {
             if (flagpdf) { // use sampling function
-                this->doStepMRT2();
+                this->doStepMRT2(false);
             }
             else { // sample randomly
-                this->doStepRandom();
+                this->doStepRandom(false);
             }
         }
     }
@@ -232,10 +232,10 @@ namespace mci
         for (_ridx=0; _ridx<npoints; ++_ridx) {
             // do MC step
             if (flagpdf) { // use sampling function
-                this->doStepMRT2();
+                this->doStepMRT2(true);
             }
             else { // sample randomly
-                this->doStepRandom();
+                this->doStepRandom(true);
             }
 
             // accumulate obs
@@ -253,7 +253,7 @@ namespace mci
 
     // --- Walking
 
-    void MCI::doStepMRT2() // do MC step, sampling from _pdfcont
+    void MCI::doStepMRT2(const bool flag_obs) // do MC step, sampling from _pdfcont
     {
         // propose a new position x and get move acceptance
         const double moveAcc = _trialMove->computeTrialMove(_wlkstate);
@@ -273,7 +273,7 @@ namespace mci
         _wlkstate.accepted ? ++_acc : ++_rej; // increase counters
 
         // call callbacks
-        this->callBackOnMove();
+        this->callBackOnMove(flag_obs);
 
         // set state according to result
         if (_wlkstate.accepted) {
@@ -287,7 +287,7 @@ namespace mci
         }
     }
 
-    void MCI::doStepRandom() // do MC step, sampling randomly (used when _pdfcont is empty)
+    void MCI::doStepRandom(const bool flag_obs) // do MC step, sampling randomly (used when _pdfcont is empty)
     {
         // set xnew to new random values within the domain
         for (int i=0; i<_ndim; ++i) { _wlkstate.xnew[i] = _rd(_rgen); } // between 0 and 1
@@ -299,7 +299,7 @@ namespace mci
         ++_acc;
 
         // rest
-        this->callBackOnMove(); // call callbacks
+        this->callBackOnMove(flag_obs); // call callbacks
         _wlkstate.newToOld(); // to mimic doStepMRT2()
     }
 
@@ -429,10 +429,10 @@ namespace mci
         _cbacks.emplace_back( std::unique_ptr<CallBackOnMoveInterface>(cback.clone()) ); // we add unique clone
     }
 
-    void MCI::callBackOnMove()
+    void MCI::callBackOnMove(const bool flag_obs)
     {
         for (auto & cback : _cbacks){
-            cback->callBackFunction(_wlkstate);
+            cback->callBackFunction(_wlkstate, flag_obs);
         }
     }
 

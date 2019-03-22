@@ -9,7 +9,8 @@ namespace mci
     // Base class for adding callbacks to MCI. When added to MCI, they will be invoked directly
     // after every walker move & acceptance/rejection. You will get passed the WalkerState struct,
     // containing old positions, new positions (which might be rejected), which and how many indices
-    // are changed, and finally if the step was accepted.
+    // are changed, and finally if the step was accepted. As second argument you get a flag telling
+    // whether observables are to be calculated.
     //
     // Derive from this and implement the virtual callBackFunction(...) method.
     // You also need to provide a protected _clone method returning a raw pointer of
@@ -41,7 +42,7 @@ namespace mci
         // --- METHODS THAT MUST BE IMPLEMENTED
 
         // Call-back function, called by the MCI Integrator at every step
-        virtual void callBackFunction(const WalkerState &wlkstate) = 0;
+        virtual void callBackFunction(const WalkerState &wlkstate, bool flag_obs /*are we sampling observables?*/) = 0;
         //                                              ^walker state struct
     };
 }  // namespace mci
