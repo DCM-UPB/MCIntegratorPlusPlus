@@ -1,6 +1,8 @@
 #ifndef MCI_PROTOFUNCTIONINTERFACE_HPP
 #define MCI_PROTOFUNCTIONINTERFACE_HPP
 
+#include "mci/WalkerState.hpp"
+
 namespace mci
 {
     // Base class for all proto functions
@@ -19,8 +21,11 @@ namespace mci
     // If you have own proto-value like data and for some reason don't want to store them in the
     // protovalue arrays, please implement the protected method _newToOld and copy your new data
     // to your old data. This makes sure the old values are initialized at the first step and
-    // copied on newToOld. Update your custom data in protoFunction and in the derived interface's
-    // selective updating methods.
+    // copied on newToOld.
+    // If you are using observables that somehow depend on this function and want to update
+    // certain data only on acceptance, do this update in _newToOld, using the information provided
+    // by the WalkerState object. Other custom data (that is required on every pdf evaluation)
+    // should be updated in protoFunction and in the derived interface's selective updating methods.
     class ProtoFunctionInterface
     {
     protected:
@@ -34,7 +39,7 @@ namespace mci
 
         // Overwrite this if you have own data to copy on acceptance/rejection.
         // It will be called in the public newToOld()/oldToNew() methods.
-        virtual void _newToOld() {};
+        virtual void _newToOld(const WalkerState &wlk) {};
         virtual void _oldToNew() {};
 
     public:
@@ -48,10 +53,10 @@ namespace mci
         // --- Main operational methods
 
         // initializer for proto values
-        void initializeProtoValues(const double in[]);
+        void initializeProtoValues(const WalkerState &wlk);
 
         // copy new to old protov, call _newToOld()/_oldToNew()
-        void newToOld(); // called on acceptance
+        void newToOld(const WalkerState &wlk); // called on acceptance
         void oldToNew(); // called on rejection
 
         // --- METHOD THAT MUST BE IMPLEMENTED

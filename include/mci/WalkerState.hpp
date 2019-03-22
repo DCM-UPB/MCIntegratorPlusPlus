@@ -20,13 +20,15 @@ namespace mci
         /* NOTE: If nchanged=ndim, changedIdx is allowed to be invalid! You must check for that case (i.e. all-particle moves)!!) */
         int * const changedIdx; // first nchanged elements are the differing indices, in order
         bool accepted{}; // is the step accepted?
+        bool needsObs{}; // are we sampling observables right now? (usually should only be set via construct/initialize)
 
-        explicit WalkerState(int n_dim): // initialize
+    public:
+        explicit WalkerState(int n_dim, bool flag_obs): // initialize
             ndim(n_dim), xold(new double[ndim]),
             xnew(new double[ndim]), changedIdx(new int[ndim])
         {
             std::fill(xold, xold+ndim, 0.);
-            this->initialize();
+            this->initialize(flag_obs);
         }
 
         ~WalkerState() {
@@ -35,12 +37,13 @@ namespace mci
             delete [] xold;
         }
 
-        void initialize() {
+        void initialize(bool flag_obs) {
             // prepare sampling run (initial state is "accepted")
             std::copy(xold, xold+ndim, xnew);
             nchanged = ndim;
             std::iota(changedIdx, changedIdx+ndim, 0); // fill 0..ndim-1
             accepted = true;
+            needsObs = flag_obs;
         }
 
         void newToOld() { std::copy(xnew, xnew+ndim, xold); } // on acceptance

@@ -83,6 +83,12 @@ namespace mci
         }
     }
 
+    void ObservableContainer::pop_back()
+    {
+        _nobsdim -= _cont.back().accu->getNObs();
+        _cont.pop_back();
+    }
+
     void ObservableContainer::clear()
     {
         _cont.clear();

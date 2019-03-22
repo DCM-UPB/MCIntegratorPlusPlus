@@ -38,7 +38,7 @@ namespace mci
             return ret;
         }
 
-        void _newToOld() final {}; // not needed
+        void _newToOld(const WalkerState&/*wlk*/) final {}; // not needed
         void _oldToNew() final {}; // not needed
 
     public:

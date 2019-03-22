@@ -76,12 +76,12 @@ namespace mci
         void initializeSampling(ObservableContainer * obsCont /*optional*/);
 
         // call callbacks
-        void callBackOnMove(bool flag_obs/*are we sampling observables?*/);
+        void callBackOnMove();
 
         // if there is a pdf, performs move and decides acc/rej
-        void doStepMRT2(bool flag_obs); // passes flag_obs to callBackOnMove
+        void doStepMRT2();
         // else we use this to sample randomly (mostly for testing/examples)
-        void doStepRandom(bool flag_obs); // same as above
+        void doStepRandom();
 
         // sample without taking data
         void sample(int64_t npoints);
@@ -156,15 +156,18 @@ namespace mci
             addObservable(obs, blocksize, nskip, blocksize>0, blocksize==1); // safe&easy defaults, appropriate for most cases
         }
         void addObservable(const ObservableFunctionInterface &obs, int blocksize, int nskip, bool flag_equil, EstimatorType estimType /*enum, see Factories-hpp*/);
-        void clearObservables(); // clear
+        void popObservable() { _obscont.pop_back(); } // remove last observable
+        void clearObservables() { _obscont.clear(); } // clear
 
         // Sampling Functions
         void addSamplingFunction(const SamplingFunctionInterface &mcisf);
-        void clearSamplingFunctions();
+        void popSamplingFunction() { _pdfcont.pop_back(); } // remove last pdf
+        void clearSamplingFunctions() { _pdfcont.clear(); }
 
         // Callbacks
         void addCallBack(const CallBackOnMoveInterface &cback);
-        void clearCallBacks();
+        void popCallBack() { _cbacks.pop_back(); }
+        void clearCallBacks() { _cbacks.clear(); }
 
         // enable file printout to given files, with frequency freq
         void storeObservablesOnFile(const std::string &filepath, int freq);

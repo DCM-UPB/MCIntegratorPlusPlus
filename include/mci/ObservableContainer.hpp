@@ -60,6 +60,7 @@ namespace mci
         void estimate(double average[], double error[]) const; // eval estimators on finalized data and return average/error
         void reset(); // obtain clean state, but keep allocation
         void deallocate(); // free data memory
+        void pop_back(); // remove last obs
         void clear(); // clear everything
     };
 }  // namespace mci

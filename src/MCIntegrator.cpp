@@ -188,19 +188,21 @@ namespace mci
 
     void MCI::initializeSampling(ObservableContainer * obsCont)
     {
+        const bool flag_obs = (obsCont != nullptr);
+
         // reset running counters
         _acc = 0;
         _rej = 0;
         _ridx = 0;
 
         // init xnew and all protovalues
-        _wlkstate.initialize();
-        _pdfcont.initializeProtoValues(_wlkstate.xold); // initialize the pdf at x
-        _trialMove->initializeProtoValues(_wlkstate.xold); // initialize the trial mover
+        _wlkstate.initialize(flag_obs);
+        _pdfcont.initializeProtoValues(_wlkstate); // initialize the pdf at x
+        _trialMove->initializeProtoValues(_wlkstate); // initialize the trial mover
 
         // init rest
-        this->callBackOnMove(obsCont != nullptr); // first call of the call-back functions
-        if (obsCont != nullptr) { // optional passed observable container
+        this->callBackOnMove(); // first call of the call-back functions
+        if (flag_obs) {
             obsCont->reset(); // reset observable accumulators
         }
     }
@@ -214,10 +216,10 @@ namespace mci
         const bool flagpdf = _pdfcont.hasPDF();
         for (_ridx=0; _ridx<npoints; ++_ridx) {
             if (flagpdf) { // use sampling function
-                this->doStepMRT2(false);
+                this->doStepMRT2();
             }
             else { // sample randomly
-                this->doStepRandom(false);
+                this->doStepRandom();
             }
         }
     }
@@ -232,10 +234,10 @@ namespace mci
         for (_ridx=0; _ridx<npoints; ++_ridx) {
             // do MC step
             if (flagpdf) { // use sampling function
-                this->doStepMRT2(true);
+                this->doStepMRT2();
             }
             else { // sample randomly
-                this->doStepRandom(true);
+                this->doStepRandom();
             }
 
             // accumulate obs
@@ -253,7 +255,7 @@ namespace mci
 
     // --- Walking
 
-    void MCI::doStepMRT2(const bool flag_obs) // do MC step, sampling from _pdfcont
+    void MCI::doStepMRT2() // do MC step, sampling from _pdfcont
     {
         // propose a new position x and get move acceptance
         const double moveAcc = _trialMove->computeTrialMove(_wlkstate);
@@ -273,21 +275,21 @@ namespace mci
         _wlkstate.accepted ? ++_acc : ++_rej; // increase counters
 
         // call callbacks
-        this->callBackOnMove(flag_obs);
+        this->callBackOnMove();
 
         // set state according to result
         if (_wlkstate.accepted) {
+            _pdfcont.newToOld(_wlkstate);
+            _trialMove->newToOld(_wlkstate);
             _wlkstate.newToOld();
-            _pdfcont.newToOld();
-            _trialMove->newToOld();
         } else { // rejected
-            _wlkstate.oldToNew();
             _pdfcont.oldToNew();
             _trialMove->oldToNew();
+            _wlkstate.oldToNew();
         }
     }
 
-    void MCI::doStepRandom(const bool flag_obs) // do MC step, sampling randomly (used when _pdfcont is empty)
+    void MCI::doStepRandom() // do MC step, sampling randomly (used when _pdfcont is empty)
     {
         // set xnew to new random values within the domain
         for (int i=0; i<_ndim; ++i) { _wlkstate.xnew[i] = _rd(_rgen); } // between 0 and 1
@@ -299,7 +301,7 @@ namespace mci
         ++_acc;
 
         // rest
-        this->callBackOnMove(flag_obs); // call callbacks
+        this->callBackOnMove(); // call callbacks
         _wlkstate.newToOld(); // to mimic doStepMRT2()
     }
 
@@ -367,11 +369,6 @@ namespace mci
 
     // --- Observables
 
-    void MCI::clearObservables()
-    {
-        _obscont.clear();
-    }
-
     void MCI::addObservable(const ObservableFunctionInterface &obs, int blocksize, int nskip, const bool flag_equil, const EstimatorType estimType)
     {
         // sanity
@@ -401,11 +398,6 @@ namespace mci
 
     // --- Sampling functions
 
-    void MCI::clearSamplingFunctions()
-    {
-        _pdfcont.clear();
-    }
-
     void MCI::addSamplingFunction(const SamplingFunctionInterface &mcisf)
     {
         if (mcisf.getNDim() != _ndim) {
@@ -417,10 +409,6 @@ namespace mci
 
     // --- Callbacks
 
-    void MCI::clearCallBacks() {
-        _cbacks.clear();
-    }
-
     void MCI::addCallBack(const CallBackOnMoveInterface &cback)
     {
         if (cback.getNDim() != _ndim) {
@@ -429,10 +417,10 @@ namespace mci
         _cbacks.emplace_back( std::unique_ptr<CallBackOnMoveInterface>(cback.clone()) ); // we add unique clone
     }
 
-    void MCI::callBackOnMove(const bool flag_obs)
+    void MCI::callBackOnMove()
     {
         for (auto & cback : _cbacks){
-            cback->callBackFunction(_wlkstate, flag_obs);
+            cback->callBackFunction(_wlkstate);
         }
     }
 
@@ -540,7 +528,7 @@ namespace mci
 
     //   --- Constructor and Destructor
 
-    MCI::MCI(const int ndim): _ndim(ndim), _wlkstate(_ndim)
+    MCI::MCI(const int ndim): _ndim(ndim), _wlkstate(_ndim, false)
     {
         // initialize random generator
         _rgen = std::mt19937_64(_rdev()); // passed through to trial moves (for seed consistency)

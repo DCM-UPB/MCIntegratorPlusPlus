@@ -105,7 +105,7 @@ void assertAccuFinalized(const AccumulatorInterface &accu, int Nmc)
 void accumulateData(AccumulatorInterface &accu, int Nmc, int ndim, const double datax[],
                     const bool datacc[], const int nchanged[], const int changedIdx[])
 {   // simulated MC observable accumulation
-    WalkerState wlk(ndim);
+    WalkerState wlk(ndim, true);
     for (int i=0; i<Nmc; ++i) {
         std::copy(datax+i*ndim, datax+(i+1)*ndim, wlk.xnew);
         wlk.nchanged = nchanged[i];

@@ -37,15 +37,15 @@ namespace mci
         }
     }
 
-    void ProtoFunctionInterface::initializeProtoValues(const double in[]) {
-        this->protoFunction(in, _protonew);
-        this->newToOld();
+    void ProtoFunctionInterface::initializeProtoValues(const WalkerState &wlk) {
+        this->protoFunction(wlk.xold, _protonew);
+        this->newToOld(wlk);
     }
 
-    void ProtoFunctionInterface::newToOld()
+    void ProtoFunctionInterface::newToOld(const WalkerState &wlk)
     {   // copy new values to old
         std::copy(_protonew, _protonew+_nproto, _protoold);
-        this->_newToOld();
+        this->_newToOld(wlk);
     }
 
     void ProtoFunctionInterface::oldToNew()

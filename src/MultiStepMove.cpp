@@ -7,12 +7,15 @@ namespace mci
 
     double MultiStepMove::trialMove(WalkerState &wlk, const double/*pold*/[], double/*pnew*/[]) // perform mini-MC
     {
+        const bool orig_needsObs = wlk.needsObs; // store original need Obs flag
         std::copy(wlk.xold, wlk.xold+_ndim, _origX); // make backup of xold
-        _pdfcont.initializeProtoValues(wlk.xold); // initialize the sub-pdf at x
+        wlk.needsObs = false; // we don't do obs here
+
+        _pdfcont.initializeProtoValues(wlk); // initialize the sub-pdf at x
         const double oldPDF = _pdfcont.getOldSamplingFunction(); // remember this for later (faster)
 
-        _trialMove->bindRGen(*_rgen); // we bind rgen late
-        _trialMove->initializeProtoValues(wlk.xold); // initialize the sub-move
+        _trialMove->bindRGen(*_rgen); // we bind rgen here
+        _trialMove->initializeProtoValues(wlk); // initialize the sub-move
 
         for (int i=0; i<_nsteps; ++i) {
             // propose a new position x and get move acceptance
@@ -23,21 +26,22 @@ namespace mci
             wlk.accepted = ( _rd(*_rgen) <= pdfAcc*moveAcc );
             // set state according to result
             if (wlk.accepted) {
+                _pdfcont.newToOld(wlk);
+                _trialMove->newToOld(wlk);
                 wlk.newToOld();
-                _pdfcont.newToOld();
-                _trialMove->newToOld();
             } else { // rejected
-                wlk.oldToNew();
                 _pdfcont.oldToNew();
                 _trialMove->oldToNew();
+                wlk.oldToNew();
             }
         }
         const double newPDF = _pdfcont.getOldSamplingFunction(); // compute final PDF value
 
         // reset wlk to proper state
-        wlk.accepted = false; // reset this, to be sure
-        std::copy(_origX, _origX+_ndim, wlk.xold); // set xold to original xold
+        std::copy(_origX, _origX+_ndim, wlk.xold); // set xold to original xold (xnew stays as is)
         wlk.nchanged = _ndim; // most indices should have changed, so let's treat this like an all-move
+        wlk.needsObs = orig_needsObs;
+        wlk.accepted = false; // reset this, to be sure
 
         // return move acceptance (inverse of "normal" acceptace), for detailed balance
         return oldPDF/newPDF;

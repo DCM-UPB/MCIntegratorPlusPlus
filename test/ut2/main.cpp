@@ -82,8 +82,8 @@ int main(){
     assert( fabs(average-CORRECT_RESULT) < 2.*error );
 
     // and now also without sampling function
-    mci.clearSamplingFunctions();
-    mci.clearObservables();
+    mci.popSamplingFunction();
+    mci.popObservable();
     GaussXSquared obs_nopdf; // is XSquared multiplied by Gaussian
     mci.addObservable(obs_nopdf, 1, 1, false, false); // don't use correlated estimator (but would work as well)
     mci.integrate(NMC, &average, &error, false, false);

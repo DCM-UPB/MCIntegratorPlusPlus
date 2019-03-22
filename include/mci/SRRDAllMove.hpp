@@ -33,7 +33,7 @@ namespace mci
         }
 
         // not used, make final for that extra performance
-        void _newToOld() final {}
+        void _newToOld(const WalkerState&/*wlk*/) final {}
         void _oldToNew() final {}
 
     public:
