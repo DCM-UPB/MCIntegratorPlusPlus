@@ -11,8 +11,7 @@ using namespace std;
 using namespace mci;
 
 int main(){
-    const int NMC_pre = 10000; // used for the initial two tests
-    const int NMC = 25000; // used for all-moves, multipled by 1/changeRate for non-all-moves
+    const int NMC = 32768; // used for all-moves, multipled by 1/changeRate for non-all-moves
     const double CORRECT_RESULT = 0.5;
 
     Gauss pdf(3);
@@ -30,26 +29,15 @@ int main(){
 
     // the integral should provide 0.5 as answer!
 
-    double x[3];
-    x[0] = 5.; x[1] = -5.; x[2] = 10.;
-
     double average[4];
     double error[4];
 
     // Starting with default all-particle moves
 
-    // this integral should give a wrong answer
-    mci.setX(x);
-    mci.integrate(NMC_pre, average, error, false, false);
-    for (int i=0; i<mci.getNObsDim(); ++i) {
-        //std::cout << "i " << i << ", average[i] " << average[i] << ", error[i] " << error[i] << ", CORRECT_RESULT" << CORRECT_RESULT << std::endl;
-        assert( fabs(average[i]-CORRECT_RESULT) > 2.*error[i] );
-    }
-    //std::cout << std::endl;
-
-    // this integral, instead, will provide the right answer
-    mci.setX(x);
-    mci.integrate(NMC_pre, average, error, true, true);
+    // this integral shold provide the right answer
+    mci.centerX(); // set x to 0
+    mci.moveX(); // do one random move manually
+    mci.integrate(NMC, average, error, true, true);
     for (int i=0; i<mci.getNObsDim(); ++i) {
         //std::cout << "i " << i << ", average[i] " << average[i] << ", error[i] " << error[i] << ", CORRECT_RESULT" << CORRECT_RESULT << std::endl;
         assert( fabs(average[i]-CORRECT_RESULT) < 2.*error[i] );

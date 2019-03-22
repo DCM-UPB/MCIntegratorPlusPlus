@@ -1,9 +1,9 @@
 #ifndef MCI_MULTISTEPMOVE_HPP
 #define MCI_MULTISTEPMOVE_HPP
 
-#include "mci/TrialMoveInterface.hpp"
-#include "mci/SamplingFunctionContainer.hpp"
 #include "mci/SRRDVecMove.hpp"
+#include "mci/SamplingFunctionContainer.hpp"
+#include "mci/TrialMoveInterface.hpp"
 
 #include <numeric>
 
@@ -53,7 +53,7 @@ namespace mci
 
         void setNSteps(int nsteps) { _nsteps=nsteps; }
         void setTrialMove(const TrialMoveInterface &tmove); // pass an existing move to be cloned
-        void addSamplingFunction(const SamplingFunctionInterface &sf); // add a sampling function (we make clone)
+        void addSamplingFunction(const SamplingFunctionInterface &pdf); // add a sampling function (we make clone)
         void clearSamplingFunctions();
 
         int getNSteps() const { return _nsteps; }
@@ -68,9 +68,7 @@ namespace mci
         int getStepSizeIndex(int xidx) const final { return _trialMove->getStepSizeIndex(xidx); }
 
         // Methods used during sampling:
-
-        void protoFunction(const double[], double[]) final {} // not needed
-
+        void protoFunction(const double/*in*/[], double/*protov*/[]) final {} // not needed
         double trialMove(WalkerState &wlk, const double protoold[], double protonew[]) final;
     };
 

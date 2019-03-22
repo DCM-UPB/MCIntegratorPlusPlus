@@ -8,10 +8,10 @@
 
 #include "mci/Estimators.hpp"
 
-#include "mci/TrialMoveInterface.hpp"
+#include "mci/MultiStepMove.hpp"
 #include "mci/SRRDAllMove.hpp"
 #include "mci/SRRDVecMove.hpp"
-#include "mci/MultiStepMove.hpp"
+#include "mci/TrialMoveInterface.hpp"
 
 #include <algorithm>
 #include <cstdint>
@@ -52,7 +52,9 @@ namespace mci
                               // block-averages or is uncorrelated) or auto-blocking estimators.
                               Noop,
                               Uncorrelated,
-                              Correlated
+                              Correlated, /* uses MJBlocker, if ndata power of 2, and else FCBlocker */
+                              FCBlocker, /* Francesco's auto blocker implementation */
+                              MJBlocker /* Our implementation of Marius Jonsson's auto blocking */
     };
 
     inline EstimatorType selectEstimatorType(const bool flag_correlated, const bool flag_error = true)
@@ -78,6 +80,12 @@ namespace mci
 
         case EstimatorType::Correlated:
             return CorrelatedEstimator;
+
+        case EstimatorType::FCBlocker:
+            return FCBlockerEstimator;
+
+        case EstimatorType::MJBlocker:
+            return MJBlockerEstimator;
 
         default:
             throw std::domain_error("[createEstimator] Unhandled estimator enumerator.");

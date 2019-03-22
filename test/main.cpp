@@ -32,14 +32,12 @@ int main(){
     cout << "- BlockEstimator()" << endl;
     cout << "     average = " << avg1D << "     error = " << err1D << endl << endl;
 
-    mci::OneDimCorrelatedEstimator(N, x, avg1D, err1D);
-    cout << "- CorrelatedEstimator()" << endl;
+    mci::OneDimFCBlockerEstimator(N, x, avg1D, err1D);
+    cout << "- FCBlockerEstimator()" << endl;
     cout << "     average = " << avg1D << "     error = " << err1D << endl << endl;
 
 
-
     cout << endl << "Multidimensional version of Estimators" << endl << endl;
-
 
     int nd=2;
     double data[N*nd];
@@ -60,11 +58,10 @@ int main(){
     cout << "     average1 = " << avg2D[0] << "     error1 = " << err2D[0] << endl;
     cout << "     average2 = " << avg2D[1] << "     error2 = " << err2D[1] << endl << endl;
 
-    mci::MultiDimCorrelatedEstimator(N, nd, data, avg2D, err2D);
-    cout << "- MultiDimCorrelatedEstimator()" << endl;
+    mci::MultiDimFCBlockerEstimator(N, nd, data, avg2D, err2D);
+    cout << "- MultiDimFCBlockerEstimator()" << endl;
     cout << "     average1 = " << avg2D[0] << "     error1 = " << err2D[0] << endl;
     cout << "     average2 = " << avg2D[1] << "     error2 = " << err2D[1] << endl << endl;
-
 
 
     cout << endl << "Monte Carlo integrator" << endl << endl;
@@ -88,7 +85,7 @@ int main(){
     mci.addObservable(constval);
     mci.addObservable(polynom);
 
-    N=10000;
+    N=16384; // take a power of two to test MJBlocker
     mci.integrate(N,avg2D,err2D);
 
     cout << "Compute average: " << endl;
@@ -100,7 +97,6 @@ int main(){
     mci_1d.setIRange(-1., 1.);
     X2Sum x2(nd);
     mci_1d.addObservable(x2);
-    N=10000;
     mci_1d.integrate(N,&avg1D,&err1D);
     cout << "Integral of x^2 between -1 and +1 (expected 2./3.): " << endl;
     cout << "Integral = " << avg1D << " +- " << err1D << endl << endl << endl;
@@ -115,7 +111,6 @@ int main(){
     mci_1dgauss.addObservable(constval_1D);
     mci_1dgauss.storeObservablesOnFile("observables.txt", 100);
     mci_1dgauss.storeWalkerPositionsOnFile("walker.txt", 100);
-    N=10000;
     mci_1dgauss.integrate(N,avg2D,err2D);
     cout << "Integral of x^2 between -1 and +1 sampling from a normalized gaussian (expected 1./2.): " << endl;
     cout << "Integral = " << avg2D[0] << " +- " << err2D[0] << endl << endl << endl;

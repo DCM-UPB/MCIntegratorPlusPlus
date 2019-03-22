@@ -198,14 +198,14 @@ int main(){
     bool verbose = false;
     //verbose = true; // uncomment for output
 
-    const double SMALL = 0.01;
-    const double EXTRA_TINY = 0.0000000001; // 1e-10
+    const double SMALL = 0.0005;
+    const double EXTRA_TINY = 0.00000001; // 1e-8
 
-    const int Nmc = 20000;
+    const int Nmc = 32768; // use a power of 2, so we can test MJBlocker
     const int nd = 2;
     const int ndata = Nmc*nd;
 
-    const int nblocks=10; // blocks to use for fixed-block estimation
+    const int nblocks=128; // blocks to use for fixed-block estimator
 
     // generate random walk
     double xND[ndata];
@@ -249,13 +249,18 @@ int main(){
         if (verbose) { reportAvgErr1D("BlockEstimator()", avg1D, err1D); }
         assert(fabs(avg1D - refAvg[i]) < EXTRA_TINY ); // these should be virtually identical
 
-        mci::OneDimCorrelatedEstimator(Nmc, x1D, avg1D, err1D);
-        if (verbose) { reportAvgErr1D("CorrelatedEstimator()", avg1D, err1D); }
+        mci::OneDimFCBlockerEstimator(Nmc, x1D, avg1D, err1D);
+        if (verbose) { reportAvgErr1D("FCBlockerEstimator()", avg1D, err1D); }
         assert(fabs(avg1D - refAvg[i]) < SMALL ); // this difference should be small
 
         // the following is currently true with the selected seed
-        // and valid changes to the estimator are very unlikely
-        // to break the check (just take a better seed then ;-) )
+        // and should be quite robust under (valid) change
+        assert(fabs(avg1D - refAvg[i]) < 3*err1D );
+
+        // and the same with MJBlocker
+        mci::MJBlockerEstimator(Nmc, 1, x1D, &avg1D, &err1D);
+        if (verbose) { reportAvgErr1D("MJBlockerEstimator()", avg1D, err1D); }
+        assert(fabs(avg1D - refAvg[i]) < SMALL ); // this difference should be small
         assert(fabs(avg1D - refAvg[i]) < 3*err1D );
     }
 
@@ -274,8 +279,15 @@ int main(){
     if (verbose) { reportAvgErrND("MultiDimBlockEstimator()", nd, avgND, errND); }
     assertArraysEqual(nd, avgND, refAvg, EXTRA_TINY); // these should be virtually identical
 
-    mci::MultiDimCorrelatedEstimator(Nmc, nd, xND, avgND, errND);
-    if (verbose) { reportAvgErrND("MultiDimCorrelatedEstimator()", nd, avgND, errND); }
+    mci::MultiDimFCBlockerEstimator(Nmc, nd, xND, avgND, errND);
+    if (verbose) { reportAvgErrND("MultiDimFCBlockerEstimator()", nd, avgND, errND); }
+    for (int i=0; i<nd; ++i) {
+        assert(fabs(avgND[i] - refAvg[i]) < SMALL ); // this difference should be small
+        assert(fabs(avgND[i] - refAvg[i]) < 3*errND[i] ); // like in the 1D case
+    }
+
+    mci::MJBlockerEstimator(Nmc, nd, xND, avgND, errND);
+    if (verbose) { reportAvgErrND("MJBlockerEstimator()", nd, avgND, errND); }
     for (int i=0; i<nd; ++i) {
         assert(fabs(avgND[i] - refAvg[i]) < SMALL ); // this difference should be small
         assert(fabs(avgND[i] - refAvg[i]) < 3*errND[i] ); // like in the 1D case
@@ -287,8 +299,8 @@ int main(){
     XND obsfun(nd); // n-dimensional position observable
     SimpleAccumulator simpleAccu(obsfun.clone(), 1);
     SimpleAccumulator simpleAccuSkip2(obsfun.clone(), 2);
-    BlockAccumulator blockAccu(obsfun.clone(), 1, 10);
-    BlockAccumulator blockAccuSkip2(obsfun.clone(), 2, 5);
+    BlockAccumulator blockAccu(obsfun.clone(), 1, 8);
+    BlockAccumulator blockAccuSkip2(obsfun.clone(), 2, 4);
     FullAccumulator fullAccu(obsfun.clone(), 1);
     FullAccumulator fullAccuSkip2(obsfun.clone(), 2);
 

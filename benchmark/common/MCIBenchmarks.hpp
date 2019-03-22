@@ -47,12 +47,20 @@ inline std::pair<double, double> sample_benchmark_MCIntegrate(mci::MCI & mci, co
     return sample_benchmark([&] { return benchmark_MCIntegrate(mci, NMC); }, nruns);
 }
 
+// supported estimator configurations
+enum class BenchEstim{Uncorr1D,
+                           Block1D,
+                           CorrFC1D,
+                           UncorrND,
+                           BlockND,
+                           CorrFCND,
+                           CorrMJND};
 
 inline double benchmark_estimators(const double datax[],
-                            const int estimatorType /* 1 uncorr-1d, 2 block-1d, 3 corr-1d, 4 uncorr-nd, 5 block-nd, 6 corr-nd */,
+                            BenchEstim estimatorType,
                             const int64_t NMC, const int ndim)
 {
-    const int nblocks = 20;
+    const int blocksize = 16; // for fixed blocking estimator
     Timer timer(1.);
     double average[ndim];
     double error[ndim];
@@ -61,45 +69,51 @@ inline double benchmark_estimators(const double datax[],
 
     switch(estimatorType)
         {
-        case 1:
+        case BenchEstim::Uncorr1D:
             if (ndim>1) { throw std::invalid_argument("OneDimUncorrelatedEstimator requested, but ndim>1"); }
             else {timer.reset(); mci::OneDimUncorrelatedEstimator(NMC, datax, average[0], error[0]); }
             break;
 
-        case 2:
+        case BenchEstim::Block1D:
             if (ndim>1) { throw std::invalid_argument("OneDimBlockEstimator requested, but ndim>1"); }
-            else {timer.reset(); mci::OneDimBlockEstimator(NMC, datax, nblocks, average[0], error[0]); }
+            else {timer.reset(); mci::OneDimBlockEstimator(NMC, datax, NMC/blocksize, average[0], error[0]); }
             break;
 
-        case 3:
-            if (ndim>1) { throw std::invalid_argument("OneDimCorrelatedEstimator requested, but ndim>1"); }
-            else {timer.reset(); mci::OneDimCorrelatedEstimator(NMC, datax, average[0], error[0]); }
+        case BenchEstim::CorrFC1D:
+            if (ndim>1) { throw std::invalid_argument("OneDimFCBlockerEstimator requested, but ndim>1"); }
+            else {timer.reset(); mci::OneDimFCBlockerEstimator(NMC, datax, average[0], error[0]); }
             break;
 
-        case 4:
+        case BenchEstim::UncorrND:
             timer.reset();
             mci::MultiDimUncorrelatedEstimator(NMC, ndim, datax, average, error);
             break;
 
-        case 5:
+        case BenchEstim::BlockND:
             timer.reset();
-            mci::MultiDimBlockEstimator(NMC, ndim, datax, nblocks, average, error);
+            mci::MultiDimBlockEstimator(NMC, ndim, datax, NMC/blocksize, average, error);
             break;
 
-        case (6):
+        case (BenchEstim::CorrFCND):
             timer.reset();
-            mci::MultiDimCorrelatedEstimator(NMC, ndim, datax, average, error);
+            mci::MultiDimFCBlockerEstimator(NMC, ndim, datax, average, error);
             break;
+
+        case (BenchEstim::CorrMJND):
+            timer.reset();
+            mci::MJBlockerEstimator(NMC, ndim, datax, average, error);
+            break;
+
 
         default:
-            throw std::invalid_argument("Invalid estimator typeID.");
+            throw std::invalid_argument("Invalid enumerator.");
         }
 
     return timer.elapsed();
 }
 
 
-inline std::pair<double, double> sample_benchmark_estimators(const double datax[], const int estimatorType, const int64_t NMC, const int ndim, const int nruns) {
+inline std::pair<double, double> sample_benchmark_estimators(const double datax[], BenchEstim estimatorType, const int64_t NMC, const int ndim, const int nruns) {
     return sample_benchmark([&] { return benchmark_estimators(datax, estimatorType, NMC, ndim); }, nruns);
 }
 

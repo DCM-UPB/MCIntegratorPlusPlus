@@ -136,7 +136,7 @@ namespace mci
             for (int i=0; i<_obscont.getNObs(); ++i) {
                 if (_obscont.getFlagEquil(i)) {
                     obs_equil.addObservable(std::unique_ptr<AccumulatorInterface>( new FullAccumulator(_obscont.getObservableFunction(i).clone(), 1) ),
-                                            mci::CorrelatedEstimator, true);
+                                            createEstimator(EstimatorType::Correlated), true);
                 }
             }
             const auto MIN_NMC=static_cast<int64_t>( sqrt(10000.*_ndim) ); // a guess on how many steps we need

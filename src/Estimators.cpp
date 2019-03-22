@@ -1,4 +1,5 @@
 #include "mci/Estimators.hpp"
+#include "mci/MJBlocker.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -74,13 +75,16 @@ namespace mci
     }
 
 
-    void OneDimCorrelatedEstimator(const int64_t n, const double x[], double & average, double & error)
+    // The original default auto-blocker, implemented by Francesco Calcavecchia.
+    // In the factory default we now use our adaption of Marius Johnssons blocker
+    // (see MJBlocker.hpp), whenever ndata is a power of 2.
+    void OneDimFCBlockerEstimator(const int64_t n, const double x[], double & average, double & error)
     {
         const int MIN_BLOCKS=6, MAX_BLOCKS=50;
         const int MAX_PLATEAU_AVERAGE=4;
 
         if ( n < MAX_BLOCKS) {
-            throw std::invalid_argument("[OneDimCorrelatedEstimator] n must be >= " + std::to_string(MAX_BLOCKS));
+            throw std::invalid_argument("[OneDimFCBlockerEstimator] n must be >= " + std::to_string(MAX_BLOCKS));
         }
 
         const int nav = MAX_BLOCKS-MIN_BLOCKS+1;
@@ -179,13 +183,16 @@ namespace mci
     }
 
 
-    void MultiDimCorrelatedEstimator(const int64_t n, const int ndim, const double x[], double average[], double error[])
+    // The original default auto-blocker, implemented by Francesco Calcavecchia.
+    // In the factory default we now use our adaption of Marius Johnssons blocker
+    // (see MJBlocker.hpp), whenever ndata is a power of 2.
+    void MultiDimFCBlockerEstimator(const int64_t n, const int ndim, const double x[], double average[], double error[])
     {   // we create an explicit multidimensional implementation, for better efficiency
         const int MIN_BLOCKS=6, MAX_BLOCKS=50;
         const int MAX_PLATEAU_AVERAGE=4;
 
         if ( n < MAX_BLOCKS) {
-            throw std::invalid_argument("MCI error MultiDimCorrelatedEstimator() : n must be >= " + std::to_string(MAX_BLOCKS));
+            throw std::invalid_argument("MCI error MultiDimFCBlockerEstimator() : n must be >= " + std::to_string(MAX_BLOCKS));
         }
 
         const int nav = MAX_BLOCKS-MIN_BLOCKS+1;
@@ -247,29 +254,37 @@ namespace mci
         }
     }
 
-    void BlockEstimator(const int64_t n, const int ndim, const double x[], const int64_t nblocks, double average[], double error[])
+    void FCBlockerEstimator(const int64_t n, const int ndim, const double x[], double average[], double error[])
     {
         if (ndim>1) {
-            MultiDimBlockEstimator(n, ndim, x, nblocks, average, error);
+            MultiDimFCBlockerEstimator(n, ndim, x, average, error);
         } else {
-            OneDimBlockEstimator(n, x, nblocks, average[0], error[0]);
+            OneDimFCBlockerEstimator(n, x, average[0], error[0]);
         }
     }
 
+    // Implementation of Marius Jonsson's auto-blocking technique, for details see MJBlocker.hpp
+    void MJBlockerEstimator(int64_t n, int ndim, const double x[], double average[], double error[])
+    {
+        MJBlocker mjblk(n, ndim); // create MJBlocker object
+        mjblk.estimate(x, average, error); // run the algorithm
+    }
+
+    // If n power of 2, use MJBlocker, else FCBlocker
     void CorrelatedEstimator(const int64_t n, const int ndim, const double x[], double average[], double error[])
     {
-        if (ndim>1) {
-            MultiDimCorrelatedEstimator(n, ndim, x, average, error);
+        if ( (n & (n-1)) != 0 ) { // n is not a power of 2
+            FCBlockerEstimator(n, ndim, x, average, error);
         } else {
-            OneDimCorrelatedEstimator(n, x, average[0], error[0]);
+            MJBlockerEstimator(n, ndim, x, average, error);
         }
     }
 
-
     // Noop Estimator
-    void NoopEstimator(int64_t/*n*/, int nobs, const double data[], double avg[], double err[]) {
-        std::copy(data, data+nobs, avg);
-        std::fill(err, err+nobs, 0.);
+    void NoopEstimator(int64_t/*n*/, int ndim, const double x[], double average[], double error[])
+    {
+        std::copy(x, x+ndim, average);
+        std::fill(error, error+ndim, 0.);
     }
 
 }  // namespace mci

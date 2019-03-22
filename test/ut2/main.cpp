@@ -1,6 +1,6 @@
 #include "mci/MCIntegrator.hpp"
-#include "mci/SamplingFunctionInterface.hpp"
 #include "mci/OrthoPeriodicDomain.hpp"
+#include "mci/SamplingFunctionInterface.hpp"
 
 #include <cassert>
 #include <cmath>

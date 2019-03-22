@@ -11,7 +11,7 @@ using namespace std;
 using namespace mci;
 
 int main(){
-    const int NMC = 10000;
+    const int NMC = 16384; // use a power of 2 this time, to let MCI use MJBlocker
     const double CORRECT_RESULT = 0.5;
 
     ThreeDimGaussianPDF pdf;
@@ -24,23 +24,15 @@ int main(){
 
     // the integral should provide 0.5 as answer!
 
-    double x[3];
-    x[0] = 5.; x[1] = -5.; x[2] = 10.;
-
+    double x[3] {5., -5., 10.}; // bad starting point
     double average;
     double error;
 
     // configure a fixed amount steps to use in pre-sampling
-    mci.setNfindMRT2Iterations(10); // 10 iterations
-    mci.setNdecorrelationSteps(1000);
+    mci.setNfindMRT2Iterations(20);
+    mci.setNdecorrelationSteps(2000);
 
-    // this integral will give a wrong answer! This is because the starting point is very bad and initialDecorrelation is skipped (as well as the MRT2step automatic setting)
-    mci.setX(x);
-    mci.integrate(NMC, &average, &error, false, false);
-    //std::cout << "average " << average << ", error " << error << ", CORRECT_RESULT" << CORRECT_RESULT << std::endl;
-    assert( fabs(average-CORRECT_RESULT) > 2.*error );
-
-    // this integral, instead, will provide the right answer
+    // this integral should provide the right answer (after findMRT2step&decorrelation phase)
     mci.setX(x);
     mci.integrate(NMC, &average, &error, true, true);
     //std::cout << "average " << average << ", error " << error << ", CORRECT_RESULT" << CORRECT_RESULT << std::endl;
@@ -53,30 +45,31 @@ int main(){
 
     // and using fixed blocking also gives the same result
     mci.clearObservables();
-    mci.addObservable(obs, 10); // blocks of size 10
+    mci.addObservable(obs, 16); // blocks of size 16
     mci.integrate(NMC, &average, &error, false, false);
     //std::cout << "average " << average << ", error " << error << ", CORRECT_RESULT" << CORRECT_RESULT << std::endl;
     assert( fabs(average-CORRECT_RESULT) < 2.*error );
 
     // and half the block size with skipping every second step, should be similar again
     mci.clearObservables();
-    mci.addObservable(obs, 5, 2); // blocksize 5, nskip 2 (i.e. "effective" blocksize of 10)
+    mci.addObservable(obs, 8, 2); // blocksize 4, nskip 2 (i.e. "effective" blocksize of 16)
     mci.integrate(NMC, &average, &error, false, false);
     //std::cout << "average " << average << ", error " << error << ", CORRECT_RESULT" << CORRECT_RESULT << std::endl;
     assert( fabs(average-CORRECT_RESULT) < 2.*error );
 
-    // The last version implicitly used UncorrelatedEstimator (because blocksize>1). CorrelatedEstimator should yield similar result.
+    // The previous two integrations implicitly used UncorrelatedEstimator (because blocksize>1).
+    // CorrelatedEstimator (is MJBlocker, because NMC is power of 2) should yield similar result.
 
     // first set it by boolean arguments
     mci.clearObservables();
-    mci.addObservable(obs, 5, 2, false /*flag_equil*/, true /*flag_correlated*/); // forcing correlated estimator, although the other settings would "imply" uncorrelated samples
+    mci.addObservable(obs, 8, 2, false /*flag_equil*/, true /*flag_correlated*/); // forcing correlated estimator, although the other settings would "imply" uncorrelated samples
     mci.integrate(NMC, &average, &error, false, false);
     //std::cout << "average " << average << ", error " << error << ", CORRECT_RESULT" << CORRECT_RESULT << std::endl;
     assert( fabs(average-CORRECT_RESULT) < 2.*error );
 
     // now via enumerator
     mci.clearObservables();
-    mci.addObservable(obs, 5, 2, false /*flag_equil*/, EstimatorType::Correlated);
+    mci.addObservable(obs, 8, 2, false /*flag_equil*/, EstimatorType::Correlated);
     mci.integrate(NMC, &average, &error, false, false);
     //std::cout << "average " << average << ", error " << error << ", CORRECT_RESULT" << CORRECT_RESULT << std::endl;
     assert( fabs(average-CORRECT_RESULT) < 2.*error );

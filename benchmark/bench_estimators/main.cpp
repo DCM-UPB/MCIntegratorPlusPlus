@@ -15,7 +15,7 @@ using namespace std;
 using namespace mci;
 
 void run_single_benchmark(const string &label, const double datax[],
-                          const int estimatorType /*1 uncorr-1d, 2 block-1d, 3 corr-1d, 4 uncorr-nd, 5 block-nd, 6 corr-nd */,
+                          BenchEstim estimatorType,
                           const int NMC, const int ndim, const int nruns)
 {
     pair<double, double> result;
@@ -30,18 +30,20 @@ int main ()
 {
     const bool flag_debug = false;
     const bool verbose = flag_debug; // some debug printout
-    const int NMC = flag_debug ? 5000 : 10000000;
+    const int NMC = flag_debug ? 4096 : 8388608; // use power of two to allow MJBlocker
     const int nruns = 10;
-    const int estimatorTypes[6] = {1, 2, 3, 4, 5, 6};
-    const int ndims[3] = {1, 10, 100};
-    const double stepSizes[3] = {1.59, 0.404, 0.12};
+    const int ntypes = 7;
+    const BenchEstim estimatorTypes[ntypes] = {BenchEstim::Uncorr1D, BenchEstim::Block1D, BenchEstim::CorrFC1D, 
+                                               BenchEstim::UncorrND, BenchEstim::BlockND, BenchEstim::CorrFCND, BenchEstim::CorrMJND};
+    const int ndims[3] = {1, 16, 128};
+    const double stepSizes[3] = {1.59, 0.313, 0.1053};
 
-    vector<string> labels {"noblock-1D", "20-block-1D", "autoblock-1D", "noblock-ND", "20-block-ND", "autoblock-ND"};
+    vector<string> labels {"noblock-1D", "500K-block-1D", "autoblock-FC-1D", "noblock-ND", "500K-block-ND", "autoblock-FC-ND", "autoblock-MJ-ND"};
 
     srand(1337); // consistent random seed
 
     cout << "=========================================================================================" << endl << endl;
-    cout << "Benchmark results (time per sample):" << endl;
+    cout << "Benchmark results (time per sample and dimension):" << endl;
 
     // Estimator benchmark
     for (int i=0; i<3; ++i) { // go through ndims/stepSizes
@@ -61,13 +63,13 @@ int main ()
            }
         }
 
-        // the steps sizes were tuned for 0.5+-0.001 acceptance rate (on 1337 seed)
+        // the steps sizes were tuned for 0.5+-0.01 acceptance rate (on 1337 seed)
         // so this serves as a little check that nothing was messed up in TestMCIFunctions
-        assert(fabs(testWalk.getAcceptanceRate()-0.5) < 0.001); // the steps sizes were tuned for 0.5+-0.001 acceptance rate (on 1337 seed)
+        assert(fabs(testWalk.getAcceptanceRate()-0.5) < 0.01);
 
-        for (const int &etype : estimatorTypes) {
-            if ( !(ndims[i]>1 && etype<4) ) {
-                run_single_benchmark("t/element ( ndim=" + to_string(ndims[i]) + ", " + labels[etype-1] + " )", datax, etype, trueNMC, ndims[i], nruns);
+        for (int j=0; j<ntypes; ++j) {
+            if ( !(ndims[i]>1 && j<3) ) {
+                run_single_benchmark("t/element ( ndim=" + to_string(ndims[i]) + ", " + labels[j] + " )", datax, estimatorTypes[j], trueNMC, ndims[i], nruns);
             }
         }
 

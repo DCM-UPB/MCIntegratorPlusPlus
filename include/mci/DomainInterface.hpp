@@ -12,7 +12,7 @@ namespace mci
         static constexpr double infinity = std::numeric_limits<float>::max(); // 3.402823e+38
         static constexpr double infinityX2 = infinity+infinity; // length from -infinity to +infinity
         static constexpr double infiniteVol = 0.; // convention is infinite box -> vol = 0
-    }
+    } // namespace domain_conv
 
     // Derived classes of DomainInterface define integration domains for
     // MCI to integrate over. Note that distance calculation in the form
