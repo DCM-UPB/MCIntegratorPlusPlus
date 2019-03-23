@@ -307,12 +307,12 @@ namespace mci
 
     // --- Domain
 
-    void MCI::setDomain(const DomainInterface &domain)
+    void MCI::setDomain(std::unique_ptr<DomainInterface> domain)
     {
-        if (domain.ndim != _ndim) {
+        if (domain->ndim != _ndim) {
             throw std::invalid_argument("[MCI::setDomain] Passed domain's number of dimensions is not equal to MCI's number of walkers.");
         }
-        _domain = domain.clone();
+        _domain = std::move(domain);
         _domain->applyDomain(_wlkstate.xold);
     }
 
@@ -336,12 +336,12 @@ namespace mci
 
     // --- Trial Moves
 
-    void MCI::setTrialMove(const TrialMoveInterface &tmove)
+    void MCI::setTrialMove(std::unique_ptr<TrialMoveInterface> tmove)
     {
-        if (tmove.getNDim() != _ndim) {
+        if (tmove->getNDim() != _ndim) {
             throw std::invalid_argument("[MCI::setTrialMove] Passed trial move's number of inputs is not equal to MCI's number of walkers.");
         }
-        _trialMove = tmove.clone(); // unique ptr, old move gets freed automatically
+        _trialMove = std::move(tmove); // unique ptr, old move gets freed automatically
         _trialMove->bindRGen(_rgen);
     }
 
@@ -369,12 +369,12 @@ namespace mci
 
     // --- Observables
 
-    void MCI::addObservable(const ObservableFunctionInterface &obs, int blocksize, int nskip, const bool flag_equil, const EstimatorType estimType)
+    void MCI::addObservable(std::unique_ptr<ObservableFunctionInterface> obs, int blocksize, int nskip, const bool flag_equil, const EstimatorType estimType)
     {
         // sanity
         blocksize = std::max(0, blocksize);
         nskip = std::max(1, nskip);
-        if (obs.getNDim() != _ndim) {
+        if (obs->getNDim() != _ndim) {
             throw std::invalid_argument("[MCI::addObservable] Passed observable function's number of inputs is not equal to MCI's number of walkers.");
         }
         if (flag_equil && estimType == EstimatorType::Noop) {
@@ -382,39 +382,39 @@ namespace mci
         }
 
         // add accumulator&estimator from factory functions
-        _obscont.addObservable(createAccumulator(obs, blocksize, nskip), createEstimator(estimType), flag_equil);
+        _obscont.addObservable(createAccumulator(std::move(obs), blocksize, nskip), createEstimator(estimType), flag_equil);
     }
 
-    void MCI::addObservable(const ObservableFunctionInterface &obs, const int blocksize, const int nskip, const bool flag_equil, const bool flag_correlated)
+    void MCI::addObservable(std::unique_ptr<ObservableFunctionInterface> obs, const int blocksize, const int nskip, const bool flag_equil, const bool flag_correlated)
     {
         // select type
         const bool flag_error = (blocksize > 0); // will we calculate errors?
         const EstimatorType estimType = selectEstimatorType(flag_correlated, flag_error);
 
         // use addObservable above
-        this->addObservable(obs, blocksize, nskip, flag_equil, estimType);
+        this->addObservable(std::move(obs), blocksize, nskip, flag_equil, estimType);
     }
 
 
     // --- Sampling functions
 
-    void MCI::addSamplingFunction(const SamplingFunctionInterface &mcisf)
+    void MCI::addSamplingFunction(std::unique_ptr<SamplingFunctionInterface> pdf)
     {
-        if (mcisf.getNDim() != _ndim) {
+        if (pdf->getNDim() != _ndim) {
             throw std::invalid_argument("[MCI::addSamplingFunction] Passed sampling function's number of inputs is not equal to MCI's number of walkers.");
         }
-        _pdfcont.addSamplingFunction( mcisf.clone() );
+        _pdfcont.addSamplingFunction(std::move(pdf)); // we move pdf into pdfcont
     }
 
 
     // --- Callbacks
 
-    void MCI::addCallBack(const CallBackOnMoveInterface &cback)
+    void MCI::addCallBack(std::unique_ptr<CallBackOnMoveInterface> cback)
     {
-        if (cback.getNDim() != _ndim) {
+        if (cback->getNDim() != _ndim) {
             throw std::invalid_argument("[MCI::addCallBack] Passed callback function's number of inputs is not equal to MCI's number of walkers.");
         }
-        _cbacks.emplace_back( std::unique_ptr<CallBackOnMoveInterface>(cback.clone()) ); // we add unique clone
+        _cbacks.emplace_back( std::move(cback) ); // we move cback ptr into a vector
     }
 
     void MCI::callBackOnMove()

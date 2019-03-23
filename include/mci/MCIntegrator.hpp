@@ -129,7 +129,8 @@ namespace mci
         // Note: Objects passed by raw-ref will be cloned by MCI
 
         // Domain
-        void setDomain(const DomainInterface &domain); // pass an existing domain to be cloned by MCI
+        void setDomain(std::unique_ptr<DomainInterface> domain); // move a domain to be owned by MCI
+        void setDomain(const DomainInterface &domain) { this->setDomain(domain.clone()); } // pass a domain to be cloned by MCI
         void resetDomain(); // reset the domain to unbound
 
         // keep walkers within these bounds during integration (using periodic boundaries)
@@ -138,34 +139,51 @@ namespace mci
         void setIRange(const double lbounds[], const double ubounds[]);
 
         // Trial Moves
-        void setTrialMove(const TrialMoveInterface &tmove); // pass an existing move to be cloned by MCI
+        void setTrialMove(std::unique_ptr<TrialMoveInterface> tmove); // move a move to be owned by MCI
+        void setTrialMove(const TrialMoveInterface &tmove) { this->setTrialMove(tmove.clone()); } // pass a move to be cloned by MCI
         void setTrialMove(MoveType move /*enum, see Factories.hpp*/); // set trial move to default version of chosen builtin move
         void setTrialMove(SRRDType srrd /*enum*/, // set builtin SRRD-class move, with distribution srrd
                           int veclen = 0, /*0 means all-move, > 0 means single-vector move*/
                           int ntypes = 1, int typeEnds[] = nullptr /* see TypedTrialMove.hpp */
                           );
 
+
         // Observables
-        void addObservable(const ObservableFunctionInterface &obs /* MCI adds accumulator and estimator for this obs, with following options: */,
+        void addObservable(std::unique_ptr<ObservableFunctionInterface> obs /* MCI adds accumulator and estimator for this obs, with following options: */,
                            int blocksize, /* if > 1, use fixed block size and assume uncorrelated samples, if 0, use no blocks and no error calculation */
                            int nskip, /* evaluate observable only every n-th step NOTE: now one block is used for blocksize*nskip steps */
                            bool flag_equil, /* observable wants to be equilibrated when using automatic initial decorrelation (blocksize must be > 0) */
                            bool flag_correlated /* should block averages be treated as correlated samples? (blocksize must be > 0) */
                            );
-        void addObservable(const ObservableFunctionInterface &obs, int blocksize = 1, int nskip = 1) {
-            addObservable(obs, blocksize, nskip, blocksize>0, blocksize==1); // safe&easy defaults, appropriate for most cases
+        void addObservable(const ObservableFunctionInterface &obs, int blocksize, int nskip, bool flag_equil, bool flag_correlated) {
+            this->addObservable(obs.clone(), blocksize, nskip, flag_equil, flag_correlated);
         }
-        void addObservable(const ObservableFunctionInterface &obs, int blocksize, int nskip, bool flag_equil, EstimatorType estimType /*enum, see Factories-hpp*/);
+
+        void addObservable(std::unique_ptr<ObservableFunctionInterface> obs, int blocksize = 1, int nskip = 1) {
+            this->addObservable(std::move(obs), blocksize, nskip, blocksize>0, blocksize==1); // safe&easy defaults, appropriate for most cases
+        }
+        void addObservable(const ObservableFunctionInterface &obs, int blocksize = 1, int nskip = 1) {
+            this->addObservable(obs.clone(), blocksize, nskip);
+        }
+
+        void addObservable(std::unique_ptr<ObservableFunctionInterface> obs, int blocksize, int nskip, bool flag_equil, EstimatorType estimType /*enum, see Factories-hpp*/);
+        void addObservable(const ObservableFunctionInterface &obs, int blocksize, int nskip, bool flag_equil, EstimatorType estimType) {
+            this->addObservable(obs.clone(), blocksize, nskip, flag_equil, estimType);
+        }
+
         void popObservable() { _obscont.pop_back(); } // remove last observable
         void clearObservables() { _obscont.clear(); } // clear
 
+
         // Sampling Functions
-        void addSamplingFunction(const SamplingFunctionInterface &mcisf);
+        void addSamplingFunction(std::unique_ptr<SamplingFunctionInterface> pdf);
+        void addSamplingFunction(const SamplingFunctionInterface &pdf) { this->addSamplingFunction(pdf.clone()); }
         void popSamplingFunction() { _pdfcont.pop_back(); } // remove last pdf
         void clearSamplingFunctions() { _pdfcont.clear(); }
 
         // Callbacks
-        void addCallBack(const CallBackOnMoveInterface &cback);
+        void addCallBack(std::unique_ptr<CallBackOnMoveInterface> cback);
+        void addCallBack(const CallBackOnMoveInterface &cback) { this->addCallBack(cback.clone()); }
         void popCallBack() { _cbacks.pop_back(); }
         void clearCallBacks() { _cbacks.clear(); }
 

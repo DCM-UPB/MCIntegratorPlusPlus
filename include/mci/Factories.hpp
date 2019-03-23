@@ -26,20 +26,20 @@ namespace mci
 
     // --- Create Accumulators
 
-    inline std::unique_ptr<AccumulatorInterface> createAccumulator(const ObservableFunctionInterface &obs, int blocksize = 1, int nskip = 1)
+    inline std::unique_ptr<AccumulatorInterface> createAccumulator(std::unique_ptr<ObservableFunctionInterface> obs, int blocksize = 1, int nskip = 1)
     {
         // sanity
         blocksize = std::max(0, blocksize);
         nskip = std::max(1, nskip);
 
         if (blocksize == 0) {
-            return std::unique_ptr<AccumulatorInterface>( new SimpleAccumulator(obs.clone(), nskip) );
+            return std::unique_ptr<AccumulatorInterface>( new SimpleAccumulator(std::move(obs), nskip) );
         }
         if (blocksize == 1) {
-            return std::unique_ptr<AccumulatorInterface>( new FullAccumulator(obs.clone(), nskip) );
+            return std::unique_ptr<AccumulatorInterface>( new FullAccumulator(std::move(obs), nskip) );
         }
 
-        return std::unique_ptr<AccumulatorInterface>( new BlockAccumulator(obs.clone(), nskip, blocksize) );
+        return std::unique_ptr<AccumulatorInterface>( new BlockAccumulator(std::move(obs), nskip, blocksize) );
     }
 
 
