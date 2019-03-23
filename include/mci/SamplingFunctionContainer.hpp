@@ -40,7 +40,7 @@ namespace mci
         double computeAcceptance(const WalkerState &wlk); //compute then new sampling function and return acceptance of new coordinates
 
         //void printProtoValues(std::ofstream &file) const; // write last protovalues to filestream
-        void pop_back() { _pdfs.pop_back(); } // remove last obs
+        std::unique_ptr<SamplingFunctionInterface> pop_back(); // remove and return last pdf
         void clear() { _pdfs.clear(); } // clear everything
     };
 

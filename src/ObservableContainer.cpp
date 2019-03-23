@@ -83,10 +83,12 @@ namespace mci
         }
     }
 
-    void ObservableContainer::pop_back()
+    std::unique_ptr<AccumulatorInterface> ObservableContainer::pop_back()
     {
-        _nobsdim -= _cont.back().accu->getNObs();
-        _cont.pop_back();
+        auto accu = std::move(_cont.back().accu); // move last accu out
+        _nobsdim -= accu->getNObs(); // adjust nobsdim
+        _cont.pop_back(); // resize vector
+        return accu;
     }
 
     void ObservableContainer::clear()

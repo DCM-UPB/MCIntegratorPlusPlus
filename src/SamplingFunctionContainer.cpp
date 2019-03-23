@@ -47,4 +47,11 @@ namespace mci
         return acceptance;
     }
 
+    std::unique_ptr<SamplingFunctionInterface> SamplingFunctionContainer::pop_back()
+    {
+        auto pdf = std::move(_pdfs.back()); // move last pdf out of vector
+        _pdfs.pop_back();
+        return pdf;
+    }
+
 }  // namespace mci

@@ -21,6 +21,11 @@ namespace mci
         delete [] _obs_values;
     }
 
+    std::unique_ptr<ObservableFunctionInterface> AccumulatorInterface::removeObs()
+    {
+        return std::move(_obs); // move away the obs (NOW THE OBJECT IS INVALID; DELETE IT)
+    }
+
     void AccumulatorInterface::_init() // reset base variables (except nsteps/_data)
     {
         _stepidx = 0;

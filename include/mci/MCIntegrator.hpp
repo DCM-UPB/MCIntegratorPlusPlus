@@ -129,9 +129,9 @@ namespace mci
         // Note: Objects passed by raw-ref will be cloned by MCI
 
         // Domain
-        void setDomain(std::unique_ptr<DomainInterface> domain); // move a domain to be owned by MCI
-        void setDomain(const DomainInterface &domain) { this->setDomain(domain.clone()); } // pass a domain to be cloned by MCI
-        void resetDomain(); // reset the domain to unbound
+        std::unique_ptr<DomainInterface> setDomain(std::unique_ptr<DomainInterface> domain); // move a domain to be owned by MCI, returns the previously set domain
+        std::unique_ptr<DomainInterface> setDomain(const DomainInterface &domain) { return this->setDomain(domain.clone()); } // pass a domain to be cloned by MCI
+        std::unique_ptr<DomainInterface> resetDomain(); // reset the domain to unbound, returns the previously set domain (if you don't take it, it will be destroyed)
 
         // keep walkers within these bounds during integration (using periodic boundaries)
         // NOTE: If you use these, any prior domain will be replaced with OrthoPeriodicDomain!!
@@ -139,13 +139,13 @@ namespace mci
         void setIRange(const double lbounds[], const double ubounds[]);
 
         // Trial Moves
-        void setTrialMove(std::unique_ptr<TrialMoveInterface> tmove); // move a move to be owned by MCI
-        void setTrialMove(const TrialMoveInterface &tmove) { this->setTrialMove(tmove.clone()); } // pass a move to be cloned by MCI
-        void setTrialMove(MoveType move /*enum, see Factories.hpp*/); // set trial move to default version of chosen builtin move
-        void setTrialMove(SRRDType srrd /*enum*/, // set builtin SRRD-class move, with distribution srrd
-                          int veclen = 0, /*0 means all-move, > 0 means single-vector move*/
-                          int ntypes = 1, int typeEnds[] = nullptr /* see TypedTrialMove.hpp */
-                          );
+        std::unique_ptr<TrialMoveInterface> setTrialMove(std::unique_ptr<TrialMoveInterface> tmove); // move a move to be owned by MCI
+        std::unique_ptr<TrialMoveInterface> setTrialMove(const TrialMoveInterface &tmove) { return this->setTrialMove(tmove.clone()); } // pass a move to be cloned by MCI
+        std::unique_ptr<TrialMoveInterface> setTrialMove(MoveType move /*enum, see Factories.hpp*/); // set trial move to default version of chosen builtin move
+        std::unique_ptr<TrialMoveInterface> setTrialMove(SRRDType srrd /*enum*/, // set builtin SRRD-class move, with distribution srrd
+                                                         int veclen = 0, /*0 means all-move, > 0 means single-vector move*/
+                                                         int ntypes = 1, int typeEnds[] = nullptr /* see TypedTrialMove.hpp */
+                                                         );
 
 
         // Observables
@@ -171,21 +171,21 @@ namespace mci
             this->addObservable(obs.clone(), blocksize, nskip, flag_equil, estimType);
         }
 
-        void popObservable() { _obscont.pop_back(); } // remove last observable
-        void clearObservables() { _obscont.clear(); } // clear
+        std::unique_ptr<ObservableFunctionInterface> popObservable(); // remove last observable (returns it for you to optionally take it back)
+        void clearObservables() { _obscont.clear(); } // delete all observables
 
 
         // Sampling Functions
         void addSamplingFunction(std::unique_ptr<SamplingFunctionInterface> pdf);
         void addSamplingFunction(const SamplingFunctionInterface &pdf) { this->addSamplingFunction(pdf.clone()); }
-        void popSamplingFunction() { _pdfcont.pop_back(); } // remove last pdf
-        void clearSamplingFunctions() { _pdfcont.clear(); }
+        std::unique_ptr<SamplingFunctionInterface> popSamplingFunction() { return _pdfcont.pop_back(); } // remove last pdf (returns it for you to optionally take it back)
+        void clearSamplingFunctions() { _pdfcont.clear(); } // delete all pdfs
 
         // Callbacks
         void addCallBack(std::unique_ptr<CallBackOnMoveInterface> cback);
         void addCallBack(const CallBackOnMoveInterface &cback) { this->addCallBack(cback.clone()); }
-        void popCallBack() { _cbacks.pop_back(); }
-        void clearCallBacks() { _cbacks.clear(); }
+        std::unique_ptr<CallBackOnMoveInterface> popCallBack(); // remove last callback (returns it for you to optionally take it back)
+        void clearCallBacks() { _cbacks.clear(); } // delete all callbacks
 
         // enable file printout to given files, with frequency freq
         void storeObservablesOnFile(const std::string &filepath, int freq);

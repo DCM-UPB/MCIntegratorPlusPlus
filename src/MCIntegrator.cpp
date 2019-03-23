@@ -307,18 +307,21 @@ namespace mci
 
     // --- Domain
 
-    void MCI::setDomain(std::unique_ptr<DomainInterface> domain)
+    std::unique_ptr<DomainInterface> MCI::setDomain(std::unique_ptr<DomainInterface> domain)
     {
         if (domain->ndim != _ndim) {
             throw std::invalid_argument("[MCI::setDomain] Passed domain's number of dimensions is not equal to MCI's number of walkers.");
         }
-        _domain = std::move(domain);
+        std::swap(domain, _domain); // swap owned pointers
         _domain->applyDomain(_wlkstate.xold);
+        return domain; // return old (will get deleted if not taken)
     }
 
-    void MCI::resetDomain() {
-        _domain = std::unique_ptr<DomainInterface>(new UnboundDomain(_ndim));
+    std::unique_ptr<DomainInterface> MCI::resetDomain() {
+        std::unique_ptr<DomainInterface> domain( new UnboundDomain(_ndim) );
+        std::swap(domain, _domain);
         _domain->applyDomain(_wlkstate.xold); // just in case
+        return domain; // same as above
     }
 
     void MCI::setIRange(const double lbound, const double ubound)
@@ -336,34 +339,39 @@ namespace mci
 
     // --- Trial Moves
 
-    void MCI::setTrialMove(std::unique_ptr<TrialMoveInterface> tmove)
+    std::unique_ptr<TrialMoveInterface> MCI::setTrialMove(std::unique_ptr<TrialMoveInterface> tmove)
     {
         if (tmove->getNDim() != _ndim) {
             throw std::invalid_argument("[MCI::setTrialMove] Passed trial move's number of inputs is not equal to MCI's number of walkers.");
         }
-        _trialMove = std::move(tmove); // unique ptr, old move gets freed automatically
+        std::swap(tmove, _trialMove); // unique ptr, old move gets freed automatically
         _trialMove->bindRGen(_rgen);
+        return tmove; // deleted if not taken
     }
 
-    void MCI::setTrialMove(MoveType move)
+    std::unique_ptr<TrialMoveInterface> MCI::setTrialMove(MoveType move)
     {
-        _trialMove = createMoveDefault(move, _ndim); // use factory default function
+        auto tmove = createMoveDefault(move, _ndim); // use factory default function
+        std::swap(tmove, _trialMove);
         _trialMove->bindRGen(_rgen);
+        return tmove;
     }
 
-    void MCI::setTrialMove(SRRDType srrd, int veclen, int ntypes, int typeEnds[])
+    std::unique_ptr<TrialMoveInterface> MCI::setTrialMove(SRRDType srrd, int veclen, int ntypes, int typeEnds[])
     {
+        std::unique_ptr<TrialMoveInterface> tmove;
         if (veclen>0) {
             if (_ndim % veclen != 0) {
                 throw std::invalid_argument("[MCI::setTrialMove] MCI's number of walkers must be a multiple of passed veclen.");
             }
-            _trialMove = createSRRDVecMove(srrd, _ndim/veclen, veclen, ntypes, typeEnds);
+            tmove = createSRRDVecMove(srrd, _ndim/veclen, veclen, ntypes, typeEnds);
         }
         else {
-            _trialMove = createSRRDAllMove(srrd, _ndim, ntypes, typeEnds);
+            tmove = createSRRDAllMove(srrd, _ndim, ntypes, typeEnds);
         }
-
+        std::swap(tmove, _trialMove);
         _trialMove->bindRGen(_rgen);
+        return tmove;
     }
 
 
@@ -395,6 +403,12 @@ namespace mci
         this->addObservable(std::move(obs), blocksize, nskip, flag_equil, estimType);
     }
 
+    std::unique_ptr<ObservableFunctionInterface> MCI::popObservable()
+    {
+        auto accu = _obscont.pop_back(); // remove accu from container
+        auto obs = accu->removeObs(); // extract contained observable, accu will be destroyed after return
+        return obs; // return obs
+    }
 
     // --- Sampling functions
 
@@ -415,6 +429,13 @@ namespace mci
             throw std::invalid_argument("[MCI::addCallBack] Passed callback function's number of inputs is not equal to MCI's number of walkers.");
         }
         _cbacks.emplace_back( std::move(cback) ); // we move cback ptr into a vector
+    }
+
+    std::unique_ptr<CallBackOnMoveInterface> MCI::popCallBack()
+    {
+        auto cback = std::move(_cbacks.back()); // move last element out of vector
+        _cbacks.pop_back(); // resize vec
+        return cback;
     }
 
     void MCI::callBackOnMove()

@@ -22,7 +22,7 @@ namespace mci
     class AccumulatorInterface
     {
     protected:
-        const std::unique_ptr<ObservableFunctionInterface> _obs; // "unique" pointer to the passed observable function (we own it)
+        std::unique_ptr<ObservableFunctionInterface> _obs; // "unique" pointer to the passed observable function (we own it)
         UpdateableObservableInterface * const _updobs; // if _obs is an UpdateObs, we store a casted raw pointer for internal use (else nullptr)
         const bool _flag_updobs; // is the passed observable derived from UpdateableObservableInterface? (i.e. is _updobs!=nullptr ?)
 
@@ -56,6 +56,7 @@ namespace mci
     public:
         AccumulatorInterface(std::unique_ptr<ObservableFunctionInterface> obs, int nskip);
         virtual ~AccumulatorInterface();
+        std::unique_ptr<ObservableFunctionInterface> removeObs(); // remove and return the contained obs. NOTE: After calling this, the accumulator should be immediately deleted.
 
         ObservableFunctionInterface & getObservableFunction() const { return *_obs; } // acquire raw read-only ref
 
