@@ -1,3 +1,4 @@
+#include <cassert>
 #include <cmath>
 #include <iomanip>
 #include <iostream>
@@ -8,59 +9,14 @@
 #include "mci/Estimators.hpp"
 
 #include "../../test/common/TestMCIFunctions.hpp"
-#include "MCIBenchmarks.hpp"
+#include "../common/MCIBenchmarks.hpp"
 
 using namespace std;
+using namespace mci;
 
-bool isStepAccepted(double oldWFVal, double newWFVal)
-{   // standard VMC acceptance criterion
-    if (oldWFVal == 0) {
-        return true;
-    }
-    if (newWFVal == 0) {
-        return false;
-    }
-    const double threshold = (newWFVal*newWFVal)/(oldWFVal*oldWFVal);
-    if (threshold >= 1.) {
-        return true;
-    }
-    return ( rand()*(1.0 / RAND_MAX) <= threshold );
-}
-
-double calc1sOrbitalWFVal(const double * position, const int ndim)
-{   // product of 1s orbitals in 1D
-    double wfval = 0.;
-    for (int i=0; i<ndim; ++i) {
-        wfval += fabs(position[i]);
-    }
-    return exp(-wfval);
-}
-
-void generate1sOrbitalPosition(const double * oldPosition, double * newPosition, const int ndim)
-{
-    double oldWFVal = calc1sOrbitalWFVal(oldPosition, ndim);
-    
-    bool accepted = false;
-    do {
-        for (int i=0; i<ndim; ++i) {
-            newPosition[i] = oldPosition[i] + 0.2*(rand()*(1.0 / RAND_MAX) - 0.5);
-        }
-        const double newWFVal = calc1sOrbitalWFVal(newPosition, ndim);
-        accepted = isStepAccepted(oldWFVal, newWFVal);
-    } while (!accepted);
-}
-
-void generate1sOrbitalWalk(double * datax, const int NMC, const int ndim)
-{
-    for (int j=0; j<ndim; ++j) { datax[j] = 0.; } // set first step to 0
-    for (int i=1; i<NMC; ++i) {
-        generate1sOrbitalPosition(datax+(i-1)*ndim, datax+i*ndim, ndim);
-    }
-}
-
-
-void run_single_benchmark(const string &label, const int estimatorType /*1 uncorr-1d, 2 block-1d, 3 corr-1d, 4 uncorr-nd, 5 block-nd, 6 corr-nd */,
-                          const double * datax, const int NMC, const int ndim, const int nruns)
+void run_single_benchmark(const string &label, const double datax[],
+                          BenchEstim estimatorType,
+                          const int NMC, const int ndim, const int nruns)
 {
     pair<double, double> result;
     const double time_scale = 1000000000.; //nanoseconds
@@ -72,27 +28,48 @@ void run_single_benchmark(const string &label, const int estimatorType /*1 uncor
 
 int main ()
 {
-    const int NMC = 10000000;
+    const bool flag_debug = false;
+    const bool verbose = flag_debug; // some debug printout
+    const int NMC = flag_debug ? 4096 : 8388608; // use power of two to allow MJBlocker
     const int nruns = 10;
-    const int estimatorTypes[6] = {1, 2, 3, 4, 5, 6};
-    const int ndims[3] = {1, 10, 100};
+    const int ntypes = 7;
+    const BenchEstim estimatorTypes[ntypes] = {BenchEstim::Uncorr1D, BenchEstim::Block1D, BenchEstim::CorrFC1D, 
+                                               BenchEstim::UncorrND, BenchEstim::BlockND, BenchEstim::CorrFCND, BenchEstim::CorrMJND};
+    const int ndims[3] = {1, 16, 128};
+    const double stepSizes[3] = {1.59, 0.313, 0.1053};
 
-    vector<string> labels {"noblock-1D", "20-block-1D", "autoblock-1D", "noblock-ND", "20-block-ND", "autoblock-ND"};
+    vector<string> labels {"noblock-1D", "500K-block-1D", "autoblock-FC-1D", "noblock-ND", "500K-block-ND", "autoblock-FC-ND", "autoblock-MJ-ND"};
 
     srand(1337); // consistent random seed
 
     cout << "=========================================================================================" << endl << endl;
-    cout << "Benchmark results (time per sample):" << endl;
+    cout << "Benchmark results (time per sample and dimension):" << endl;
 
     // Estimator benchmark
-    for (const int &ndim : ndims) {
-        const int trueNMC = NMC/ndim;
-        auto * datax = new double[trueNMC*ndim];
-        generate1sOrbitalWalk(datax, trueNMC, ndim);
+    for (int i=0; i<3; ++i) { // go through ndims/stepSizes
+        const int trueNMC = NMC/ndims[i];
+        auto * datax = new double[trueNMC*ndims[i]];
+        TestWalk1s testWalk(trueNMC, ndims[i], stepSizes[i], 1. /*all-particle steps*/);
+        testWalk.generateWalk(datax);
 
-        for (const int &etype : estimatorTypes) {
-            if ( !(ndim>1 && etype<4) ) {
-                run_single_benchmark("t/element ( ndim=" + to_string(ndim) + ", " + labels[etype-1] + " )", etype, datax, trueNMC, ndim, nruns);
+        if (verbose) { // verbose stuff (better decrease NMC to 1000)
+           cout << "Acceptance ratio was " << testWalk.getAcceptanceRate() << endl;
+           cout << "datax:" << endl;
+           for (int imc=0; imc<trueNMC; ++imc) {
+               cout << "imc " << imc << endl;
+               cout << "x ";
+           for (int idm=0; idm<ndims[i]; ++idm) { cout << " " << datax[imc*ndims[i] + idm]; }
+           cout << endl;
+           }
+        }
+
+        // the steps sizes were tuned for 0.5+-0.01 acceptance rate (on 1337 seed)
+        // so this serves as a little check that nothing was messed up in TestMCIFunctions
+        assert(fabs(testWalk.getAcceptanceRate()-0.5) < 0.01);
+
+        for (int j=0; j<ntypes; ++j) {
+            if ( !(ndims[i]>1 && j<3) ) {
+                run_single_benchmark("t/element ( ndim=" + to_string(ndims[i]) + ", " + labels[j] + " )", datax, estimatorTypes[j], trueNMC, ndims[i], nruns);
             }
         }
 

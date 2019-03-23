@@ -9,20 +9,33 @@
 
 
 // Observable functions
-class Parabola: public MCIObservableFunctionInterface{
+// Observable functions
+class Parabola: public mci::ObservableFunctionInterface{
+protected:
+    // Observables need to be copyable, so we need to provide this
+    // protected method. In return, there will be a public method
+    // clone() returning a std::unique_ptr<ObservableFunctionInterface> .
+    mci::ObservableFunctionInterface * _clone() const override {
+        return new Parabola();
+    }
 public:
-    explicit Parabola(const int &ndim): MCIObservableFunctionInterface(ndim, 1) {}
+    Parabola(): mci::ObservableFunctionInterface(1 /*1D input*/, 1 /*1D output*/) {}
 
-    void observableFunction(const double * in, double * out) override{
+    // here we calculate the observable function
+    void observableFunction(const double in[], double out[]) override{
         out[0] = 4.*in[0] - in[0]*in[0];
     }
 };
 
-class NormalizedParabola: public MCIObservableFunctionInterface{
+class NormalizedParabola: public mci::ObservableFunctionInterface{
+protected:
+    mci::ObservableFunctionInterface * _clone() const override {
+        return new NormalizedParabola();
+    }
 public:
-    explicit NormalizedParabola(const int &ndim): MCIObservableFunctionInterface(ndim, 1) {}
+    explicit NormalizedParabola(): mci::ObservableFunctionInterface(1, 1) {}
 
-    void observableFunction(const double * in, double * out) override{
+    void observableFunction(const double in[], double out[]) override{
         out[0] = (4. - in[0]) * 5.;
         if (std::signbit(in[0])) { out[0] = -out[0];}
     }
@@ -32,23 +45,32 @@ public:
 
 // Sampling function
 // the 48 is for normalization (even if not strictly necessary)
-class NormalizedLine: public MCISamplingFunctionInterface{
+class NormalizedLine: public mci::SamplingFunctionInterface{
+protected:
+    // same as above
+    mci::SamplingFunctionInterface * _clone() const override {
+        return new NormalizedLine();
+    }
 public:
-    explicit NormalizedLine(const int &ndim): MCISamplingFunctionInterface(ndim, 1) {}
+    explicit NormalizedLine(): mci::SamplingFunctionInterface(1, 1) {}
 
-    void samplingFunction(const double * in, double * protovalue) override{
+    void protoFunction(const double in[], double protovalue[]) override{
         protovalue[0] = 0.2 * fabs(in[0]);
     }
 
-    double getAcceptance(const double * protoold, const double * protonew) override{
+    double samplingFunction(const double protovalue[]) const override{
+        return protovalue[0];
+    }
+
+    double acceptanceFunction(const double protoold[], const double protonew[]) const override{
         return protonew[0] / protoold[0];
     }
 };
 
 
-
 int main() {
     using namespace std;
+    using namespace mci;
 
     int myrank = MPIMCI::init(); // first run custom MPI init
 
@@ -71,7 +93,7 @@ int main() {
     // set the integration range to [-1:3]
     mci.setIRange(-1., 3.);
 
-    if (myrank == 0) { cout << "irange = [ " << mci.getLBound(0) << " ; " << mci.getUBound(0) << " ]" << endl;}
+    if (myrank == 0) { cout << "irange = [ " << -1 << " ; " << 3 << " ]" << endl;}
 
     // initial walker position
     double initpos[ndim];
@@ -81,9 +103,7 @@ int main() {
     if (myrank == 0) { cout << "initial walker position = " << mci.getX(0) << endl;}
 
     // initial MRT2 step
-    double step[ndim];
-    step[0] = 0.5;
-    mci.setMRT2Step(step);
+    mci.setMRT2Step(0.25);
 
     if (myrank == 0) { cout << "MRT2 step = " << mci.getMRT2Step(0) << endl;}
 
@@ -101,13 +121,14 @@ int main() {
     }
 
     // observable
-    MCIObservableFunctionInterface * obs = new Parabola(ndim);
+    Parabola obs;
     mci.addObservable(obs);
 
     if (myrank == 0) {
         cout << "Number of observables set = " << mci.getNObs() << endl;
+        cout << "Dimension of observables set = " << mci.getNObsDim() << endl;
         // sampling function
-        cout << "Number of sampling function set = " << mci.getNSampF() << endl;
+        cout << "Number of sampling function set = " << mci.getNPDF() << endl;
     }
 
     // integrate
@@ -117,10 +138,10 @@ int main() {
 
     // ! set fixed amount of findMRT2 and decorrelation steps    !
     // ! this is very important for efficient parallel execution !
-    mci.setNfindMRT2steps(50);
+    mci.setNfindMRT2Iterations(50);
     mci.setNdecorrelationSteps(5000);
 
-    MPIMCI::integrate(&mci, Nmc, average, error);
+    MPIMCI::integrate(mci, Nmc, average, error);
 
     if (myrank == 0) {
         cout << "The integral gives as result = " << average[0] << "   +-   " << error[0] << endl;
@@ -133,23 +154,22 @@ int main() {
     }
 
     // observable
-    delete obs;
-    obs = new NormalizedParabola(ndim);
+    NormalizedParabola obs2;
     mci.clearObservables();  // we first remove the old observable
-    mci.addObservable(obs);
-
-    if (myrank == 0) { cout << "Number of observables set = " << mci.getNObs() << endl;}
-
+    mci.addObservable(obs2);
 
     // sampling function
-    MCISamplingFunctionInterface * sf = new NormalizedLine(ndim);
+    NormalizedLine sf;
     mci.addSamplingFunction(sf);
 
-    if (myrank == 0) { cout << "Number of sampling function set = " << mci.getNSampF() << endl;}
-
+    if (myrank == 0) {
+        cout << "Number of observables set = " << mci.getNObs() << endl;
+        cout << "Dimension of observables set = " << mci.getNObsDim() << endl;
+        cout << "Number of sampling function set = " << mci.getNPDF() << endl;
+    }
 
     // integrate
-    MPIMCI::integrate(&mci, Nmc, average, error);
+    MPIMCI::integrate(mci, Nmc, average, error);
 
     if (myrank == 0) {
         cout << "The integral gives as result = " << average[0] << "   +-   " << error[0] << endl;
@@ -160,10 +180,6 @@ int main() {
         cout << "Using a sampling function in this case gives worse performance. In fact, the error bar is larger." << endl;
         cout << "This implies that the variance of the re-factored f(x) written for introducing a sampling function, is larger than the original f(x)." << endl;
     }
-
-    // deallocate per-thread allocations
-    delete sf;
-    delete obs;
 
     // finalize MPI
     MPIMCI::finalize();

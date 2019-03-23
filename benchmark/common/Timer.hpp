@@ -1,3 +1,6 @@
+#ifndef MCI_TIMER_HPP
+#define MCI_TIMER_HPP
+
 #include <chrono>
 #include <iostream>
 
@@ -16,3 +19,5 @@ private:
     std::chrono::time_point<_clock> _beg;
     const double _scale;
 };
+
+#endif

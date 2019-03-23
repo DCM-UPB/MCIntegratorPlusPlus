@@ -1,5 +1,8 @@
-include_directories(common/)
 link_libraries(mci)
 
-add_executable(bench_integrate_nmc bench_integrate_nmc/main.cpp)
 add_executable(bench_estimators bench_estimators/main.cpp)
+add_executable(bench_integrate_mixed bench_integrate_mixed/main.cpp)
+add_executable(bench_throughput_nmc bench_throughput_nmc/main.cpp)
+add_executable(bench_throughput_3G bench_throughput_3G/main.cpp)
+add_executable(bench_throughput_ndim_all bench_throughput_ndim_all/main.cpp)
+add_executable(bench_throughput_ndim_single bench_throughput_ndim_single/main.cpp)
