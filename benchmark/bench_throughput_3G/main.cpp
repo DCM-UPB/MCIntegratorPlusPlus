@@ -1,25 +1,24 @@
 #include <iomanip>
 #include <iostream>
-#include <string>
 
 #include "mci/MCIntegrator.hpp"
 
 #include "../../test/common/TestMCIFunctions.hpp"
 #include "../common/MCIBenchmarks.hpp"
 
-#include <cstdint>
-
 using namespace std;
 using namespace mci;
 
-void run_single_benchmark(const string &label, MCI &mci, const int nruns, const int64_t NMC) {
+void run_single_benchmark(const string &label, MCI &mci, const int nruns, const int64_t NMC)
+{
     pair<double, double> result;
 
     result = sample_benchmark_MCIntegrate(mci, nruns, NMC);
-    cout << label << ":" << setw(max(1, 20-static_cast<int>(label.length()))) << setfill(' ') << " " << result.first << " +- " << result.second << " seconds" << endl;
+    cout << label << ":" << setw(max(1, 20 - static_cast<int>(label.length()))) << setfill(' ') << " " << result.first << " +- " << result.second << " seconds" << endl;
 }
 
-int main () {
+int main()
+{
     // benchmark settings
     const int64_t NMC = 3000000000; // 3G steps, enough to overflow 32 bit int
     const int nruns = 1;
@@ -37,7 +36,7 @@ int main () {
     mci.setMRT2Step(&mrt2step);
 
     mci.integrate(100000, &avg, &err, false, false); // warmup&decorrelate
-    cout << "avg " << avg <<  ", err " << err << endl;
+    cout << "avg " << avg << ", err " << err << endl;
     cout << "acceptance rate " << mci.getAcceptanceRate() << endl;
 
     cout << "=========================================================================================" << endl << endl;

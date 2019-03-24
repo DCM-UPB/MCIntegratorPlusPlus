@@ -3,13 +3,10 @@
 #include "mci/FullAccumulator.hpp"
 #include "mci/SimpleAccumulator.hpp"
 
-#include <algorithm>
 #include <cassert>
 #include <cmath>
 #include <iostream>
 #include <random>
-#include <string>
-#include <tuple>
 
 #include "../common/TestMCIFunctions.hpp"
 
@@ -26,7 +23,7 @@ void reportAvgErr1D(const string &label, double avg, double err)
 void reportAvgErrND(const string &label, int ndim, double avg[], double err[])
 {
     cout << "- " << label << endl;
-    for (int i=0; i<ndim; ++i) {
+    for (int i = 0; i < ndim; ++i) {
         cout << "     avg" << i << " = " << avg[i] << "     error" << i << " = " << err[i] << endl;
     }
     cout << endl;
@@ -34,21 +31,22 @@ void reportAvgErrND(const string &label, int ndim, double avg[], double err[])
 
 void arrayAvgND(int N1, int N2, const double in[] /*N1*N2*/, double out[] /*N2*/)
 {   // calculate average of length N2
-    std::fill(out, out+N2, 0.);
-    for (int i=0; i<N1; ++i) {
-        for (int j=0; j<N2; ++j) {
+    std::fill(out, out + N2, 0.);
+    for (int i = 0; i < N1; ++i) {
+        for (int j = 0; j < N2; ++j) {
             out[j] += in[i*N2 + j];
         }
     }
-    for (int i=0; i<N2; ++i) { out[i] /= N1; }
+    for (int i = 0; i < N2; ++i) { out[i] /= N1; }
 }
 
 void assertArraysEqual(int ndim, const double arr1[], const double arr2[], double tol = 0.)
 {
     if (tol > 0.) {
-        for (int i=0; i<ndim; ++i) { assert( fabs(arr1[i] - arr2[i]) < tol ); }
-    } else {
-        for (int i=0; i<ndim; ++i) { assert( arr1[i] == arr2[i] ); } // the check above may fail in this case
+        for (int i = 0; i < ndim; ++i) { assert(fabs(arr1[i] - arr2[i]) < tol); }
+    }
+    else {
+        for (int i = 0; i < ndim; ++i) { assert(arr1[i] == arr2[i]); } // the check above may fail in this case
     }
 }
 
@@ -69,7 +67,7 @@ void assertAccuResetted(const AccumulatorInterface &accu)
     assert(accu.getStepIndex() == 0);
     assert(accu.isClean());
     assert(!accu.isFinalized());
-    for (int i=0; i<accu.getNData(); ++i) { assert(accu.getData()[i] == 0.); }
+    for (int i = 0; i < accu.getNData(); ++i) { assert(accu.getData()[i] == 0.); }
 }
 
 void assertAccuDeallocated(const AccumulatorInterface &accu)
@@ -90,7 +88,7 @@ void assertAccuAllocated(const AccumulatorInterface &accu, int Nmc)
     assert(accu.getNAccu() > 0);
     assert(accu.getNStore() > 0);
     assert(accu.getNData() > 0);
-    assert(accu.getNData() == accu.getNStore() * accu.getNObs());
+    assert(accu.getNData() == accu.getNStore()*accu.getNObs());
 }
 
 void assertAccuFinalized(const AccumulatorInterface &accu, int Nmc)
@@ -106,10 +104,10 @@ void accumulateData(AccumulatorInterface &accu, int Nmc, int ndim, const double 
                     const bool datacc[], const int nchanged[], const int changedIdx[])
 {   // simulated MC observable accumulation
     WalkerState wlk(ndim, true);
-    for (int i=0; i<Nmc; ++i) {
-        std::copy(datax+i*ndim, datax+(i+1)*ndim, wlk.xnew);
+    for (int i = 0; i < Nmc; ++i) {
+        std::copy(datax + i*ndim, datax + (i + 1)*ndim, wlk.xnew);
         wlk.nchanged = nchanged[i];
-        std::copy(changedIdx+i*ndim, changedIdx+(i+1)*ndim, wlk.changedIdx);
+        std::copy(changedIdx + i*ndim, changedIdx + (i + 1)*ndim, wlk.changedIdx);
         wlk.accepted = datacc[i];
         /*
         std::cout << "Step " << i << ":" << std::endl;
@@ -150,7 +148,7 @@ void checkAccumulator(AccumulatorInterface &accu, int Nmc, int ndim, const doubl
 
     // copy the stored data
     const double * const dataptr = accu.getData(); // we acquire a read-only pointer to data
-    std::copy(dataptr, dataptr+accu.getNData(), storedData);
+    std::copy(dataptr, dataptr + accu.getNData(), storedData);
 
     // now do the same after reset
     accu.reset();
@@ -175,16 +173,16 @@ void checkAccumulator(AccumulatorInterface &accu, int Nmc, int ndim, const doubl
     if (accu.getNStore() > 1) {
         double avg[ndim];
         arrayAvgND(accu.getNStore(), ndim, accu.getData(), avg);
-        for (int i=0; i<ndim; ++i) {
-            assert( fabs(avg[i] - refAvg[i]) < tol );
+        for (int i = 0; i < ndim; ++i) {
+            assert(fabs(avg[i] - refAvg[i]) < tol);
             if (verbose) {
                 cout << "avg" << i << " " << avg[i] << " refAvg" << i << " " << refAvg[i] << endl;
             }
         }
     }
     else {
-        for (int i=0; i<ndim; ++i) {
-            assert( fabs(accu.getData()[i] - refAvg[i]) < tol );
+        for (int i = 0; i < ndim; ++i) {
+            assert(fabs(accu.getData()[i] - refAvg[i]) < tol);
             if (verbose) {
                 cout << "avg" << i << " " << accu.getData()[i] << " refAvg" << i << " " << refAvg[i] << endl;
             }
@@ -192,7 +190,8 @@ void checkAccumulator(AccumulatorInterface &accu, int Nmc, int ndim, const doubl
     }
 }
 
-int main(){
+int main()
+{
     using namespace std;
 
     bool verbose = false;
@@ -206,7 +205,7 @@ int main(){
     const int nd = 2;
     const int ndata = Nmc*nd;
 
-    const int nblocks=2048; // blocks to use for fixed-block estimator
+    const int nblocks = 2048; // blocks to use for fixed-block estimator
 
     // generate random walk
     double xND[ndata];
@@ -235,9 +234,9 @@ int main(){
     // helper input for 1D
     double x1D[Nmc];
 
-    for (int i=0; i<nd; ++i) {
+    for (int i = 0; i < nd; ++i) {
         // copy subdata into continous array
-        for (int j=0; j<Nmc; ++j) { x1D[j] = xND[j*nd + i]; }
+        for (int j = 0; j < Nmc; ++j) { x1D[j] = xND[j*nd + i]; }
 
         // perform check for correct averages
         double avg1D = 0., err1D = 0.;
@@ -248,21 +247,21 @@ int main(){
 
         mci::OneDimBlockEstimator(Nmc, x1D, nblocks, avg1D, err1D);
         if (verbose) { reportAvgErr1D("BlockEstimator()", avg1D, err1D); }
-        assert(fabs(avg1D - refAvg[i]) < EXTRA_TINY ); // these should be virtually identical
+        assert(fabs(avg1D - refAvg[i]) < EXTRA_TINY); // these should be virtually identical
 
         mci::OneDimFCBlockerEstimator(Nmc, x1D, avg1D, err1D);
         if (verbose) { reportAvgErr1D("FCBlockerEstimator()", avg1D, err1D); }
-        assert(fabs(avg1D - refAvg[i]) < TINY ); // this difference should be TINY
+        assert(fabs(avg1D - refAvg[i]) < TINY); // this difference should be TINY
 
         // the following is currently true with the selected seed
         // and should be quite robust under (valid) change
-        assert(fabs(avg1D - refAvg[i]) < 3*err1D );
+        assert(fabs(avg1D - refAvg[i]) < 3*err1D);
 
         // and the same with MJBlocker
         mci::MJBlockerEstimator(Nmc, 1, x1D, &avg1D, &err1D);
         if (verbose) { reportAvgErr1D("MJBlockerEstimator()", avg1D, err1D); }
-        assert(fabs(avg1D - refAvg[i]) < TINY ); // this difference should be TINY
-        assert(fabs(avg1D - refAvg[i]) < 3*err1D );
+        assert(fabs(avg1D - refAvg[i]) < TINY); // this difference should be TINY
+        assert(fabs(avg1D - refAvg[i]) < 3*err1D);
     }
 
 
@@ -282,16 +281,16 @@ int main(){
 
     mci::MultiDimFCBlockerEstimator(Nmc, nd, xND, avgND, errND);
     if (verbose) { reportAvgErrND("MultiDimFCBlockerEstimator()", nd, avgND, errND); }
-    for (int i=0; i<nd; ++i) {
-        assert(fabs(avgND[i] - refAvg[i]) < TINY ); // this difference should be TINY
-        assert(fabs(avgND[i] - refAvg[i]) < 3*errND[i] ); // like in the 1D case
+    for (int i = 0; i < nd; ++i) {
+        assert(fabs(avgND[i] - refAvg[i]) < TINY); // this difference should be TINY
+        assert(fabs(avgND[i] - refAvg[i]) < 3*errND[i]); // like in the 1D case
     }
 
     mci::MJBlockerEstimator(Nmc, nd, xND, avgND, errND);
     if (verbose) { reportAvgErrND("MJBlockerEstimator()", nd, avgND, errND); }
-    for (int i=0; i<nd; ++i) {
-        assert(fabs(avgND[i] - refAvg[i]) < TINY ); // this difference should be TINY
-        assert(fabs(avgND[i] - refAvg[i]) < 3*errND[i] ); // like in the 1D case
+    for (int i = 0; i < nd; ++i) {
+        assert(fabs(avgND[i] - refAvg[i]) < TINY); // this difference should be TINY
+        assert(fabs(avgND[i] - refAvg[i]) < 3*errND[i]); // like in the 1D case
     }
 
 
@@ -305,7 +304,7 @@ int main(){
     FullAccumulator fullAccu(obsfun.clone(), 1);
     FullAccumulator fullAccuSkip2(obsfun.clone(), 2);
 
-    vector<pair< AccumulatorInterface *, string > > accuList;
+    vector<pair<AccumulatorInterface *, string> > accuList;
     accuList.emplace_back(&simpleAccu, "simpleAccu");
     accuList.emplace_back(&blockAccu, "blockAccu");
     accuList.emplace_back(&fullAccu, "fullAccu");
@@ -313,7 +312,7 @@ int main(){
     accuList.emplace_back(&blockAccuSkip2, "blockAccuSkip2");
     accuList.emplace_back(&fullAccuSkip2, "fullAccuSkip2");
 
-    for (auto & accuTup : accuList) {
+    for (auto &accuTup : accuList) {
         if (verbose) { cout << endl << "Checking accumulator " << accuTup.second << " ..." << endl; }
         checkAccumulator(*accuTup.first, Nmc, nd, xND, accepted, nchanged, changedIdx, SMALL, verbose);
     }

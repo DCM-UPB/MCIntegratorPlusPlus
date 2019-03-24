@@ -25,19 +25,19 @@
 
 namespace mci
 {
-    template<typename T>
-    struct Clonable
+template <typename T>
+struct Clonable
+{
+protected:
+    virtual T * _clone() const = 0;
+
+public:
+    virtual ~Clonable() = default;
+
+    std::unique_ptr<T> clone() const
     {
-    protected:
-        virtual T * _clone() const = 0;
-
-    public:
-        virtual ~Clonable() = default;
-
-        std::unique_ptr<T> clone() const
-        {
-            return std::unique_ptr<T>(_clone());
-        }
-    };
+        return std::unique_ptr<T>(_clone());
+    }
+};
 }  // namespace mci
 #endif

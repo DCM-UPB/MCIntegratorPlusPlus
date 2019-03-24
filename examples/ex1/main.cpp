@@ -1,5 +1,4 @@
 #include <cmath>
-#include <cmath>
 #include <fstream>
 #include <iostream>
 
@@ -7,66 +6,76 @@
 
 
 // Observable functions
-class Parabola: public mci::ObservableFunctionInterface{
+class Parabola: public mci::ObservableFunctionInterface
+{
 protected:
     // Observables need to be copyable, so we need to provide this
     // protected method. In return, there will be a public method
     // clone() returning a std::unique_ptr<ObservableFunctionInterface> .
-    mci::ObservableFunctionInterface * _clone() const override {
+    mci::ObservableFunctionInterface * _clone() const override
+    {
         return new Parabola();
     }
 public:
     Parabola(): mci::ObservableFunctionInterface(1 /*1D input*/, 1 /*1D output*/) {}
 
     // here we calculate the observable function
-    void observableFunction(const double in[], double out[]) override{
+    void observableFunction(const double in[], double out[]) override
+    {
         out[0] = 4.*in[0] - in[0]*in[0];
     }
 };
 
-class NormalizedParabola: public mci::ObservableFunctionInterface{
+class NormalizedParabola: public mci::ObservableFunctionInterface
+{
 protected:
     // same as above
-    mci::ObservableFunctionInterface * _clone() const override {
+    mci::ObservableFunctionInterface * _clone() const override
+    {
         return new NormalizedParabola();
     }
 public:
     explicit NormalizedParabola(): mci::ObservableFunctionInterface(1, 1) {}
 
-    void observableFunction(const double in[], double out[]) override{
-        out[0] = (4. - in[0]) * 5.;
-        if (std::signbit(in[0])) { out[0] = -out[0];}
+    void observableFunction(const double in[], double out[]) override
+    {
+        out[0] = (4. - in[0])*5.;
+        if (std::signbit(in[0])) { out[0] = -out[0]; }
     }
 };
 
 
-
 // Sampling function
 // the 48 is for normalization (even if not strictly necessary)
-class NormalizedLine: public mci::SamplingFunctionInterface{
+class NormalizedLine: public mci::SamplingFunctionInterface
+{
 protected:
-    mci::SamplingFunctionInterface * _clone() const override {
+    mci::SamplingFunctionInterface * _clone() const override
+    {
         return new NormalizedLine();
     }
 public:
     explicit NormalizedLine(): mci::SamplingFunctionInterface(1, 1) {}
 
-    void protoFunction(const double in[], double protovalue[]) override{
-        protovalue[0] = 0.2 * fabs(in[0]);
+    void protoFunction(const double in[], double protovalue[]) override
+    {
+        protovalue[0] = 0.2*fabs(in[0]);
     }
 
-    double samplingFunction(const double protovalue[]) const override{
+    double samplingFunction(const double protovalue[]) const override
+    {
         return protovalue[0];
     }
 
-    double acceptanceFunction(const double protoold[], const double protonew[]) const override{ // don't forget the const!
-        return protonew[0] / protoold[0];
+    double acceptanceFunction(const double protoold[], const double protonew[]) const override
+    { // don't forget the const!
+        return protonew[0]/protoold[0];
     }
 };
 
 
-
-int main() {
+int main()
+{
     using namespace std;
     using namespace mci; // everything in MCI lib is namespaced
 

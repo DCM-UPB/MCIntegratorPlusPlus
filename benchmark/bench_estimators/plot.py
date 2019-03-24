@@ -1,5 +1,6 @@
 from pylab import *
 
+
 class benchmark_integrate_nmc:
 
     def __init__(self, filename, label):
@@ -25,17 +26,18 @@ def plot_compare_nmc(benchmark_list, **kwargs):
     print(benchmark_list[0].data)
 
     fig = figure()
-    fig.suptitle('Estimators benchmark, comparing averaging techniques\n ',fontsize=12)
+    fig.suptitle('Estimators benchmark, comparing averaging techniques\n ', fontsize=12)
     for i in range(4):
-        ax = fig.add_subplot(2, 2, i+1)
-        xlabels = [ tup[1] for tup in list(benchmark_list[0].data.keys())[i*3:(i+1)*3] ] # get the xlabels from first entry in data dict
+        ax = fig.add_subplot(2, 2, i + 1)
+        xlabels = [tup[1] for tup in list(benchmark_list[0].data.keys())[
+                                     i * 3:(i + 1) * 3]]  # get the xlabels from first entry in data dict
 
         for benchmark in benchmark_list:
-            values = [ benchmark.data[key][0] for key in list(benchmark.data.keys())[i*3:(i+1)*3] ]
-            errors = [ benchmark.data[key][1] for key in list(benchmark.data.keys())[i*3:(i+1)*3] ]
+            values = [benchmark.data[key][0] for key in list(benchmark.data.keys())[i * 3:(i + 1) * 3]]
+            errors = [benchmark.data[key][1] for key in list(benchmark.data.keys())[i * 3:(i + 1) * 3]]
             ax.errorbar(xlabels, values, xerr=None, yerr=errors, **kwargs)
-        ax.set_title(list(benchmark_list[0].data.keys())[i*3][0])
-        if (i%2==0):
+        ax.set_title(list(benchmark_list[0].data.keys())[i * 3][0])
+        if (i % 2 == 0):
             ax.set_ylabel('Time per element [ns]')
         ax.set_ylim(0.1, 100.)
         ax.set_yscale('log')
@@ -54,7 +56,7 @@ for benchmark_file in sys.argv[1:]:
     except(OSError):
         print("Warning: Couldn't load benchmark file " + benchmark_file + "!")
 
-if len(benchmark_list)<1:
+if len(benchmark_list) < 1:
     print("Error: Not even one benchmark loaded!")
 else:
     fig1 = plot_compare_nmc(benchmark_list, fmt='o--')

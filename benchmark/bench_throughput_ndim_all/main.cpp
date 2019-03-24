@@ -1,28 +1,27 @@
 #include <iomanip>
 #include <iostream>
 #include <memory>
-#include <string>
 
 #include "mci/MCIntegrator.hpp"
 
 #include "../../test/common/TestMCIFunctions.hpp"
 #include "../common/MCIBenchmarks.hpp"
 
-#include <memory>
-
 using namespace std;
 using namespace mci;
 
-void run_single_benchmark(const string &label, MCI &mci, const int nruns, const int NMC) {
+void run_single_benchmark(const string &label, MCI &mci, const int nruns, const int NMC)
+{
     pair<double, double> result;
     const double time_scale = 1000000.; //microseconds
-    const double full_scale = (time_scale / NMC) / mci.getNDim(); // time per step per dim
+    const double full_scale = (time_scale/NMC)/mci.getNDim(); // time per step per dim
 
     result = sample_benchmark_MCIntegrate(mci, nruns, NMC);
-    cout << label << ":" << setw(max(1, 20-static_cast<int>(label.length()))) << setfill(' ') << " " << result.first*full_scale << " +- " << result.second*full_scale << " microseconds" << endl;
+    cout << label << ":" << setw(max(1, 20 - static_cast<int>(label.length()))) << setfill(' ') << " " << result.first*full_scale << " +- " << result.second*full_scale << " microseconds" << endl;
 }
 
-int main () {
+int main()
+{
     // benchmark settings
     const int NMC = 50000;
     const int nset = 6;
@@ -30,12 +29,12 @@ int main () {
     const int nruns[nset] = {5120, 1280, 320, 80, 20, 5};
     const double mrt2steps[nset] = {3.0, 1.35, 0.6, 0.3, 0.15, 0.07};
 
-    std::vector< std::unique_ptr<MCI> > mcis;
+    std::vector<std::unique_ptr<MCI> > mcis;
     for (int nd : ndims) {
-        mcis.push_back( std::make_unique<MCI>(nd) );
+        mcis.push_back(std::make_unique<MCI>(nd));
     }
 
-    for (int i=0; i<nset; ++i) {
+    for (int i = 0; i < nset; ++i) {
         MCI * mci = mcis[i].get();
         int nd = mci->getNDim();
         ExpNDPDF pdf(nd);
@@ -46,7 +45,7 @@ int main () {
         mci->addObservable(obs, 0, 1); // use simple accu (i.e. no error), no skipping
 
         double avg[nd], err[nd];
-        for (int j=0; j<nd; ++j) { mci->setX(j, j%2==0 ? 0.1 : -0.05 ); }
+        for (int j = 0; j < nd; ++j) { mci->setX(j, j%2 == 0 ? 0.1 : -0.05); }
         mci->setMRT2Step(mrt2steps[i]);
 
         mci->setNdecorrelationSteps(500000);
@@ -58,7 +57,7 @@ int main () {
     cout << "Benchmark results (time per step and dimension):" << endl;
 
     // MCIntegrate benchmark
-    for (int inmc=0; inmc<nset; ++inmc) {
+    for (int inmc = 0; inmc < nset; ++inmc) {
         run_single_benchmark("t/step (" + std::to_string(ndims[inmc]) + " dim)", *(mcis[inmc]), nruns[inmc], NMC);
     }
     cout << "=========================================================================================" << endl << endl << endl;

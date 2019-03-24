@@ -9,7 +9,8 @@
   random.org without comma delimiters and unordered.
 */
 
-int main() {
+int main()
+{
     using namespace std;
 
     ifstream infile;
@@ -19,7 +20,7 @@ int main() {
 
     uint_fast64_t factor = 65537;
     factor *= 6700417;
-    for (int i=0; i<10000; ++i) {
+    for (int i = 0; i < 10000; ++i) {
         uint_fast64_t seed;
         infile >> seed;
         seed *= factor;

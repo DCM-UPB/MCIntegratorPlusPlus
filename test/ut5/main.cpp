@@ -1,8 +1,6 @@
 #include "mci/MCIntegrator.hpp"
-#include "mci/SamplingFunctionInterface.hpp"
 
 #include <cassert>
-#include <cmath>
 #include <iostream>
 
 #include "../common/TestMCIFunctions.hpp"
@@ -10,7 +8,8 @@
 using namespace std;
 using namespace mci;
 
-int main(){
+int main()
+{
     const int NMC = 32768; // used for all-moves, multipled by 1/changeRate for non-all-moves
     const double CORRECT_RESULT = 0.5;
 
@@ -38,9 +37,9 @@ int main(){
     mci.centerX(); // set x to 0
     mci.moveX(); // do one random move manually
     mci.integrate(NMC, average, error, true, true);
-    for (int i=0; i<mci.getNObsDim(); ++i) {
+    for (int i = 0; i < mci.getNObsDim(); ++i) {
         //std::cout << "i " << i << ", average[i] " << average[i] << ", error[i] " << error[i] << ", CORRECT_RESULT" << CORRECT_RESULT << std::endl;
-        assert( fabs(average[i]-CORRECT_RESULT) < 2.*error[i] );
+        assert(fabs(average[i] - CORRECT_RESULT) < 2.*error[i]);
     }
     //std::cout << std::endl;
 
@@ -57,22 +56,25 @@ int main(){
         mci.addObservable(obs3d, 1, nskip);
         // integrate
         mci.integrate(NMC*nskip, average, error, true, false);
-        for (int i=0; i<mci.getNObsDim(); ++i) {
+        for (int i = 0; i < mci.getNObsDim(); ++i) {
             //std::cout << "i " << i << ", average[i] " << average[i] << ", error[i] " << error[i] << ", CORRECT_RESULT" << CORRECT_RESULT << std::endl;
-            assert( fabs(average[i]-CORRECT_RESULT) < 3.*error[i] ); // for this test and those below to pass safely, factor 2 is a bit small
+            assert(fabs(average[i] - CORRECT_RESULT) < 3.*error[i]); // for this test and those below to pass safely, factor 2 is a bit small
         }
         //std::cout << std::endl;
     }
 
 
     // Now using all/vec moves with uniform distribution and multiple settings
-    for (int veclen=0; veclen<4; veclen=1+2*veclen) { // vector length parameter
-        for (int ntypes=1; ntypes<3; ++ntypes) {
-            if (veclen>1 && ntypes > 1) { continue; }
+    for (int veclen = 0; veclen < 4; veclen = 1 + 2*veclen) { // vector length parameter
+        for (int ntypes = 1; ntypes < 3; ++ntypes) {
+            if (veclen > 1 && ntypes > 1) { continue; }
             // set typeEnds
             int typeEnds[ntypes];
-            if (ntypes==1) { typeEnds[0] = 3; }
-            else { typeEnds[0] = 1; typeEnds[1] = 3;}
+            if (ntypes == 1) { typeEnds[0] = 3; }
+            else {
+                typeEnds[0] = 1;
+                typeEnds[1] = 3;
+            }
 
             // set move
             mci.setTrialMove(SRRDType::Uniform, veclen, ntypes, typeEnds);
@@ -86,9 +88,9 @@ int main(){
 
             // integrate
             mci.integrate(NMC*nskip, average, error, true, false);
-            for (int i=0; i<mci.getNObsDim(); ++i) {
+            for (int i = 0; i < mci.getNObsDim(); ++i) {
                 //std::cout << "i " << i << ", average[i] " << average[i] << ", error[i] " << error[i] << ", CORRECT_RESULT" << CORRECT_RESULT << std::endl;
-                assert( fabs(average[i]-CORRECT_RESULT) < 3.*error[i] ); // for all these tests to pass safely, factor 2 is a bit small
+                assert(fabs(average[i] - CORRECT_RESULT) < 3.*error[i]); // for all these tests to pass safely, factor 2 is a bit small
             }
             //std::cout << std::endl;
         }
@@ -97,7 +99,7 @@ int main(){
     // Now try to (just) set all/vec moves with all possible distributions
     // No need to run integration again, if we trust the standard library
     for (auto srrd : list_all_SRRDType) { // from Factories.hpp
-        for (int veclen=0; veclen<2; ++veclen) { // vector length 0 (all) / 1 (vec)
+        for (int veclen = 0; veclen < 2; ++veclen) { // vector length 0 (all) / 1 (vec)
             // set move
             //std::cout << "Setting SRRDType " << static_cast<size_t>(srrd) << ", veclen " << veclen << std::endl;
             mci.setTrialMove(srrd, veclen);
@@ -113,14 +115,15 @@ int main(){
     UniformVecMove customVecMove(mci.getNDim(), 1, 0.1, &defaultUniformDist);
     MultiStepMove customMultiMove(mci.getNDim());
     customMultiMove.setTrialMove(customVecMove); // add custom sub-move
-    customMultiMove.addSamplingFunction( ExpNDPDF(mci.getNDim()) ); // add exponential sub-pdf (not the same as gauss!)
+    customMultiMove.addSamplingFunction(ExpNDPDF(mci.getNDim())); // add exponential sub-pdf (not the same as gauss!)
 
     const double origTargetRate = mci.getTargetAcceptanceRate();
-    for (int i=0; i<2; ++i) {
+    for (int i = 0; i < 2; ++i) {
         mci.setTargetAcceptanceRate(origTargetRate);
-        if (i==0) {
+        if (i == 0) {
             mci.setTrialMove(customAllMove);
-        } else {
+        }
+        else {
             mci.setTrialMove(customMultiMove);
             mci.setTargetAcceptanceRate(0.85); // should be higher for multi-step move
         }
@@ -130,9 +133,9 @@ int main(){
         mci.addObservable(obs1d, 1, nskip);
         mci.addObservable(obs3d, 1, nskip);
         mci.integrate(NMC*nskip, average, error, true, false);
-        for (int j=0; j<mci.getNObsDim(); ++j) {
+        for (int j = 0; j < mci.getNObsDim(); ++j) {
             //std::cout << "j " << j << ", average[j] " << average[j] << ", error[j] " << error[j] << ", CORRECT_RESULT" << CORRECT_RESULT << std::endl;
-            assert( fabs(average[j]-CORRECT_RESULT) < 3.*error[j] );
+            assert(fabs(average[j] - CORRECT_RESULT) < 3.*error[j]);
         }
         //std::cout << "acceptance " << mci.getAcceptanceRate() << std::endl;
         //std::cout << std::endl;

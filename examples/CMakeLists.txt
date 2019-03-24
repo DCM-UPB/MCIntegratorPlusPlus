@@ -1,5 +1,5 @@
 link_libraries(mci)
 add_executable(ex1.exe ex1/main.cpp)
 if (MPI_FOUND)
-  add_executable(ex2.exe ex2/main.cpp)
-endif()
+    add_executable(ex2.exe ex2/main.cpp)
+endif ()
