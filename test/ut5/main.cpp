@@ -130,9 +130,9 @@ int main(){
         mci.addObservable(obs1d, 1, nskip);
         mci.addObservable(obs3d, 1, nskip);
         mci.integrate(NMC*nskip, average, error, true, false);
-        for (int i=0; i<mci.getNObsDim(); ++i) {
-            //std::cout << "i " << i << ", average[i] " << average[i] << ", error[i] " << error[i] << ", CORRECT_RESULT" << CORRECT_RESULT << std::endl;
-            assert( fabs(average[i]-CORRECT_RESULT) < 3.*error[i] );
+        for (int j=0; j<mci.getNObsDim(); ++j) {
+            //std::cout << "j " << j << ", average[j] " << average[j] << ", error[j] " << error[j] << ", CORRECT_RESULT" << CORRECT_RESULT << std::endl;
+            assert( fabs(average[j]-CORRECT_RESULT) < 3.*error[j] );
         }
         //std::cout << "acceptance " << mci.getAcceptanceRate() << std::endl;
         //std::cout << std::endl;

@@ -11,11 +11,11 @@ namespace mci
         std::copy(wlk.xold, wlk.xold+_ndim, _origX); // make backup of xold
         wlk.needsObs = false; // we don't do obs here
 
-        _pdfcont.initializeProtoValues(wlk); // initialize the sub-pdf at x
+        _pdfcont.initializeProtoValues(wlk.xold); // initialize the sub-pdf at x
         const double oldPDF = _pdfcont.getOldSamplingFunction(); // remember this for later (faster)
 
         _trialMove->bindRGen(*_rgen); // we bind rgen here
-        _trialMove->initializeProtoValues(wlk); // initialize the sub-move
+        _trialMove->initializeProtoValues(wlk.xold); // initialize the sub-move
 
         for (int i=0; i<_nsteps; ++i) {
             // propose a new position x and get move acceptance
@@ -26,8 +26,8 @@ namespace mci
             wlk.accepted = ( _rd(*_rgen) <= pdfAcc*moveAcc );
             // set state according to result
             if (wlk.accepted) {
-                _pdfcont.newToOld(wlk);
-                _trialMove->newToOld(wlk);
+                _pdfcont.newToOld();
+                _trialMove->newToOld();
                 wlk.newToOld();
             } else { // rejected
                 _pdfcont.oldToNew();

@@ -25,7 +25,7 @@ namespace mci
         if (ndata <= 0) {
             throw std::invalid_argument("[MJBlocker] ndata must be a natural number.");
         }
-        if ( (ndata & (ndata-1)) != 0 ) { // ndata must be power of two
+        if ( ( static_cast<uint64_t>(ndata) & (static_cast<uint64_t>(ndata) - 1) ) != 0 ) { // ndata must be power of two
             throw std::invalid_argument("[MJBlocker] ndata must be a power of two.");
         }
     }

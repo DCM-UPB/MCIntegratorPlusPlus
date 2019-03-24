@@ -33,9 +33,9 @@ namespace mci
 
         void addSamplingFunction(std::unique_ptr<SamplingFunctionInterface> sf); // we acquire ownership
 
-        void newToOld(const WalkerState &wlk); // copy new to old protovalues
+        void newToOld(); // copy new to old protovalues
         void oldToNew(); // copy old to new protovalues
-        void initializeProtoValues(const WalkerState &wlk); // initialize the proto sampling values, given the WalkerState
+        void initializeProtoValues(const double xold[]); // initialize the proto sampling values, given the xold
         double getOldSamplingFunction() const; // returns the combined true sampling function value of the old step (potential use in trial moves)
         double computeAcceptance(const WalkerState &wlk); //compute then new sampling function and return acceptance of new coordinates
 

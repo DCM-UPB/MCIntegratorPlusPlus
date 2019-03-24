@@ -204,7 +204,7 @@ namespace mci
         double getAcceptanceRate() const { return (_acc>0) ? static_cast<double>(_acc)/(static_cast<double>(_acc)+_rej) : 0.; }
 
         int getNfindMRT2Iterations() const { return _NfindMRT2Iterations; }
-        int getNdecorrelationSteps() const { return _NdecorrelationSteps; }
+        int64_t getNdecorrelationSteps() const { return _NdecorrelationSteps; }
 
         const DomainInterface & getDomain() const { return *_domain; }
         TrialMoveInterface & getTrialMove() const { return *_trialMove; }

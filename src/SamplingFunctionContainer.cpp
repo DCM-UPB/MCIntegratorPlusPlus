@@ -8,10 +8,10 @@ namespace mci
         _pdfs.emplace_back(std::move(sf)); // now sf is owned by _pdfs vector
     }
 
-    void SamplingFunctionContainer::newToOld(const WalkerState &wlk)
+    void SamplingFunctionContainer::newToOld()
     {
         for (auto & sf : _pdfs) {
-            sf->newToOld(wlk);
+            sf->newToOld();
         }
     }
 
@@ -22,10 +22,10 @@ namespace mci
         }
     }
 
-    void SamplingFunctionContainer::initializeProtoValues(const WalkerState &wlk)
+    void SamplingFunctionContainer::initializeProtoValues(const double xold[])
     {
         for (auto & sf : _pdfs) {
-            sf->initializeProtoValues(wlk);
+            sf->initializeProtoValues(xold);
         }
     }
 

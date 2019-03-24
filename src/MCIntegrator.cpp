@@ -197,8 +197,8 @@ namespace mci
 
         // init xnew and all protovalues
         _wlkstate.initialize(flag_obs);
-        _pdfcont.initializeProtoValues(_wlkstate); // initialize the pdf at x
-        _trialMove->initializeProtoValues(_wlkstate); // initialize the trial mover
+        _pdfcont.initializeProtoValues(_wlkstate.xold); // initialize the pdf at x
+        _trialMove->initializeProtoValues(_wlkstate.xold); // initialize the trial mover
 
         // init rest
         this->callBackOnMove(); // first call of the call-back functions
@@ -279,8 +279,8 @@ namespace mci
 
         // set state according to result
         if (_wlkstate.accepted) {
-            _pdfcont.newToOld(_wlkstate);
-            _trialMove->newToOld(_wlkstate);
+            _pdfcont.newToOld();
+            _trialMove->newToOld();
             _wlkstate.newToOld();
         } else { // rejected
             _pdfcont.oldToNew();

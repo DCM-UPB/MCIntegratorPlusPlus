@@ -2,8 +2,8 @@ namespace std {
   // STL vector class
   template<class T> class vector { public: T element; };
 
-  // STL vector class
-  template<class T, size_t N> class vector { public: T element; public: N size; };
+  // STL array class
+  template<class T, size_t N> class array { public: T element; public: N size; };
 
   // STL set class
   template<class T> class set { public: T element; };

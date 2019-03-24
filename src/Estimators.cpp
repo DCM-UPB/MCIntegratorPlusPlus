@@ -10,24 +10,25 @@
 double calcErrDelta(const int mode, const double err[9])
 {   // for Francesco's plateau finding algorithm
     const int im = 4; // index of middle element
-    switch(mode)
-        {
+    switch(mode) {
         case 1:
-            return ( -0.5*err[im-1] + 0.5*err[im+1] );
+            return (-0.5 * err[im - 1] + 0.5 * err[im + 1]);
 
         case 2:
-            return ( (1./12.)*err[im-2] -(2./3.)*err[im-1]
-                     +(2./3.)*err[im+1] -(1./12.)*err[im+2] );
+            return ((1. / 12.) * err[im - 2] - (2. / 3.) * err[im - 1]
+                    + (2. / 3.) * err[im + 1] - (1. / 12.) * err[im + 2]);
 
         case 3:
-            return ( -(1./60.)*err[im-3] +(3./20.)*err[im-2] -0.75*err[im-1]
-                     +0.75*err[im+1] -(3./20.)*err[im+2] +(1./60.)*err[im+3]  );
+            return (-(1. / 60.) * err[im - 3] + (3. / 20.) * err[im - 2] - 0.75 * err[im - 1]
+                    + 0.75 * err[im + 1] - (3. / 20.) * err[im + 2] + (1. / 60.) * err[im + 3]);
 
         case 4:
-            return ( (1./280.)*err[im-4] -(4./105.)*err[im-3] +0.2*err[im-2] -0.8*err[im-1]
-                     +0.8*err[im+1] -0.2*err[im+2] +(4./105.)*err[im+3] -(1./280.)*err[im+4] );
-        }
-    return 0.;
+            return ((1. / 280.) * err[im - 4] - (4. / 105.) * err[im - 3] + 0.2 * err[im - 2] - 0.8 * err[im - 1]
+                    + 0.8 * err[im + 1] - 0.2 * err[im + 2] + (4. / 105.) * err[im + 3] - (1. / 280.) * err[im + 4]);
+
+        default:
+            return 0.;
+    }
 }
 
 
@@ -273,7 +274,7 @@ namespace mci
     // If n power of 2, use MJBlocker, else FCBlocker
     void CorrelatedEstimator(const int64_t n, const int ndim, const double x[], double average[], double error[])
     {
-        if ( (n & (n-1)) != 0 ) { // n is not a power of 2
+        if ( ( static_cast<uint64_t>(n) & (static_cast<uint64_t>(n) - 1) ) != 0 ) { // n is not a power of 2
             FCBlockerEstimator(n, ndim, x, average, error);
         } else {
             MJBlockerEstimator(n, ndim, x, average, error);
