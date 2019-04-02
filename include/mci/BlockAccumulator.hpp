@@ -11,7 +11,7 @@ namespace mci
 // is desired. Typical use case is if you know how large the blocks have to be for uncorrelated samples
 // and want to avoid the memory&CPU overhead of using automatic blocking.
 // NOTE: The planned number of steps must be a multiple of the chosen blocksize.
-class BlockAccumulator: public AccumulatorInterface
+class BlockAccumulator final: public AccumulatorInterface
 {
 protected:
     const int _blocksize; // how many samples to accumulate per block

@@ -23,7 +23,7 @@ namespace mci
 // Note: If you pass ntypes>1, follow the rules of TypedMoveInterface .
 //
 template <class SRRD /*symmetric, real-valued random distribution that works like standard library dists*/>
-class SRRDAllMove: public TypedMoveInterface
+class SRRDAllMove final: public TypedMoveInterface
 {
 private:
     SRRD _rd; // real-valued random distribution for move

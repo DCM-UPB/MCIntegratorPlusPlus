@@ -227,7 +227,7 @@ public:
     int getNObsDim() const { return _obscont.getNObsDim(); }
 
     CallBackOnMoveInterface &getCallBackOnMove(int i) const { return *_cbacks[i]; }
-    int getNCallBacks() const { return _cbacks.size(); }
+    int getNCallBacks() const { return static_cast<int>(_cbacks.size()); }
 
     // --- Integrate
 

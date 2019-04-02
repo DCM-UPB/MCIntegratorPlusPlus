@@ -7,7 +7,7 @@ namespace mci
 {
 // Class to handle accumulation of observables that don't require an error (typically gradients)
 // This mean that all we have to do is to sum up the individual samples
-class SimpleAccumulator: public AccumulatorInterface
+class SimpleAccumulator final: public AccumulatorInterface
 {
 protected:
     bool _flag_alloc; // to determine proper nstored/ndata

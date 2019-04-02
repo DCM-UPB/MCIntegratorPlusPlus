@@ -18,7 +18,7 @@ namespace mci
 // vectors must be aligned with the specified typeEnds (else constructor will throw).
 //
 template <class SRRD /*symmetric, real-valued random distribution that works like standard library dists*/>
-class SRRDVecMove: public TypedMoveInterface
+class SRRDVecMove final: public TypedMoveInterface
 {
 private:
     const int _nvecs{}; // how many vector/particles are considered (calculated as ndim/veclen)

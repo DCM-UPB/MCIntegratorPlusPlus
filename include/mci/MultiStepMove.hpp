@@ -20,7 +20,7 @@ namespace mci
 // NOTE 2: For simplicity and speed, the sub-sampling itself does not consider any domain boundaries, but MCI
 // will apply them to the end result. Make sure that your sub-PDF does not rely on already applied PBC. This
 // should be a non-issue when only distances calculated via minimum-image convention enter the sub-PDF.
-class MultiStepMove: public TrialMoveInterface
+class MultiStepMove final: public TrialMoveInterface
 {
 protected:
     int _nsteps; // how many sub-sampling steps to do

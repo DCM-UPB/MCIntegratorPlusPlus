@@ -9,7 +9,7 @@
 namespace mci
 {
 // Domain without boundaries, i.e. R^N
-struct UnboundDomain: public DomainInterface
+struct UnboundDomain final: public DomainInterface
 {
 protected:
     DomainInterface * _clone() const final

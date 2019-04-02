@@ -110,7 +110,7 @@ public:
 
 // --- SAMPLING FUNCTIONS
 
-class ThreeDimGaussianPDF: public mci::SamplingFunctionInterface
+class ThreeDimGaussianPDF final: public mci::SamplingFunctionInterface
 {
 protected:
     mci::SamplingFunctionInterface * _clone() const final
@@ -138,7 +138,7 @@ public:
 };
 
 
-class Gauss: public mci::SamplingFunctionInterface
+class Gauss final: public mci::SamplingFunctionInterface
 {
 protected:
     mci::SamplingFunctionInterface * _clone() const final
@@ -179,7 +179,7 @@ public:
     }
 };
 
-class Exp1DPDF: public mci::SamplingFunctionInterface
+class Exp1DPDF final: public mci::SamplingFunctionInterface
 {
 protected:
     mci::SamplingFunctionInterface * _clone() const final
@@ -206,7 +206,7 @@ public:
     }
 };
 
-class ExpNDPDF: public mci::SamplingFunctionInterface
+class ExpNDPDF final: public mci::SamplingFunctionInterface
 {
 protected:
     mci::SamplingFunctionInterface * _clone() const final
@@ -247,7 +247,7 @@ public:
 
 // --- OBSERVABLE FUNCTIONS
 
-class XSquared: public mci::ObservableFunctionInterface
+class XSquared final: public mci::ObservableFunctionInterface
 {
 protected:
     mci::ObservableFunctionInterface * _clone() const final
@@ -265,7 +265,7 @@ public:
 };
 
 // like XSquared, but multiplied by normalized Gaussian
-class GaussXSquared: public mci::ObservableFunctionInterface
+class GaussXSquared final: public mci::ObservableFunctionInterface
 {
 protected:
     mci::ObservableFunctionInterface * _clone() const final
@@ -284,7 +284,7 @@ public:
 };
 
 
-class XYZSquared: public mci::ObservableFunctionInterface
+class XYZSquared final: public mci::ObservableFunctionInterface
 {
 protected:
     mci::ObservableFunctionInterface * _clone() const final
@@ -304,7 +304,7 @@ public:
 };
 
 
-class X1D: public mci::ObservableFunctionInterface
+class X1D final: public mci::ObservableFunctionInterface
 {
 protected:
     mci::ObservableFunctionInterface * _clone() const final
@@ -322,7 +322,7 @@ public:
 };
 
 
-class XND: public mci::ObservableFunctionInterface
+class XND final: public mci::ObservableFunctionInterface
 {
 protected:
     mci::ObservableFunctionInterface * _clone() const final
@@ -339,7 +339,7 @@ public:
     }
 };
 
-class UpdateableXND: public mci::UpdateableObservableInterface
+class UpdateableXND final: public mci::UpdateableObservableInterface
 {
 protected:
     mci::ObservableFunctionInterface * _clone() const final
@@ -363,7 +363,7 @@ public:
 };
 
 
-class Constval: public mci::ObservableFunctionInterface
+class Constval final: public mci::ObservableFunctionInterface
 {
 protected:
     mci::ObservableFunctionInterface * _clone() const final
@@ -381,7 +381,7 @@ public:
 };
 
 
-class Polynom: public mci::ObservableFunctionInterface
+class Polynom final: public mci::ObservableFunctionInterface
 {
 protected:
     mci::ObservableFunctionInterface * _clone() const final
@@ -402,7 +402,7 @@ public:
 };
 
 
-class X2Sum: public mci::ObservableFunctionInterface
+class X2Sum final: public mci::ObservableFunctionInterface
 {
 protected:
     mci::ObservableFunctionInterface * _clone() const final
@@ -423,7 +423,7 @@ public:
 };
 
 
-class X2: public mci::UpdateableObservableInterface
+class X2 final: public mci::UpdateableObservableInterface
 {
 protected:
     mci::ObservableFunctionInterface * _clone() const final

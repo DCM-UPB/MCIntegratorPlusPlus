@@ -9,7 +9,7 @@ namespace mci
 {
 // Domain enforcing orthorhombic periodic boundary conditions.
 // The boundaries are defined by the two arrays _lbounds and _ubounds.
-struct OrthoPeriodicDomain: public DomainInterface
+struct OrthoPeriodicDomain final: public DomainInterface
 {
 public:
     double * const lbounds; // lower boundaries

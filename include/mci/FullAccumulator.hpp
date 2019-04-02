@@ -12,7 +12,7 @@ namespace mci
 // or SimpleAccumulator (if no error is required) instead, because the memory requirements
 // of the FullAccumulator may become very large with a large number of MC steps.
 //
-class FullAccumulator: public AccumulatorInterface
+class FullAccumulator final: public AccumulatorInterface
 {
 protected:
     int64_t _nstore; // number of allocated storage elements with _nobs length each
