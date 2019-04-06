@@ -17,4 +17,4 @@ function and observable implementations that are shared between the examples.
 
 ## Example 2
 
-`ex2/`: like ex2, but using the MPI wrapper for parallel integration. Pass the wanted number of threads to run.sh.
+`ex2/`: like ex2, but using the MPI wrapper for parallel integration. Pass the wanted number of threads to run.sh (e.g. `run.sh 4` to use 4 cpus).
