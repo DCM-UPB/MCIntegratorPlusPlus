@@ -2,6 +2,7 @@
 #define MCI_OBSERVABLEFUNCTIONINTERFACE_HPP
 
 #include "mci/Clonable.hpp"
+#include "mci/SamplingFunctionContainer.hpp"
 
 #include <algorithm>
 
@@ -39,8 +40,8 @@ public:
 
     // --- METHOD THAT MUST BE IMPLEMENTED
     // Compute all observable elements and store them in out.
-    virtual void observableFunction(const double in[], double out[]) = 0;
-    //                               ^input = walker positions  ^resulting observables
+    virtual void observableFunction(const double in[], const SamplingFunctionContainer &pdfcont, double out[]) = 0;
+    //                               ^input = walker positions            ^you may read the pdfs        ^resulting observables
 };
 }  // namespace mci
 

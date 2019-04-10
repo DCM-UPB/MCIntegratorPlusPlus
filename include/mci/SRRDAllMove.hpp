@@ -7,8 +7,10 @@
 
 namespace mci
 {
-// Generic all-particle move that can be instantiated for any type SSRD for which
-// a specialization of the createSymNormalRRD function exists (e.g. in TrialMoveInterface.hpp).
+// Generic all-particle move that can be instantiated for applicable real-valued
+// random distributions SSRD. Applicable distributions from the standard library
+// are enumerated in TrialMoveInterface.hpp, in the form of explicit template
+// specializations of the createSymNormalRRD() function.
 // In any case, SRRD type must be callable and, when called with passed stdlib
 // random generator, return a random double from a symmetric distribution around 0.
 // By including this header you automatically "use" instantiations for types that

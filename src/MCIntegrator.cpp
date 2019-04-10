@@ -56,21 +56,26 @@ void MCI::integrate(const int64_t Nmc, double average[], double error[], const b
 
 void MCI::findMRT2Step()
 {
+    // NOTE: Multiple step sizes will be scaled together, i.e. their initial
+    // proportions will remain during scaling. Also note that currently the
+    // MPI threads don't sync their stepSizes. This might lead to a decrease
+    // in parallel efficiency (because time used to integrate will spread).
+
     if (!_trialMove->hasStepSizes()) { return; } // in the odd case that our mover has no adjustable step sizes
 
     //constants
     const int nStepSizes = _trialMove->getNStepSizes();
     //const double changeRate = _trialMove->getChangeRate();
-    const int64_t MIN_STAT = 200LL*nStepSizes; // minimum statistic: number of M(RT)^2 steps done to decide on step size change
+    const int64_t MIN_STAT = 200LL; // minimum statistic: number of M(RT)^2 steps done to decide on step size change
     const int MIN_CONS = 5;   //minimum consecutive: minimum number of consecutive loops without need of changing mrt2step
     const double TOLERANCE = 0.05;  //tolerance: tolerance for the acceptance rate
     const double SMALLEST_ACCEPTABLE_DOUBLE = std::numeric_limits<float>::min(); // use smallest float value as limit for double
 
     // fill temporary vectors
-    std::vector<double> dimSizes(_ndim); // vector holding dimension sizes
+    std::vector<double> dimSizes(static_cast<size_t>(_ndim)); // vector holding dimension sizes
     _domain->getSizes(dimSizes.data());
 
-    std::vector<int> stepSizeIdx(_ndim); // mapping from x indices to used step size indices
+    std::vector<int> stepSizeIdx(dimSizes.size()); // mapping from x indices to used step size indices
     for (int i = 0; i < _ndim; ++i) {
         stepSizeIdx[i] = _trialMove->getStepSizeIndex(i);
     }
@@ -231,7 +236,7 @@ void MCI::sample(const int64_t npoints, ObservableContainer &container, const bo
         }
 
         // accumulate obs
-        container.accumulate(_wlkstate);
+        container.accumulate(_wlkstate, _pdfcont);
 
         // file output
         if (flagMC && _flagobsfile) { this->storeObservables(); } // store obs on file
@@ -519,6 +524,12 @@ double MCI::getMRT2Step(int i) const
     return (i < _trialMove->getNStepSizes()) ? _trialMove->getStepSize(i) : 0.;
 }
 
+double MCI::getAcceptanceRate() const
+{
+    return (_acc > 0)
+           ? static_cast<double>(_acc)/(static_cast<double>(_acc) + _rej)
+           : 0.;
+}
 
 void MCI::setX(const int i, const double val)
 {

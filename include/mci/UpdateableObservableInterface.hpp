@@ -21,8 +21,8 @@ namespace mci
 //         return new MyObservable(...); // create a cloned version here
 //     }
 // public:
-//     void observableFunction(in, out) final; // full update
-//     void observableUpdate(in, nchanged, changeFlags, out) final; // partial update, see below
+//     void observableFunction(in, pdfs, out) final; // full update
+//     void observableUpdate(in, nchanged, changeFlags, pdfs, out) final; // partial update, see below
 //     ...
 // };
 class UpdateableObservableInterface: public ObservableFunctionInterface
@@ -38,8 +38,8 @@ public:
     // need to do so.
     // You may use the nchanged argument to decide whether a full recalculation or flag-based recalculation is more efficient.
     // If full recalculation is almost always more efficient in your case, you may also choose not to overwrite this method.
-    virtual void updatedObservable(const double in[], int nchanged, const bool flags_xchanged[]/*[ndim]*/, double out[]) = 0;
-    //                             ^input = walker positions  ^how many inputs changed  ^which indices are new  ^resulting observables (passed containing old obs, so you may make use of those)
+    virtual void updatedObservable(const double in[], int nchanged, const bool flags_xchanged[]/*[ndim]*/, const SamplingFunctionContainer &pdfcont, double out[]) = 0;
+    //                             ^input = walker positions  ^how many inputs changed  ^which indices are new           ^allows to read from pdfs      ^resulting observables (passed containing old obs, so you may make use of those)
 };
 }  // namespace mci
 

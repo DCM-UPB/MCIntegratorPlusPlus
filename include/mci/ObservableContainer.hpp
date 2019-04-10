@@ -4,6 +4,7 @@
 #include "mci/AccumulatorInterface.hpp"
 #include "mci/ObservableFunctionInterface.hpp"
 #include "mci/WalkerState.hpp"
+#include "mci/SamplingFunctionContainer.hpp"
 
 #include <cstdint>
 #include <fstream>
@@ -37,7 +38,7 @@ public:
     ~ObservableContainer() = default;
 
     // simple getters
-    int size() const { return _cont.size(); }
+    int size() const { return static_cast<int>(_cont.size()); }
     int getNObs() const { return this->size(); }
     int getNObsDim() const { return _nobsdim; }
 
@@ -54,7 +55,7 @@ public:
                        bool needsEquil);
 
     void allocate(int64_t Nmc); // allocate data memory
-    void accumulate(const WalkerState &wlk); // process accumulation for new step, described by WalkerState
+    void accumulate(const WalkerState &wlk, const SamplingFunctionContainer &pdfcont); // process accumulation for new step, described by WalkerState
     void printObsValues(std::ofstream &file) const; // write last observables values to filestream
     void finalize(); // used after sampling to apply all necessary data normalization
     void estimate(double average[], double error[]) const; // eval estimators on finalized data and return average/error

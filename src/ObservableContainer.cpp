@@ -30,10 +30,10 @@ void ObservableContainer::allocate(const int64_t Nmc)
 }
 
 
-void ObservableContainer::accumulate(const WalkerState &wlk)
+void ObservableContainer::accumulate(const WalkerState &wlk, const SamplingFunctionContainer &pdfcont)
 {
     for (auto &el : _cont) {
-        el.accu->accumulate(wlk);
+        el.accu->accumulate(wlk, pdfcont);
     }
 }
 

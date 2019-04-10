@@ -3,7 +3,6 @@
 
 #include <algorithm>
 #include <numeric>
-#include <string>
 
 double calcErrDelta(const int mode, const double err[9])
 {   // for Francesco's plateau finding algorithm

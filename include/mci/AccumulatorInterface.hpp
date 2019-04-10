@@ -4,6 +4,7 @@
 #include "mci/ObservableFunctionInterface.hpp"
 #include "mci/UpdateableObservableInterface.hpp"
 #include "mci/WalkerState.hpp"
+#include "mci/SamplingFunctionContainer.hpp"
 
 #include <cstdint>
 #include <memory>
@@ -43,8 +44,11 @@ protected:
     int _skipidx{}; // to determine when to skip accumulation
     bool _flag_final{}; // was finalized called (without throwing error) ?
 
-
+    // base methods
     void _init(); // used in construct/reset
+    void _processOld(const WalkerState &wlk, const SamplingFunctionContainer &pdfcont); // used in accumulate() when observables need no computation
+    void _processFull(const WalkerState &wlk, const SamplingFunctionContainer &pdfcont); // used else when obs not updateable
+    void _processSelective(const WalkerState &wlk, const SamplingFunctionContainer &pdfcont); // and this is used otherwise
 
     // TO BE IMPLEMENTED BY CHILD
     virtual void _allocate() = 0; // allocate _data for a MC run of nsteps length ( expect deallocated state )
@@ -68,10 +72,8 @@ public:
     int64_t getNSteps() const { return _nsteps; }
     int64_t getNAccu() const
     {
-        return (_nsteps > 0)
-               ? 1 + (_nsteps - 1)/_nskip
-               : 0;
-    } // actual number of steps to accumulate
+        return (_nsteps > 0) ? 1 + (_nsteps - 1)/_nskip : 0; // actual number of steps to accumulate
+    }
     int64_t getNData() const { return this->getNStore()*_nobs; } // total length of allocated data
 
     int64_t getStepIndex() const { return _stepidx; }
@@ -96,7 +98,7 @@ public:
     void allocate(int64_t nsteps); // will deallocate any existing allocation
 
     // externally call this on every MC step
-    void accumulate(const WalkerState &wlk /*step info*/); // process step described by WalkerState
+    void accumulate(const WalkerState &wlk /*step info*/, const SamplingFunctionContainer &pdfcont /*pdf info*/); // process step described by WalkerState
 
     // finalize (e.g. normalize) stored data
     void finalize(); // will throw if called prematurely, but does nothing if deallocated or used repeatedly

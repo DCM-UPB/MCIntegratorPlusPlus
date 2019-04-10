@@ -21,7 +21,7 @@ public:
 
     // simple getters
 
-    int size() const { return _pdfs.size(); }
+    int size() const { return static_cast<int>(_pdfs.size()); }
     int getNPDF() const { return this->size(); }
 
     bool empty() const { return _pdfs.empty(); }

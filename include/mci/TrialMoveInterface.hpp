@@ -98,16 +98,24 @@ public:
 };
 
 
-// Default initialization template for supported symmetric distributions
-// A helper template used to default-initialize real random distributions from the standard library,
-// to be symmetric around 0 and, if possible, standard deviation 1 (except: interval dists are [-1,1]).
-// The template is made to compile only for the standard-library distributions that allow to have
-// these properties, or other distributions made symmetric by using the SymmetrizedPRRD class.
-// If symmetric distributions are used for MC moves, the detailed balance condition
-// is fullfilled automatically.
-template <class SRRD>
-/* should be applicable stdlib random dist <double> */
-inline auto createSymNormalRRD() = delete; // cannot be used without specialization
+// Default initialization template to obtain symmetric distributions
+// A helper template used to default-initialize real random distributions,
+// e.g. (symmetric/uniform) distributions from the standard library or
+// others when wrapped with SymmetrizedPRRD(). At the moment the helper
+// is only really needed to make an exception for the uniform distribution,
+// which is not symmetric around 0 by default.
+// Remember that distributions used for simple MC moves should fulfill this
+// condition in order to maintain detailed balance (automatically).
+//
+// NOTE: All applicable standard distributions have explicit specializations here!
+//       You may still use different types if you know they are applicable,
+//       as long as their default constructed version is symmetric around 0.
+//
+template <class SRRD /* applicable random dist */>
+inline auto createSymNormalRRD() // default specialization
+{
+    return SRRD(); // return default-constructed version
+}
 
 // Specialization for uniform
 template <>

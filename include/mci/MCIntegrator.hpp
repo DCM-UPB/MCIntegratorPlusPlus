@@ -130,17 +130,17 @@ public:
     // --- Adding objects to MCI
     // Note: Objects passed by raw-ref will be cloned by MCI
 
-    // Domain
-    std::unique_ptr<DomainInterface> setDomain(std::unique_ptr<DomainInterface> domain); // move a domain to be owned by MCI, returns the previously set domain
+    // Domain Setters (previously set domain will be returned or destroyed if not taken)
+    std::unique_ptr<DomainInterface> setDomain(std::unique_ptr<DomainInterface> domain); // move a domain to be owned by MCI
     std::unique_ptr<DomainInterface> setDomain(const DomainInterface &domain) { return this->setDomain(domain.clone()); } // pass a domain to be cloned by MCI
-    std::unique_ptr<DomainInterface> resetDomain(); // reset the domain to unbound, returns the previously set domain (if you don't take it, it will be destroyed)
+    std::unique_ptr<DomainInterface> resetDomain(); // reset the domain to unbound
 
     // keep walkers within these bounds during integration (using periodic boundaries)
     // NOTE: If you use these, any prior domain will be replaced with OrthoPeriodicDomain!!
     void setIRange(double lbound, double ubound); // set the same range on all dimensions
     void setIRange(const double lbounds[], const double ubounds[]);
 
-    // Trial Moves
+    // Trial Move Setters (previously set moves will be returned or destroyed if not taken)
     std::unique_ptr<TrialMoveInterface> setTrialMove(std::unique_ptr<TrialMoveInterface> tmove); // move a move to be owned by MCI
     std::unique_ptr<TrialMoveInterface> setTrialMove(const TrialMoveInterface &tmove) { return this->setTrialMove(tmove.clone()); } // pass a move to be cloned by MCI
     std::unique_ptr<TrialMoveInterface> setTrialMove(MoveType move /*enum, see Factories.hpp*/); // set trial move to default version of chosen builtin move
@@ -206,12 +206,7 @@ public:
 
     double getMRT2Step(int i) const;
     double getTargetAcceptanceRate() const { return _targetaccrate; }
-    double getAcceptanceRate() const
-    {
-        return (_acc > 0)
-               ? static_cast<double>(_acc)/(static_cast<double>(_acc) + _rej)
-               : 0.;
-    }
+    double getAcceptanceRate() const;
 
     int getNfindMRT2Iterations() const { return _NfindMRT2Iterations; }
     int64_t getNdecorrelationSteps() const { return _NdecorrelationSteps; }
