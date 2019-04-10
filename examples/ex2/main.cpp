@@ -34,9 +34,7 @@ int main()
     if (myrank == 0) { cout << "irange = [ " << -1 << " ; " << 3 << " ]" << endl; }
 
     // initial walker position
-    double initpos[ndim];
-    initpos[0] = -0.5;
-    mci.setX(initpos);
+    mci.setX(0, -0.5);
 
     if (myrank == 0) { cout << "initial walker position = " << mci.getX(0) << endl; }
 
@@ -59,8 +57,7 @@ int main()
     }
 
     // observable
-    Parabola obs;
-    mci.addObservable(obs);
+    mci.addObservable(std::make_unique<Parabola>());
 
     if (myrank == 0) {
         cout << "Number of observables set = " << mci.getNObs() << endl;
@@ -92,13 +89,11 @@ int main()
     }
 
     // observable
-    NormalizedParabola obs2;
     mci.clearObservables();  // we first remove the old observable
-    mci.addObservable(obs2);
+    mci.addObservable(std::make_unique<NormalizedParabola>());
 
     // sampling function
-    NormalizedLine sf;
-    mci.addSamplingFunction(sf);
+    mci.addSamplingFunction(std::make_unique<NormalizedLine>());
 
     if (myrank == 0) {
         cout << "Number of observables set = " << mci.getNObs() << endl;
