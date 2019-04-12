@@ -195,8 +195,9 @@ public:
 
     // enable file printout to given files, with frequency freq
     void storeObservablesOnFile(const std::string &filepath, int freq);
+    void clearObservableFile();
     void storeWalkerPositionsOnFile(const std::string &filepath, int freq);
-
+    void clearWalkerFile();
 
     // --- Getters
 

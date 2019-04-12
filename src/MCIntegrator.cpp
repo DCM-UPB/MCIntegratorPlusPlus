@@ -453,6 +453,13 @@ void MCI::storeObservablesOnFile(const std::string &filepath, const int freq)
     _flagobsfile = true;
 }
 
+void MCI::clearObservableFile()
+{
+    _pathobsfile = "";
+    _freqobsfile = 0;
+    _flagobsfile = false;
+}
+
 void MCI::storeObservables()
 {
     if (_ridx%_freqobsfile == 0) {
@@ -468,6 +475,13 @@ void MCI::storeWalkerPositionsOnFile(const std::string &filepath, const int freq
     _pathwlkfile = filepath;
     _freqwlkfile = freq;
     _flagwlkfile = true;
+}
+
+void MCI::clearWalkerFile()
+{
+    _pathwlkfile = "";
+    _freqwlkfile = 0;
+    _flagwlkfile = false;
 }
 
 void MCI::storeWalkerPositions()
