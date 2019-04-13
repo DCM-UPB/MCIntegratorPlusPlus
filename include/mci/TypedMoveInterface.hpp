@@ -24,7 +24,6 @@ protected:
     int * const _typeEnds; // end-indices of every type in x (i.e. the last index of type i is _typeEnds[i]-1 )
     double * const _stepSizes; // holds the step sizes, one per type
 
-public:
     TypedMoveInterface(int ndim, int nproto, int ntypes, const int typeEnds[] /*len ntypes*/, double initStepSize /*scalar init*/):
             TrialMoveInterface(ndim, nproto), _ntypes(ntypes),
             _typeEnds(new int[_ntypes]), _stepSizes(new double[_ntypes])
@@ -40,6 +39,7 @@ public:
         std::fill(_stepSizes, _stepSizes + _ntypes, initStepSize);
     }
 
+public:
     ~TypedMoveInterface() override
     {
         delete[] _stepSizes;

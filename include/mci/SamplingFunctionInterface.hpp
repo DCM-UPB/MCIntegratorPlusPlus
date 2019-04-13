@@ -35,9 +35,10 @@ namespace mci
 // integral with the normalized version anyway.
 class SamplingFunctionInterface: public ProtoFunctionInterface, public Clonable<SamplingFunctionInterface>
 {
-public:
+protected:
     SamplingFunctionInterface(int ndim, int nproto): ProtoFunctionInterface(ndim, nproto) {}
 
+public:
     // --- Main operational methods
 
     // return value of old sampling function

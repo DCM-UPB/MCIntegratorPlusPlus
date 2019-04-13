@@ -119,12 +119,12 @@ static constexpr std::initializer_list<MoveType> list_all_MoveType = {MoveType::
 // Enumeration of usable symmetric real valued random distribution
 enum class SRRDType
 {
-    /* inherently symmetric distributions */
+    // inherently symmetric distributions
             Uniform,
     Gaussian,
     Student,
     Cauchy,
-    /* symmetrized distributions */
+    // symmetrized distributions
             Exponential,
     Gamma,
     Weibull,

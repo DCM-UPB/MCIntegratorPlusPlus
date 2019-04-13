@@ -27,9 +27,10 @@ namespace mci
 // };
 class UpdateableObservableInterface: public ObservableFunctionInterface
 {
-public:
+protected:
     UpdateableObservableInterface(int ndim, int nobs): ObservableFunctionInterface(ndim, nobs) {}
 
+public:
     // --- YOU MUST IMPLEMENT THIS
     // Compute the observable, given ndim flags indicating which inputs have changed since last observable calculation.
     // This means you don't need to store the previous walker position to decide how to efficiently calculate

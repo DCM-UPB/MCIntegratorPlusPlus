@@ -37,8 +37,9 @@ protected:
     virtual void _newToOld() {};
     virtual void _oldToNew() {};
 
-public:
     ProtoFunctionInterface(int ndim, int nproto);
+
+public:
     virtual ~ProtoFunctionInterface();
 
     // Getters

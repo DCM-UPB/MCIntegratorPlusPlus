@@ -57,8 +57,10 @@ protected:
     virtual void _reset() = 0; // reset data / child's members ( must work in deallocated state )
     virtual void _deallocate() = 0; // delete _data allocation ( reset will be called already )
 
-public:
+    // Constructor
     AccumulatorInterface(std::unique_ptr<ObservableFunctionInterface> obs, int nskip);
+
+public:
     virtual ~AccumulatorInterface();
     std::unique_ptr<ObservableFunctionInterface> removeObs(); // remove and return the contained obs. NOTE: After calling this, the accumulator should be immediately deleted.
 

@@ -31,9 +31,9 @@ protected:
     const int _ndim;  //dimension of the input array (walker position)
     const int _nobs;  //number of values provided by the observable
 
-public:
     ObservableFunctionInterface(int ndim, int nobs): _ndim(ndim), _nobs(nobs) {}
 
+public:
     // getters
     int getNObs() const { return _nobs; }
     int getNDim() const { return _ndim; }

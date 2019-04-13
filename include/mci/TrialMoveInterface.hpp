@@ -20,9 +20,9 @@ protected:
     std::mt19937_64 * _rgen; // ptr to MCI's rgen
     std::mt19937_64 * getRGen() const { return _rgen; }
 
-public:
     TrialMoveInterface(int ndim, int nproto): ProtoFunctionInterface(ndim, nproto), _rgen(nullptr) {}
 
+public:
     // store ptr to MCI's rgen
     void bindRGen(std::mt19937_64 &rgen)
     {

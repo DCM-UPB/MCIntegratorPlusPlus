@@ -32,9 +32,9 @@ class CallBackOnMoveInterface: public Clonable<CallBackOnMoveInterface>
 protected:
     const int _ndim; //dimension of the input array (walker position)
 
-public:
     explicit CallBackOnMoveInterface(int ndim): _ndim(ndim) {}
 
+public:
     // Getters
     int getNDim() const { return _ndim; }
 
