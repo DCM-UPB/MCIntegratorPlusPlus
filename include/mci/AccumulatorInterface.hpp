@@ -2,7 +2,6 @@
 #define MCI_ACCUMULATORINTERFACE_HPP
 
 #include "mci/ObservableFunctionInterface.hpp"
-#include "mci/UpdateableObservableInterface.hpp"
 #include "mci/WalkerState.hpp"
 #include "mci/SamplingFunctionContainer.hpp"
 
@@ -14,18 +13,16 @@ namespace mci
 // Interface class to handle accumulation of observable data
 //
 // Accumulators completely wrap around an exclusively owned Observable-
-// FunctionInterface (or optionally UpdateableObservableInterface) and
-// are the "communication partner" for MCI during sampling. The derived
-// classes of this interface implement different storage/accumulation
-// techniques. Accumulators are typically contained within an Observable-
-// Container (see ObservaleContainer.hpp), where they are strictly paired
-// with corresponding average/error estimation functions.
+// FunctionInterface and are the "communication partner" for MCI during
+// sampling. The derived classes of this interface implement different
+// storage/accumulation techniques. Accumulators are typically contained
+// within an Observable-Container (see ObservableContainer.hpp), where they
+// are strictly paired with corresponding average/error estimation functions.
 class AccumulatorInterface
 {
 protected:
     std::unique_ptr<ObservableFunctionInterface> _obs; // "unique" pointer to the passed observable function (we own it)
-    UpdateableObservableInterface * const _updobs; // if _obs is an UpdateObs, we store a casted raw pointer for internal use (else nullptr)
-    const bool _flag_updobs; // is the passed observable derived from UpdateableObservableInterface? (i.e. is _updobs!=nullptr ?)
+    const bool _flag_updobs; // is the passed observable supporting selective updating?
 
     const int _nobs; // number of values returned by the observable function
     const int _xndim; // dimension of walker positions/flags that get passed on accumulate

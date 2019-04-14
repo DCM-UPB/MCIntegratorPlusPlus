@@ -3,7 +3,6 @@
 
 #include "mci/ObservableFunctionInterface.hpp"
 #include "mci/SamplingFunctionInterface.hpp"
-#include "mci/UpdateableObservableInterface.hpp"
 #include "mci/WalkerState.hpp"
 
 #include <algorithm>
@@ -255,7 +254,7 @@ protected:
     }
 
 public:
-    XSquared(): mci::ObservableFunctionInterface(3, 1) {}
+    XSquared(): mci::ObservableFunctionInterface(3, 1, false) {}
 
     void observableFunction(const double in[], const mci::SamplingFunctionContainer &/*pdfs*/, double out[]) final
     {
@@ -273,7 +272,7 @@ protected:
     }
     const double _normf = 1./sqrt(M_PI*M_PI*M_PI)/3.; // /3. comes from the xsquared
 public:
-    GaussXSquared(): mci::ObservableFunctionInterface(3, 1) {}
+    GaussXSquared(): mci::ObservableFunctionInterface(3, 1, false) {}
 
     void observableFunction(const double in[], const mci::SamplingFunctionContainer &/*pdfs*/, double out[]) final
     {
@@ -292,7 +291,7 @@ protected:
     }
 
 public:
-    XYZSquared(): mci::ObservableFunctionInterface(3, 3) {}
+    XYZSquared(): mci::ObservableFunctionInterface(3, 3, false) {}
 
     void observableFunction(const double in[], const mci::SamplingFunctionContainer &/*pdfs*/, double out[]) final
     {
@@ -312,7 +311,7 @@ protected:
     }
 
 public:
-    X1D(): mci::ObservableFunctionInterface(1, 1) {}
+    X1D(): mci::ObservableFunctionInterface(1, 1, false) {}
 
     void observableFunction(const double in[], const mci::SamplingFunctionContainer &/*pdfs*/, double out[]) final
     {
@@ -330,7 +329,7 @@ protected:
     }
 
 public:
-    explicit XND(int nd): mci::ObservableFunctionInterface(nd, nd) {}
+    explicit XND(int nd): mci::ObservableFunctionInterface(nd, nd, false) {}
 
     void observableFunction(const double in[], const mci::SamplingFunctionContainer &/*pdfs*/, double out[]) final
     {
@@ -338,7 +337,7 @@ public:
     }
 };
 
-class UpdateableXND final: public mci::UpdateableObservableInterface
+class UpdateableXND final: public mci::ObservableFunctionInterface
 {
 protected:
     mci::ObservableFunctionInterface * _clone() const final
@@ -347,7 +346,7 @@ protected:
     }
 
 public:
-    explicit UpdateableXND(int nd): mci::UpdateableObservableInterface(nd, nd) {}
+    explicit UpdateableXND(int nd): mci::ObservableFunctionInterface(nd, nd, true) {}
 
     void observableFunction(const double in[], const mci::SamplingFunctionContainer &/*pdfs*/, double out[]) final
     {
@@ -371,7 +370,7 @@ protected:
     }
 
 public:
-    explicit Constval(const int ndim): mci::ObservableFunctionInterface(ndim, 1) {}
+    explicit Constval(const int ndim): mci::ObservableFunctionInterface(ndim, 1, false) {}
 
     void observableFunction(const double /*in*/[], const mci::SamplingFunctionContainer &/*pdfs*/, double out[]) final
     {
@@ -389,7 +388,7 @@ protected:
     }
 
 public:
-    explicit Polynom(const int ndim): mci::ObservableFunctionInterface(ndim, 1) {}
+    explicit Polynom(const int ndim): mci::ObservableFunctionInterface(ndim, 1, false) {}
 
     void observableFunction(const double in[], const mci::SamplingFunctionContainer &/*pdfs*/, double out[]) final
     {
@@ -410,7 +409,7 @@ protected:
     }
 
 public:
-    explicit X2Sum(const int ndim): mci::ObservableFunctionInterface(ndim, 1) {}
+    explicit X2Sum(const int ndim): mci::ObservableFunctionInterface(ndim, 1, false) {}
 
     void observableFunction(const double in[], const mci::SamplingFunctionContainer &/*pdfs*/, double out[]) final
     {
@@ -422,7 +421,7 @@ public:
 };
 
 
-class X2 final: public mci::UpdateableObservableInterface
+class X2 final: public mci::ObservableFunctionInterface
 {
 protected:
     mci::ObservableFunctionInterface * _clone() const final
@@ -431,7 +430,7 @@ protected:
     }
 
 public:
-    explicit X2(const int ndim): mci::UpdateableObservableInterface(ndim, ndim) {}
+    explicit X2(const int ndim): mci::ObservableFunctionInterface(ndim, ndim, true) {}
 
     void observableFunction(const double in[], const mci::SamplingFunctionContainer &/*pdfs*/, double out[]) final
     {

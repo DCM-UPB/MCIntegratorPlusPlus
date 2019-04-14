@@ -3,7 +3,6 @@
 
 #include "mci/SamplingFunctionInterface.hpp"
 #include "mci/ObservableFunctionInterface.hpp"
-#include "mci/UpdateableObservableInterface.hpp"
 
 #include <cmath>
 
@@ -20,7 +19,7 @@ protected:
         return new Parabola();
     }
 public:
-    Parabola(): mci::ObservableFunctionInterface(1 /*1D input*/, 1 /*1D output*/) {}
+    Parabola(): mci::ObservableFunctionInterface(1 /*1D input*/, 1 /*1D output*/, false/*no partial updating*/) {}
 
     // here we calculate the observable function
     void observableFunction(const double in[], const mci::SamplingFunctionContainer &/*not used*/, double out[]) final
@@ -39,7 +38,7 @@ protected:
         return new NormalizedParabola();
     }
 public:
-    explicit NormalizedParabola(): mci::ObservableFunctionInterface(1, 1) {}
+    explicit NormalizedParabola(): mci::ObservableFunctionInterface(1, 1, false/*no partial updating*/) {}
 
     void observableFunction(const double in[], const mci::SamplingFunctionContainer &/*not used*/, double out[]) final
     {

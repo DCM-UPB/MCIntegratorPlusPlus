@@ -10,7 +10,7 @@ namespace mci
 // Generic all-particle move that can be instantiated for applicable real-valued
 // random distributions SSRD. Applicable distributions from the standard library
 // are enumerated in TrialMoveInterface.hpp, in the form of explicit template
-// specializations of the createSymNormalRRD() function.
+// specializations of the createSymRRD() function.
 // In any case, SRRD type must be callable and, when called with passed stdlib
 // random generator, return a random double from a symmetric distribution around 0.
 // By including this header you automatically "use" instantiations for types that
@@ -43,7 +43,7 @@ public:
     // Full constructor with scalar step init and optionally passed pre-made random dist
     SRRDAllMove(int ndim, int ntypes, const int typeEnds[] /*len ntypes*/, double initStepSize /*scalar init*/, const SRRD * rdist = nullptr):
             TypedMoveInterface(ndim, 0, ntypes, typeEnds, initStepSize),
-            _rd((rdist != nullptr) ? *rdist : createSymNormalRRD<SRRD>() /*fall-back*/ ) {}
+            _rd((rdist != nullptr) ? *rdist : createSymRRD<SRRD>() /*fall-back*/ ) {}
 
     // Full constructor, with array step init and optionally passed pre-made random dist
     SRRDAllMove(int ndim, int ntypes, const int typeEnds[], const double initStepSizes[] /*len ntypes*/, const SRRD * rdist = nullptr):

@@ -4,9 +4,8 @@ namespace mci
 {
 
 AccumulatorInterface::AccumulatorInterface(std::unique_ptr<ObservableFunctionInterface> obs, const int nskip):
-        _obs(std::move(obs)), _updobs(dynamic_cast<UpdateableObservableInterface *>(_obs.get())), _flag_updobs(_updobs != nullptr),
-        _nobs(_obs->getNObs()), _xndim(_obs->getNDim()), _nskip(nskip),
-        _obs_values(new double[_nobs]), _flags_xchanged(_flag_updobs ? new bool[_xndim] : nullptr),
+        _obs(std::move(obs)), _flag_updobs(_obs->isUpdateable()), _nobs(_obs->getNObs()), _xndim(_obs->getNDim()),
+        _nskip(nskip), _obs_values(new double[_nobs]), _flags_xchanged(_flag_updobs ? new bool[_xndim] : nullptr),
         _nsteps(0), _data(nullptr)
 {
     if (nskip < 1) { throw std::invalid_argument("[AccumulatorInterface] Provided number of steps per evaluation was < 1 ."); }
@@ -78,7 +77,7 @@ void AccumulatorInterface::_processSelective(const WalkerState &wlk, const Sampl
         _skipidx = 0;
 
         if (_nchanged < _xndim) { // call optimized recompute
-            _updobs->updatedObservable(wlk.xnew, _nchanged, _flags_xchanged, pdfcont, _obs_values);
+            _obs->updatedObservable(wlk.xnew, _nchanged, _flags_xchanged, pdfcont, _obs_values);
         }
         else { // call full obs compute
             _obs->observableFunction(wlk.xnew, pdfcont, _obs_values);

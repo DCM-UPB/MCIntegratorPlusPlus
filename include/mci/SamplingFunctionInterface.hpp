@@ -84,8 +84,7 @@ public:
     // Remember that in this method you should only update the protov[] elements that need to change due
     // to the nchanged input indices in changedIdx.
     // If full recalculation is more efficient in your case, you may also choose not to overwrite this method.
-    virtual double updatedAcceptance(const WalkerState &wlk,
-                                     const double protoold[], double protonew[] /* update this! */)
+    virtual double updatedAcceptance(const WalkerState &wlk, const double protoold[], double protonew[] /* update this! */)
     {
         // default to "calculate all"
         this->protoFunction(wlk.xnew, protonew);

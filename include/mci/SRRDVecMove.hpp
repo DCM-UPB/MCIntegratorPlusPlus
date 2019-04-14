@@ -40,7 +40,7 @@ public:
     SRRDVecMove(int nvecs, int veclen, int ntypes, const int typeEnds[] /*len ntypes*/, double initStepSize /*scalar*/, const SRRD * rdist = nullptr):
             TypedMoveInterface(nvecs*veclen, 0, ntypes, typeEnds, initStepSize), _nvecs(nvecs), _veclen(veclen),
             _rdidx(std::uniform_int_distribution<int>(0, _nvecs - 1)),
-            _rdmov((rdist != nullptr) ? *rdist : createSymNormalRRD<SRRD>() /*fall-back*/ )
+            _rdmov((rdist != nullptr) ? *rdist : createSymRRD<SRRD>() /*fall-back*/ )
     {
         if (_nvecs < 1) { throw std::invalid_argument("[SRRDVecMove] Number of vectors must be at least 1."); }
         if (_veclen < 1) { throw std::invalid_argument("[SRRDVecMove] Vector length must be at least 1."); }
