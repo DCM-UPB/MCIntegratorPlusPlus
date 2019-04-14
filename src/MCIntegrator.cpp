@@ -130,8 +130,7 @@ void MCI::initialDecorrelation()
         ObservableContainer obs_equil;
         for (int i = 0; i < _obscont.getNObs(); ++i) {
             if (_obscont.getFlagEquil(i)) {
-                obs_equil.addObservable(std::unique_ptr<AccumulatorInterface>(new FullAccumulator(_obscont.getObservableFunction(i).clone(), 1)),
-                                        createEstimator(EstimatorType::Correlated), true);
+                obs_equil.addObservable(_obscont.getObservableFunction(i).clone(), 1, 1, true, EstimatorType::Correlated);
             }
         }
         const auto MIN_NMC = static_cast<int64_t>( sqrt(10000.*_ndim) ); // a guess on how many steps we need
@@ -388,7 +387,7 @@ void MCI::addObservable(std::unique_ptr<ObservableFunctionInterface> obs, int bl
     }
 
     // add accumulator&estimator from factory functions
-    _obscont.addObservable(createAccumulator(std::move(obs), blocksize, nskip), createEstimator(estimType), flag_equil);
+    _obscont.addObservable(std::move(obs), blocksize, nskip, flag_equil, estimType);
 }
 
 void MCI::addObservable(std::unique_ptr<ObservableFunctionInterface> obs, const int blocksize, const int nskip, const bool flag_equil, const bool flag_correlated)
@@ -403,9 +402,7 @@ void MCI::addObservable(std::unique_ptr<ObservableFunctionInterface> obs, const 
 
 std::unique_ptr<ObservableFunctionInterface> MCI::popObservable()
 {
-    auto accu = _obscont.pop_back(); // remove accu from container
-    auto obs = accu->removeObs(); // extract contained observable, accu will be destroyed after return
-    return obs; // return obs
+    return _obscont.pop_back(); // remove obs from container and return it
 }
 
 // --- Sampling functions

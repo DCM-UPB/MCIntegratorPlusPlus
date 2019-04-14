@@ -3,22 +3,25 @@
 namespace mci
 {
 
-void ObservableContainer::addObservable(std::unique_ptr<AccumulatorInterface> accumulator,
-                                        const std::function<void(int64_t, int, const double [], double [], double [])> &estimator,
-                                        bool needsEquil)
+void ObservableContainer::addObservable(std::unique_ptr<ObservableFunctionInterface> obs,
+                                        const int blocksize, const int nskip, const bool needsEquil, const EstimatorType estimType)
 {
-    _nobsdim += accumulator->getNObs();
     ObservableContainerElement newElement;
-    newElement.estim = [accu = accumulator.get() /*OK*/, estimator](double average[], double error[]) // lambda functional
+    newElement.obs = std::move(obs); // ownership by element
+    _nobsdim += newElement.obs->getNObs();
+    newElement.accu = createAccumulator(*newElement.obs, blocksize, nskip); // use create from Factories.hpp
+
+    // lambda functional (again use create from Factories.hpp)
+    newElement.estim = [accu = newElement.accu.get() /*OK*/, estimator=createEstimator(estimType)](double average[], double error[])
     {
         if (!accu->isFinalized()) {
             throw std::runtime_error("[ObservableContainer.estim] Estimator was called, but accumulator is not finalized.");
         }
         estimator(accu->getNStore(), accu->getNObs(), accu->getData(), average, error);
     };
-    newElement.accu = std::move(accumulator); // ownership goes to new element
+
     newElement.flag_equil = needsEquil;
-    _cont.emplace_back(std::move(newElement)); // and then into container
+    _cont.push_back(std::move(newElement)); // and then into container
 }
 
 
@@ -81,12 +84,12 @@ void ObservableContainer::deallocate()
     }
 }
 
-std::unique_ptr<AccumulatorInterface> ObservableContainer::pop_back()
+std::unique_ptr<ObservableFunctionInterface> ObservableContainer::pop_back()
 {
-    auto accu = std::move(_cont.back().accu); // move last accu out
-    _nobsdim -= accu->getNObs(); // adjust nobsdim
+    auto obs = std::move(_cont.back().obs); // move last obs out
+    _nobsdim -= obs->getNObs(); // adjust nobsdim
     _cont.pop_back(); // resize vector
-    return accu;
+    return obs;
 }
 
 void ObservableContainer::clear()

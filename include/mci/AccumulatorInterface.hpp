@@ -10,18 +10,19 @@
 
 namespace mci
 {
-// Interface class to handle accumulation of observable data
+// Internal interface class to handle accumulation of observable data
 //
-// Accumulators completely wrap around an exclusively owned Observable-
-// FunctionInterface and are the "communication partner" for MCI during
-// sampling. The derived classes of this interface implement different
-// storage/accumulation techniques. Accumulators are typically contained
-// within an Observable-Container (see ObservableContainer.hpp), where they
-// are strictly paired with corresponding average/error estimation functions.
+// A designated accumulator should be created when an observable is moved
+// into MCI and destroyed when the obs gets destroyed or moved out.
+// It serves as "communication partner" for MCI during sampling and handles
+// the accumulation and finalization of data. The derived classes of this
+// interface implement different storage/accumulation techniques.
+// In MCI, Accumulators are contained within an ObservableContainer,
+// where they are strictly paired with corresponding estimator functions.
 class AccumulatorInterface
 {
 protected:
-    std::unique_ptr<ObservableFunctionInterface> _obs; // "unique" pointer to the passed observable function (we own it)
+    ObservableFunctionInterface & _obs; // reference to corresponding obs
     const bool _flag_updobs; // is the passed observable supporting selective updating?
 
     const int _nobs; // number of values returned by the observable function
@@ -55,13 +56,10 @@ protected:
     virtual void _deallocate() = 0; // delete _data allocation ( reset will be called already )
 
     // Constructor
-    AccumulatorInterface(std::unique_ptr<ObservableFunctionInterface> obs, int nskip);
+    AccumulatorInterface(ObservableFunctionInterface &obs, int nskip);
 
 public:
     virtual ~AccumulatorInterface();
-    std::unique_ptr<ObservableFunctionInterface> removeObs(); // remove and return the contained obs. NOTE: After calling this, the accumulator should be immediately deleted.
-
-    ObservableFunctionInterface &getObservableFunction() const { return *_obs; } // acquire raw read-only ref
 
     // Getters
     int getNObs() const { return _nobs; } // dimension of observable

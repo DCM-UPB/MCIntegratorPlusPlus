@@ -3,8 +3,8 @@
 namespace mci
 {
 
-AccumulatorInterface::AccumulatorInterface(std::unique_ptr<ObservableFunctionInterface> obs, const int nskip):
-        _obs(std::move(obs)), _flag_updobs(_obs->isUpdateable()), _nobs(_obs->getNObs()), _xndim(_obs->getNDim()),
+AccumulatorInterface::AccumulatorInterface(ObservableFunctionInterface &obs, const int nskip):
+        _obs(obs), _flag_updobs(_obs.isUpdateable()), _nobs(_obs.getNObs()), _xndim(_obs.getNDim()),
         _nskip(nskip), _obs_values(new double[_nobs]), _flags_xchanged(_flag_updobs ? new bool[_xndim] : nullptr),
         _nsteps(0), _data(nullptr)
 {
@@ -16,11 +16,6 @@ AccumulatorInterface::~AccumulatorInterface()
 {
     delete[] _flags_xchanged;
     delete[] _obs_values;
-}
-
-std::unique_ptr<ObservableFunctionInterface> AccumulatorInterface::removeObs()
-{
-    return std::move(_obs); // move away the obs (NOW THE OBJECT IS INVALID; DELETE IT)
 }
 
 void AccumulatorInterface::_init() // reset base variables (except nsteps/_data)
@@ -50,7 +45,7 @@ void AccumulatorInterface::_processFull(const WalkerState &wlk, const SamplingFu
         _skipidx = 0;
 
         // call full obs compute
-        _obs->observableFunction(wlk.xnew, pdfcont, _obs_values);
+        _obs.observableFunction(wlk.xnew, pdfcont, _obs_values);
         _nchanged = 0;
 
         this->_accumulate(); // call child storage implementation
@@ -77,10 +72,10 @@ void AccumulatorInterface::_processSelective(const WalkerState &wlk, const Sampl
         _skipidx = 0;
 
         if (_nchanged < _xndim) { // call optimized recompute
-            _obs->updatedObservable(wlk.xnew, _nchanged, _flags_xchanged, pdfcont, _obs_values);
+            _obs.updatedObservable(wlk.xnew, _nchanged, _flags_xchanged, pdfcont, _obs_values);
         }
         else { // call full obs compute
-            _obs->observableFunction(wlk.xnew, pdfcont, _obs_values);
+            _obs.observableFunction(wlk.xnew, pdfcont, _obs_values);
         }
         std::fill(_flags_xchanged, _flags_xchanged + _xndim, false);
         _nchanged = 0;
@@ -103,8 +98,6 @@ void AccumulatorInterface::allocate(const int64_t nsteps)
 
 void AccumulatorInterface::accumulate(const WalkerState &wlk, const SamplingFunctionContainer &pdfcont)
 {
-    if (_stepidx >= _nsteps) { throw std::runtime_error("[AccumulatorInterface::accumulate] Number of calls to accumulate exceed the allocation."); }
-
     if (wlk.accepted || _nchanged > 0) {
         if (_flag_updobs) {
             this->_processSelective(wlk, pdfcont);
@@ -123,7 +116,7 @@ void AccumulatorInterface::accumulate(const WalkerState &wlk, const SamplingFunc
 
 void AccumulatorInterface::finalize()
 {
-    if (_stepidx != _nsteps) { throw std::runtime_error("[AccumulatorInterface::finalize] Finalize was called before all steps were accumulated."); }
+    if (_stepidx != _nsteps) { throw std::runtime_error("[AccumulatorInterface::finalize] Finalize was called, but number of accumulated steps do not match the planned amount."); }
     if (!_flag_final) { this->_finalize(); } // call child finalize
     _flag_final = true;
 }

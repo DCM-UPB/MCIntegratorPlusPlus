@@ -153,7 +153,7 @@ public:
     // Observables
     void addObservable(std::unique_ptr<ObservableFunctionInterface> obs /* MCI adds accumulator and estimator for this obs, with following options: */,
                        int blocksize, /* if > 1, use fixed block size and assume uncorrelated samples, if 0, use no blocks and no error calculation */
-                       int nskip, /* evaluate observable only every n-th step NOTE: now one block is used for blocksize*nskip steps */
+                       int nskip, /* evaluate observable only every n-th step. NOTE: now one block is used for blocksize*nskip steps */
                        bool flag_equil, /* observable wants to be equilibrated when using automatic initial decorrelation (blocksize must be > 0) */
                        bool flag_correlated /* should block averages be treated as correlated samples? (blocksize must be > 0) */
                       );

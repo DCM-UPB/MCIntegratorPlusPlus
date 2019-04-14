@@ -4,6 +4,7 @@
 #include "mci/TypedMoveInterface.hpp"
 
 #include <algorithm>
+#include <random>
 
 namespace mci
 {
