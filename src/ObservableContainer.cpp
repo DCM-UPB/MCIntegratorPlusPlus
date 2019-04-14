@@ -8,6 +8,7 @@ void ObservableContainer::addObservable(std::unique_ptr<ObservableFunctionInterf
 {
     ObservableContainerElement newElement;
     newElement.obs = std::move(obs); // ownership by element
+    newElement.depobs = dynamic_cast<DependentObservableInterface *>(newElement.obs.get()); // might be nullptr
     _nobsdim += newElement.obs->getNObs();
     newElement.accu = createAccumulator(*newElement.obs, blocksize, nskip); // use create from Factories.hpp
 
@@ -25,10 +26,17 @@ void ObservableContainer::addObservable(std::unique_ptr<ObservableFunctionInterf
 }
 
 
-void ObservableContainer::allocate(const int64_t Nmc)
+void ObservableContainer::allocate(const int64_t Nmc, const SamplingFunctionContainer &pdfcont)
 {
+    std::vector<AccumulatorInterface *> accuvec; // vectors of accu pointers for obs to register
+    accuvec.reserve(_cont.size());
     for (auto &el : _cont) {
         el.accu->allocate(Nmc);
+        accuvec.push_back(el.accu.get());
+    }
+    // let dependent obs register
+    for (int i = 0; i < this->getNObs(); ++i) {
+        if (_cont[i].depobs != nullptr) { _cont[i].depobs->registerDeps(pdfcont, accuvec, i); }
     }
 }
 
@@ -81,6 +89,10 @@ void ObservableContainer::deallocate()
 {
     for (auto &el : _cont) {
         el.accu->deallocate();
+    }
+    // let dependent obs deregister
+    for (int i = 0; i < this->getNObs(); ++i) {
+        if (_cont[i].depobs != nullptr) { _cont[i].depobs->deregisterDeps(); }
     }
 }
 

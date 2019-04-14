@@ -62,7 +62,6 @@ public:
     // pass isUpdateable=false to the constructor.
     virtual void updatedObservable(const double in[], int/*nchanged*/, const bool/*flags_xchanged[ndim]*/[], const SamplingFunctionContainer &pdfcont, double out[]) { this->observableFunction(in, pdfcont, out); }
     //                             ^input = walker positions  ^how many inputs changed  ^which indices are new           ^allows to read from pdfs      ^resulting observables (passed containing old obs, so you may make use of those)
-
 };
 }  // namespace mci
 

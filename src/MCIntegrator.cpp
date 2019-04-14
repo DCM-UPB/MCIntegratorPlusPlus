@@ -25,7 +25,7 @@ void MCI::integrate(const int64_t Nmc, double average[], double error[], const b
 
     if (Nmc > 0) {
         // allocation of the accumulators where the data will be stored
-        _obscont.allocate(Nmc);
+        _obscont.allocate(Nmc, _pdfcont);
 
         //sample the observables
         if (_flagobsfile) { _obsfile.open(_pathobsfile); }
@@ -136,7 +136,7 @@ void MCI::initialDecorrelation()
         const auto MIN_NMC = static_cast<int64_t>( sqrt(10000.*_ndim) ); // a guess on how many steps we need
         const int nobsdim = obs_equil.getNObsDim();
         // allocate memory for observables
-        obs_equil.allocate(MIN_NMC);
+        obs_equil.allocate(MIN_NMC, _pdfcont);
 
         //do a first estimate of the observables
         this->sample(MIN_NMC, obs_equil, false);

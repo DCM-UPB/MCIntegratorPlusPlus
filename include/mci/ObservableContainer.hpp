@@ -2,6 +2,7 @@
 #define MCI_OBSERVABLECONTAINER_HPP
 
 #include "mci/ObservableFunctionInterface.hpp"
+#include "mci/DependentObservableInterface.hpp"
 #include "mci/Factories.hpp"
 #include "mci/WalkerState.hpp"
 #include "mci/SamplingFunctionContainer.hpp"
@@ -22,6 +23,9 @@ class ObservableContainer
     {
         // Observable
         std::unique_ptr<ObservableFunctionInterface> obs;
+
+        // obs ptr dynamic_casted to DependentObservableInterface (if possible, else nullptr)
+        DependentObservableInterface * depobs;
 
         // Accumulator
         std::unique_ptr<AccumulatorInterface> accu;
@@ -59,7 +63,7 @@ public:
     void addObservable(std::unique_ptr<ObservableFunctionInterface> obs /*we acquire ownership*/,
                        int blocksize, int nskip, bool needsEquil, EstimatorType estimType);
 
-    void allocate(int64_t Nmc); // allocate data memory
+    void allocate(int64_t Nmc, const SamplingFunctionContainer &pdfcont); // allocate data memory and register dependencies
     void accumulate(const WalkerState &wlk, const SamplingFunctionContainer &pdfcont); // process accumulation for new step, described by WalkerState
     void printObsValues(std::ofstream &file) const; // write last observables values to filestream
     void finalize(); // used after sampling to apply all necessary data normalization
