@@ -235,7 +235,7 @@ void MCI::sample(const int64_t npoints, ObservableContainer &container, const bo
         }
 
         // accumulate obs
-        container.accumulate(_wlkstate, _pdfcont);
+        container.accumulate(_wlkstate);
 
         // file output
         if (flagMC && _flagobsfile) { this->storeObservables(); } // store obs on file

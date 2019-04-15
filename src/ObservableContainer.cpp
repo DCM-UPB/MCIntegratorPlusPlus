@@ -13,7 +13,7 @@ void ObservableContainer::addObservable(std::unique_ptr<ObservableFunctionInterf
     newElement.accu = createAccumulator(*newElement.obs, blocksize, nskip); // use create from Factories.hpp
 
     // lambda functional (again use create from Factories.hpp)
-    newElement.estim = [accu = newElement.accu.get() /*OK*/, estimator=createEstimator(estimType)](double average[], double error[])
+    newElement.estim = [accu = newElement.accu.get() /*OK*/, estimator = createEstimator(estimType)](double average[], double error[])
     {
         if (!accu->isFinalized()) {
             throw std::runtime_error("[ObservableContainer.estim] Estimator was called, but accumulator is not finalized.");
@@ -41,10 +41,10 @@ void ObservableContainer::allocate(const int64_t Nmc, const SamplingFunctionCont
 }
 
 
-void ObservableContainer::accumulate(const WalkerState &wlk, const SamplingFunctionContainer &pdfcont)
+void ObservableContainer::accumulate(const WalkerState &wlk)
 {
     for (auto &el : _cont) {
-        el.accu->accumulate(wlk, pdfcont);
+        el.accu->accumulate(wlk);
     }
 }
 

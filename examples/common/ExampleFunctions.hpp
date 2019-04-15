@@ -22,7 +22,7 @@ public:
     Parabola(): mci::ObservableFunctionInterface(1 /*1D input*/, 1 /*1D output*/, false/*no partial updating*/) {}
 
     // here we calculate the observable function
-    void observableFunction(const double in[], const mci::SamplingFunctionContainer &/*not used*/, double out[]) final
+    void observableFunction(const double in[], double out[]) final
     {
         out[0] = 4.*in[0] - in[0]*in[0];
     }
@@ -40,7 +40,7 @@ protected:
 public:
     explicit NormalizedParabola(): mci::ObservableFunctionInterface(1, 1, false/*no partial updating*/) {}
 
-    void observableFunction(const double in[], const mci::SamplingFunctionContainer &/*not used*/, double out[]) final
+    void observableFunction(const double in[], double out[]) final
     {
         out[0] = (4. - in[0])*5.;
         if (std::signbit(in[0])) { out[0] = -out[0]; }

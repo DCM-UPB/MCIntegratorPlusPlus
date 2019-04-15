@@ -256,7 +256,7 @@ protected:
 public:
     XSquared(): mci::ObservableFunctionInterface(3, 1, false) {}
 
-    void observableFunction(const double in[], const mci::SamplingFunctionContainer &/*pdfs*/, double out[]) final
+    void observableFunction(const double in[], double out[]) final
     {
         out[0] = (in[0]*in[0] + in[1]*in[1] + in[2]*in[2])/3.;
     }
@@ -274,7 +274,7 @@ protected:
 public:
     GaussXSquared(): mci::ObservableFunctionInterface(3, 1, false) {}
 
-    void observableFunction(const double in[], const mci::SamplingFunctionContainer &/*pdfs*/, double out[]) final
+    void observableFunction(const double in[], double out[]) final
     {
         const double x2 = in[0]*in[0] + in[1]*in[1] + in[2]*in[2];
         out[0] = exp(-x2)*x2*_normf;
@@ -293,7 +293,7 @@ protected:
 public:
     XYZSquared(): mci::ObservableFunctionInterface(3, 3, false) {}
 
-    void observableFunction(const double in[], const mci::SamplingFunctionContainer &/*pdfs*/, double out[]) final
+    void observableFunction(const double in[], double out[]) final
     {
         out[0] = in[0]*in[0];
         out[1] = in[1]*in[1];
@@ -313,7 +313,7 @@ protected:
 public:
     X1D(): mci::ObservableFunctionInterface(1, 1, false) {}
 
-    void observableFunction(const double in[], const mci::SamplingFunctionContainer &/*pdfs*/, double out[]) final
+    void observableFunction(const double in[], double out[]) final
     {
         out[0] = in[0];
     }
@@ -331,7 +331,7 @@ protected:
 public:
     explicit XND(int nd): mci::ObservableFunctionInterface(nd, nd, false) {}
 
-    void observableFunction(const double in[], const mci::SamplingFunctionContainer &/*pdfs*/, double out[]) final
+    void observableFunction(const double in[], double out[]) final
     {
         std::copy(in, in + _ndim, out);
     }
@@ -348,11 +348,11 @@ protected:
 public:
     explicit UpdateableXND(int nd): mci::ObservableFunctionInterface(nd, nd, true) {}
 
-    void observableFunction(const double in[], const mci::SamplingFunctionContainer &/*pdfs*/, double out[]) final
+    void observableFunction(const double in[], double out[]) final
     {
         std::copy(in, in + _ndim, out);
     }
-    void updatedObservable(const double in[], const int/*nchanged*/, const bool flags[], const mci::SamplingFunctionContainer &/*pdfs*/, double out[]) final
+    void updatedObservable(const double in[], const int/*nchanged*/, const bool flags[], double out[]) final
     {
         for (int i = 0; i < _ndim; ++i) { // this is likely slower in any case, but used for testing
             if (flags[i]) { out[i] = in[i]; }
@@ -372,7 +372,7 @@ protected:
 public:
     explicit Constval(const int ndim): mci::ObservableFunctionInterface(ndim, 1, false) {}
 
-    void observableFunction(const double /*in*/[], const mci::SamplingFunctionContainer &/*pdfs*/, double out[]) final
+    void observableFunction(const double /*in*/[], double out[]) final
     {
         out[0] = 1.3;
     }
@@ -390,7 +390,7 @@ protected:
 public:
     explicit Polynom(const int ndim): mci::ObservableFunctionInterface(ndim, 1, false) {}
 
-    void observableFunction(const double in[], const mci::SamplingFunctionContainer &/*pdfs*/, double out[]) final
+    void observableFunction(const double in[], double out[]) final
     {
         out[0] = 0.;
         for (int i = 0; i < _ndim; ++i) {
@@ -411,7 +411,7 @@ protected:
 public:
     explicit X2Sum(const int ndim): mci::ObservableFunctionInterface(ndim, 1, false) {}
 
-    void observableFunction(const double in[], const mci::SamplingFunctionContainer &/*pdfs*/, double out[]) final
+    void observableFunction(const double in[], double out[]) final
     {
         out[0] = 0.;
         for (int i = 0; i < _ndim; ++i) {
@@ -432,14 +432,14 @@ protected:
 public:
     explicit X2(const int ndim): mci::ObservableFunctionInterface(ndim, ndim, true) {}
 
-    void observableFunction(const double in[], const mci::SamplingFunctionContainer &/*pdfs*/, double out[]) final
+    void observableFunction(const double in[], double out[]) final
     {
         for (int i = 0; i < _ndim; ++i) {
             out[i] = in[i]*in[i];
         }
     }
 
-    void updatedObservable(const double in[], const int/*nchanged*/, const bool flags[], const mci::SamplingFunctionContainer &/*pdfs*/, double out[]) final
+    void updatedObservable(const double in[], const int/*nchanged*/, const bool flags[], double out[]) final
     {
         for (int i = 0; i < _ndim; ++i) {
             if (flags[i]) { // this may actually be faster for small nchanged and large _ndim

@@ -120,7 +120,7 @@ void accumulateData(AccumulatorInterface &accu, int Nmc, int ndim, const double 
         }
         std::cout << std::endl;
         */
-        accu.accumulate(wlk, SamplingFunctionContainer());
+        accu.accumulate(wlk);
     }
     accu.finalize();
 }

@@ -3,7 +3,6 @@
 
 #include "mci/ObservableFunctionInterface.hpp"
 #include "mci/WalkerState.hpp"
-#include "mci/SamplingFunctionContainer.hpp"
 
 #include <cstdint>
 #include <memory>
@@ -22,7 +21,7 @@ namespace mci
 class AccumulatorInterface
 {
 protected:
-    ObservableFunctionInterface & _obs; // reference to corresponding obs
+    ObservableFunctionInterface &_obs; // reference to corresponding obs
     const bool _flag_updobs; // is the passed observable supporting selective updating?
 
     const int _nobs; // number of values returned by the observable function
@@ -44,9 +43,9 @@ protected:
 
     // base methods
     void _init(); // used in construct/reset
-    void _processOld(const WalkerState &wlk, const SamplingFunctionContainer &pdfcont); // used in accumulate() when observables need no computation
-    void _processFull(const WalkerState &wlk, const SamplingFunctionContainer &pdfcont); // used else when obs not updateable
-    void _processSelective(const WalkerState &wlk, const SamplingFunctionContainer &pdfcont); // and this is used otherwise
+    void _processOld(const WalkerState &wlk); // used in accumulate() when observables need no computation
+    void _processFull(const WalkerState &wlk); // used else when obs not updateable
+    void _processSelective(const WalkerState &wlk); // and this is used otherwise
 
     // TO BE IMPLEMENTED BY CHILD
     virtual void _allocate() = 0; // allocate _data for a MC run of nsteps length ( expect deallocated state )
@@ -60,6 +59,9 @@ protected:
 
 public:
     virtual ~AccumulatorInterface();
+
+    // you may want to know something about the bound obs
+    ObservableFunctionInterface &getObservableFunction() const { return _obs; }
 
     // Getters
     int getNObs() const { return _nobs; } // dimension of observable
@@ -95,7 +97,7 @@ public:
     void allocate(int64_t nsteps); // will deallocate any existing allocation
 
     // externally call this on every MC step
-    void accumulate(const WalkerState &wlk /*step info*/, const SamplingFunctionContainer &pdfcont /*pdf info*/); // process step described by WalkerState
+    void accumulate(const WalkerState &wlk /*step info*/); // process step described by WalkerState
 
     // finalize (e.g. normalize) stored data
     void finalize(); // will throw if called prematurely, but does nothing if deallocated or used repeatedly

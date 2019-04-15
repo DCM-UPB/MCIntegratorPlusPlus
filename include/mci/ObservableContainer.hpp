@@ -64,7 +64,7 @@ public:
                        int blocksize, int nskip, bool needsEquil, EstimatorType estimType);
 
     void allocate(int64_t Nmc, const SamplingFunctionContainer &pdfcont); // allocate data memory and register dependencies
-    void accumulate(const WalkerState &wlk, const SamplingFunctionContainer &pdfcont); // process accumulation for new step, described by WalkerState
+    void accumulate(const WalkerState &wlk); // process accumulation for new step, described by WalkerState
     void printObsValues(std::ofstream &file) const; // write last observables values to filestream
     void finalize(); // used after sampling to apply all necessary data normalization
     void estimate(double average[], double error[]) const; // eval estimators on finalized data and return average/error

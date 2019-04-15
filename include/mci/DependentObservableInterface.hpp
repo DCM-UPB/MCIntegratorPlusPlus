@@ -20,19 +20,6 @@ namespace mci
 //    accumulator of "this" observable, because computation of observables happens in that order.
 // 3) The nskip values of the respective accumulators of two dependent observables must lead to synced computation.
 //
-// The latter two rules may be checked in registerDeps() by using the helper function below:
-//
-inline bool isObsDepValid(const std::vector<AccumulatorInterface *> &accuvec, int thisIdx, int depIdx) // when index thisIdx wants to depend on depIdx
-{
-    // depIdx observable must be computed before thisIdx
-    const bool isOrdered = (depIdx < thisIdx);
-    // nskips must be synced
-    const int thisNskip = accuvec[thisIdx]->getNSkip();
-    const int depNskip = accuvec[depIdx]->getNSkip();
-    const bool isSynced = (thisNskip >= depNskip) ? (thisNskip%depNskip == 0) : false;
-
-    return (isOrdered && isSynced);
-}
 
 class DependentObservableInterface
 {
@@ -44,6 +31,16 @@ protected:
 public:
     bool dependsOnPDF() const { return _flag_pdfdep; }
 
+    // The latter two rules above may be checked in registerDeps() by using the helper function below:
+    static bool isObsDepValid(const std::vector<AccumulatorInterface *> &accuvec, int selfIdx, int depIdx) // when index thisIdx wants to depend on depIdx
+    {
+        const bool isOrdered = (depIdx < selfIdx); // depIdx observable must be computed before thisIdx
+        const int thisNskip = accuvec[selfIdx]->getNSkip();
+        const int depNskip = accuvec[depIdx]->getNSkip();
+        const bool isSynced = (thisNskip >= depNskip) ? (thisNskip%depNskip == 0) : false; // nskips must be synced
+
+        return (isOrdered && isSynced);
+    }
 
     // --- MUST BE IMPLEMENTED
     // When initializing a sampling run, registerDeps(..) method will be called once.

@@ -2,9 +2,6 @@
 #define MCI_OBSERVABLEFUNCTIONINTERFACE_HPP
 
 #include "mci/Clonable.hpp"
-#include "mci/SamplingFunctionContainer.hpp"
-
-#include <algorithm>
 
 namespace mci
 {
@@ -37,7 +34,8 @@ protected:
     const int _nobs;  //number of values provided by the observable
     const bool _flag_updateable; // does the obs want to enable use of the updatedObservable() method
 
-    ObservableFunctionInterface(int ndim, int nobs, bool isUpdateable): _ndim(ndim), _nobs(nobs), _flag_updateable(isUpdateable) {}
+    ObservableFunctionInterface(int ndim, int nobs, bool isUpdateable):
+            _ndim(ndim), _nobs(nobs), _flag_updateable(isUpdateable) {}
 
 public:
     // getters
@@ -47,8 +45,8 @@ public:
 
     // --- METHOD THAT MUST BE IMPLEMENTED
     // Compute all observable elements and store them in out.
-    virtual void observableFunction(const double in[], const SamplingFunctionContainer &pdfcont, double out[]) = 0;
-    //                               ^input = walker positions            ^you may read the pdfs        ^resulting observables
+    virtual void observableFunction(const double in[], double out[]) = 0;
+    //                               ^input = walker positions  ^resulting observables
 
 
     // --- YOU MAY ALSO OVERRIDE THIS (only used if flag_updateable set to true)
@@ -60,8 +58,8 @@ public:
     // You may use the nchanged argument to decide whether a full recalculation or flag-based recalculation is more efficient.
     // If full recalculation is almost always more efficient in your case, you may also choose not to override this method and
     // pass isUpdateable=false to the constructor.
-    virtual void updatedObservable(const double in[], int/*nchanged*/, const bool/*flags_xchanged[ndim]*/[], const SamplingFunctionContainer &pdfcont, double out[]) { this->observableFunction(in, pdfcont, out); }
-    //                             ^input = walker positions  ^how many inputs changed  ^which indices are new           ^allows to read from pdfs      ^resulting observables (passed containing old obs, so you may make use of those)
+    virtual void updatedObservable(const double in[], int/*nchanged*/, const bool/*flags_xchanged[ndim]*/[], double out[]) { this->observableFunction(in, out); }
+    //                             ^input = walker positions  ^how many inputs changed  ^which indices are new      ^resulting observables (passed containing old obs, so you may make use of those)
 };
 }  // namespace mci
 

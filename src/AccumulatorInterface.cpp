@@ -28,7 +28,7 @@ void AccumulatorInterface::_init() // reset base variables (except nsteps/_data)
     if (_flag_updobs) { std::fill(_flags_xchanged, _flags_xchanged + _xndim, true); }
 }
 
-void AccumulatorInterface::_processOld(const WalkerState &wlk, const SamplingFunctionContainer &pdfcont)
+void AccumulatorInterface::_processOld(const WalkerState &wlk)
 {
     // this is used when both !wlk.accepted and _nchanged==0
     if (++_skipidx == _nskip) { // accumulate observables
@@ -37,7 +37,7 @@ void AccumulatorInterface::_processOld(const WalkerState &wlk, const SamplingFun
     }
 }
 
-void AccumulatorInterface::_processFull(const WalkerState &wlk, const SamplingFunctionContainer &pdfcont)
+void AccumulatorInterface::_processFull(const WalkerState &wlk)
 {
     // this is used when something changed (wlk.accepted || _nchanged>0) and obs is not updateable
     _nchanged = _xndim; // remember change even when we skip
@@ -45,14 +45,14 @@ void AccumulatorInterface::_processFull(const WalkerState &wlk, const SamplingFu
         _skipidx = 0;
 
         // call full obs compute
-        _obs.observableFunction(wlk.xnew, pdfcont, _obs_values);
+        _obs.observableFunction(wlk.xnew, _obs_values);
         _nchanged = 0;
 
         this->_accumulate(); // call child storage implementation
     }
 }
 
-void AccumulatorInterface::_processSelective(const WalkerState &wlk, const SamplingFunctionContainer &pdfcont)
+void AccumulatorInterface::_processSelective(const WalkerState &wlk)
 {   // this is used when something changed (wlk.accepted || _nchanged>0) and obs is updateable
     if (_nchanged < _xndim && wlk.accepted) { // we need to record changes
         if (wlk.nchanged < _xndim) { // track changes by index
@@ -72,10 +72,10 @@ void AccumulatorInterface::_processSelective(const WalkerState &wlk, const Sampl
         _skipidx = 0;
 
         if (_nchanged < _xndim) { // call optimized recompute
-            _obs.updatedObservable(wlk.xnew, _nchanged, _flags_xchanged, pdfcont, _obs_values);
+            _obs.updatedObservable(wlk.xnew, _nchanged, _flags_xchanged, _obs_values);
         }
         else { // call full obs compute
-            _obs.observableFunction(wlk.xnew, pdfcont, _obs_values);
+            _obs.observableFunction(wlk.xnew, _obs_values);
         }
         std::fill(_flags_xchanged, _flags_xchanged + _xndim, false);
         _nchanged = 0;
@@ -96,18 +96,18 @@ void AccumulatorInterface::allocate(const int64_t nsteps)
 }
 
 
-void AccumulatorInterface::accumulate(const WalkerState &wlk, const SamplingFunctionContainer &pdfcont)
+void AccumulatorInterface::accumulate(const WalkerState &wlk)
 {
     if (wlk.accepted || _nchanged > 0) {
         if (_flag_updobs) {
-            this->_processSelective(wlk, pdfcont);
+            this->_processSelective(wlk);
         }
         else {
-            this->_processFull(wlk, pdfcont);
+            this->_processFull(wlk);
         }
     }
     else {
-        this->_processOld(wlk, pdfcont);
+        this->_processOld(wlk);
     }
 
     ++_stepidx;
