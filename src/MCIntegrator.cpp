@@ -195,7 +195,7 @@ void MCI::initializeSampling(ObservableContainer * obsCont)
     _trialMove->initializeProtoValues(_wlkstate.xold); // initialize the trial mover
 
     // init rest
-    this->callBackOnMove(); // first call of the call-back functions
+    if (_cback) { _cback(*this); } // first call of the call-back function
     if (flag_obs) {
         obsCont->reset(); // reset observable accumulators
     }
@@ -269,8 +269,8 @@ void MCI::doStepMRT2() // do MC step, sampling from _pdfcont
     _wlkstate.accepted = (_rd(_rgen) <= pdfAcc*moveAcc);
     _wlkstate.accepted ? ++_acc : ++_rej; // increase counters
 
-    // call callbacks
-    this->callBackOnMove();
+    // call callback
+    if (_cback) { _cback(*this); }
 
     // set state according to result
     if (_wlkstate.accepted) {
@@ -299,7 +299,7 @@ void MCI::doStepRandom() // do MC step, sampling randomly (used when _pdfcont is
 
     // rest
     _pdfcont.prepareObservation(_wlkstate);
-    this->callBackOnMove(); // call callbacks
+    if (_cback) { _cback(*this); } // call callback
     _wlkstate.newToOld(); // to mimic doStepMRT2()
 }
 
@@ -415,31 +415,6 @@ void MCI::addSamplingFunction(std::unique_ptr<SamplingFunctionInterface> pdf)
         throw std::invalid_argument("[MCI::addSamplingFunction] Passed sampling function's number of inputs is not equal to MCI's number of walkers.");
     }
     _pdfcont.addSamplingFunction(std::move(pdf)); // we move pdf into pdfcont
-}
-
-
-// --- Callbacks
-
-void MCI::addCallBack(std::unique_ptr<CallBackOnMoveInterface> cback)
-{
-    if (cback->getNDim() != _ndim) {
-        throw std::invalid_argument("[MCI::addCallBack] Passed callback function's number of inputs is not equal to MCI's number of walkers.");
-    }
-    _cbacks.emplace_back(std::move(cback)); // we move cback ptr into a vector
-}
-
-std::unique_ptr<CallBackOnMoveInterface> MCI::popCallBack()
-{
-    auto cback = std::move(_cbacks.back()); // move last element out of vector
-    _cbacks.pop_back(); // resize vec
-    return cback;
-}
-
-void MCI::callBackOnMove()
-{
-    for (auto &cback : _cbacks) {
-        cback->callBackFunction(_wlkstate);
-    }
 }
 
 

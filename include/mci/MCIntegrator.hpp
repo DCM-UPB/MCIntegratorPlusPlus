@@ -2,7 +2,6 @@
 #define MCI_MCINTEGRATOR_HPP
 
 #include "mci/AccumulatorInterface.hpp"
-#include "mci/CallBackOnMoveInterface.hpp"
 #include "mci/DomainInterface.hpp"
 #include "mci/Factories.hpp"
 #include "mci/ObservableContainer.hpp"
@@ -40,7 +39,7 @@ private:
     std::unique_ptr<TrialMoveInterface> _trialMove; // holds the object to perform walker moves (init: uniform all-move)
     SamplingFunctionContainer _pdfcont; // sampling function container (init: empty)
     ObservableContainer _obscont; // observable container used during integration (init: empty)
-    std::vector<std::unique_ptr<CallBackOnMoveInterface> > _cbacks;  // Vector of callback-on-move functions (init: empty)
+    std::function<void(const MCI &)> _cback{}; // callback function (see setCallback() below)
 
     // Settings
     int _NfindMRT2Iterations; // how many MRT2 step adjustment iterations to do before integrating
@@ -74,9 +73,6 @@ private:
 
     // prepare new sampling run
     void initializeSampling(ObservableContainer * obsCont /*optional*/);
-
-    // call callbacks
-    void callBackOnMove();
 
     // if there is a pdf, performs move and decides acc/rej
     void doStepMRT2();
@@ -152,7 +148,7 @@ public:
 
     // Observables
     void addObservable(std::unique_ptr<ObservableFunctionInterface> obs /* MCI adds accumulator and estimator for this obs, with following options: */,
-                       int blocksize, /* if > 1, use fixed block size and assume uncorrelated samples, if 0, use no blocks and no error calculation */
+                       int blocksize, /* if > 1, use fixed block size, if 0, use no blocks and no error calculation */
                        int nskip, /* evaluate observable only every n-th step. NOTE: now one block is used for blocksize*nskip steps */
                        bool flag_equil, /* observable wants to be equilibrated when using automatic initial decorrelation (blocksize must be > 0) */
                        bool flag_correlated /* should block averages be treated as correlated samples? (blocksize must be > 0) */
@@ -187,11 +183,11 @@ public:
     std::unique_ptr<SamplingFunctionInterface> popSamplingFunction() { return _pdfcont.pop_back(); } // remove last pdf (returns it for you to optionally take it back)
     void clearSamplingFunctions() { _pdfcont.clear(); } // delete all pdfs
 
-    // Callbacks
-    void addCallBack(std::unique_ptr<CallBackOnMoveInterface> cback);
-    void addCallBack(const CallBackOnMoveInterface &cback) { this->addCallBack(cback.clone()); }
-    std::unique_ptr<CallBackOnMoveInterface> popCallBack(); // remove last callback (returns it for you to optionally take it back)
-    void clearCallBacks() { _cbacks.clear(); } // delete all callbacks
+    // Callback Function
+    // Set a callback function which may read(!) const MCI after every move and do something with the data.
+    // This should not be abused to somehow add MCI control logic via captured references to objects contained in MCI.
+    void setCallback(const std::function<void(const MCI &)> &cback) { _cback = cback; }
+    void clearCallback() { _cback = nullptr; } // set empty callback
 
     // enable file printout to given files, with frequency freq
     void storeObservablesOnFile(const std::string &filepath, int freq);
@@ -222,8 +218,6 @@ public:
     int getNObs() const { return _obscont.getNObs(); }
     int getNObsDim() const { return _obscont.getNObsDim(); }
 
-    CallBackOnMoveInterface &getCallBackOnMove(int i) const { return *_cbacks[i]; }
-    int getNCallBacks() const { return static_cast<int>(_cbacks.size()); }
 
     // --- Integrate
 
