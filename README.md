@@ -9,7 +9,7 @@ C++ Library for computing numerical integrals with the Monte Carlo method. Inclu
 (optional) methods for automatic step calibration, decorrelation and error estimation. Provides a simple
 interface to execute the MC integration in parallel, via Message Passing Interface (MPI).
 
-In `doc/` there is a user manual in pdf and a config for doxygen.
+In `doc/` there is a user manual in pdf (not accurate for current master!) and a config for doxygen.
 
 In `examples/`, `test/` and `benchmark/` there are examples, tests and benchmarks for the library.
 
