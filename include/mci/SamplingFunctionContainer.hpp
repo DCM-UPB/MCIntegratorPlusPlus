@@ -38,6 +38,7 @@ public:
     void initializeProtoValues(const double xold[]); // initialize the proto sampling values, given the xold
     double getOldSamplingFunction() const; // returns the combined true sampling function value of the old step (potential use in trial moves)
     double computeAcceptance(const WalkerState &wlk); //compute then new sampling function and return acceptance of new coordinates
+    void prepareObservation(const WalkerState &wlk); // prepare the pdfs to be observed by observables
 
     //void printProtoValues(std::ofstream &file) const; // write last protovalues to filestream
     std::unique_ptr<SamplingFunctionInterface> pop_back(); // remove and return last pdf

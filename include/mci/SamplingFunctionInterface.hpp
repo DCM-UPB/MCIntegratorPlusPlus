@@ -56,6 +56,11 @@ public:
         return this->acceptanceFunction(_protoold, _protonew);
     }
 
+    void prepareObservation(const WalkerState &wlk)
+    {
+        this->observationCallback(wlk, _protoold, _protonew);
+    }
+
 
     // --- METHODS THAT MUST BE IMPLEMENTED
 
@@ -73,7 +78,7 @@ public:
     virtual double acceptanceFunction(const double protoold[], const double protonew[]) const = 0; // e.g. exp(-sum(protonew)+sum(protoold))
 
 
-    // --- OPTIONALLY ALSO OVERWRITE THIS (to optimize for single/few particle moves)
+    // --- OPTIONALLY ALSO OVERRIDE THIS (to optimize for single/few particle moves)
     // Return step acceptance AND update(!) protonew elements, given the WalkerSate, which
     // contains previous and current walker positions (xold/xnew), and additionally the array
     // changedIdx containing the indices of the nchanged elements that differ between xold and xnew.
@@ -90,6 +95,13 @@ public:
         this->protoFunction(wlk.xnew, protonew);
         return this->acceptanceFunction(protoold, protonew);
     }
+
+    // --- ALSO OPTIONALLY OVERRIDE THIS
+    // Prepare the sampling function to be observed by dependent observables.
+    // This will be called by MCI before such observation takes place.
+    // WalkerState and protovalues will be passed like you left them
+    // on the previous sampling/acceptance calculation.
+    virtual void observationCallback(const WalkerState &wlk, const double protoold[], const double protonew[]) {}
 };
 }  // namespace mci
 

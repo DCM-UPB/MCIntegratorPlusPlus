@@ -274,6 +274,7 @@ void MCI::doStepMRT2() // do MC step, sampling from _pdfcont
 
     // set state according to result
     if (_wlkstate.accepted) {
+        _pdfcont.prepareObservation(_wlkstate);
         _pdfcont.newToOld();
         _trialMove->newToOld();
         _wlkstate.newToOld();
@@ -297,6 +298,7 @@ void MCI::doStepRandom() // do MC step, sampling randomly (used when _pdfcont is
     ++_acc;
 
     // rest
+    _pdfcont.prepareObservation(_wlkstate);
     this->callBackOnMove(); // call callbacks
     _wlkstate.newToOld(); // to mimic doStepMRT2()
 }
