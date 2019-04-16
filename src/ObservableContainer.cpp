@@ -3,29 +3,55 @@
 namespace mci
 {
 
-void ObservableContainer::addObservable(std::unique_ptr<AccumulatorInterface> accumulator,
-                                        const std::function<void(int64_t, int, const double [], double [], double [])> &estimator,
-                                        bool needsEquil)
+void ObservableContainer::_setDependsOnPDF()
 {
-    _nobsdim += accumulator->getNObs();
+    for (auto &el : _cont) {
+        if (el.depobs != nullptr) {
+            if (el.depobs->dependsOnPDF()) {
+                _flag_dependsOnPDF = true;
+                return;
+            }
+        }
+    }
+    _flag_dependsOnPDF = false;
+}
+
+void ObservableContainer::addObservable(std::unique_ptr<ObservableFunctionInterface> obs,
+                                        const int blocksize, const int nskip, const bool needsEquil, const EstimatorType estimType)
+{
     ObservableContainerElement newElement;
-    newElement.estim = [accu = accumulator.get() /*OK*/, estimator](double average[], double error[]) // lambda functional
+    // obs+accu
+    newElement.obs = std::move(obs); // ownership by element
+    _nobsdim += newElement.obs->getNObs();
+    newElement.depobs = dynamic_cast<DependentObservableInterface *>(newElement.obs.get()); // might be nullptr
+    newElement.accu = createAccumulator(*newElement.obs, blocksize, nskip); // use create from Factories.hpp
+
+    // estimator lambda functional (again use create from Factories.hpp)
+    newElement.estim = [accu = newElement.accu.get() /*OK*/, estimator = createEstimator(estimType)](double average[], double error[])
     {
         if (!accu->isFinalized()) {
             throw std::runtime_error("[ObservableContainer.estim] Estimator was called, but accumulator is not finalized.");
         }
         estimator(accu->getNStore(), accu->getNObs(), accu->getData(), average, error);
     };
-    newElement.accu = std::move(accumulator); // ownership goes to new element
+
     newElement.flag_equil = needsEquil;
-    _cont.emplace_back(std::move(newElement)); // and then into container
+    _cont.push_back(std::move(newElement)); // and then into container
+    this->_setDependsOnPDF(); // keep it simple and call this to update the depend flag
 }
 
 
-void ObservableContainer::allocate(const int64_t Nmc)
+void ObservableContainer::allocate(const int64_t Nmc, const SamplingFunctionContainer &pdfcont)
 {
+    std::vector<AccumulatorInterface *> accuvec; // vectors of accu pointers for obs to register
+    accuvec.reserve(_cont.size());
     for (auto &el : _cont) {
         el.accu->allocate(Nmc);
+        accuvec.push_back(el.accu.get());
+    }
+    // let dependent obs register
+    for (int i = 0; i < this->getNObs(); ++i) {
+        if (_cont[i].depobs != nullptr) { _cont[i].depobs->registerDeps(pdfcont, accuvec, i); }
     }
 }
 
@@ -79,19 +105,25 @@ void ObservableContainer::deallocate()
     for (auto &el : _cont) {
         el.accu->deallocate();
     }
+    // let dependent obs deregister
+    for (int i = 0; i < this->getNObs(); ++i) {
+        if (_cont[i].depobs != nullptr) { _cont[i].depobs->deregisterDeps(); }
+    }
 }
 
-std::unique_ptr<AccumulatorInterface> ObservableContainer::pop_back()
+std::unique_ptr<ObservableFunctionInterface> ObservableContainer::pop_back()
 {
-    auto accu = std::move(_cont.back().accu); // move last accu out
-    _nobsdim -= accu->getNObs(); // adjust nobsdim
+    auto obs = std::move(_cont.back().obs); // move last obs out
     _cont.pop_back(); // resize vector
-    return accu;
+    _nobsdim -= obs->getNObs(); // adjust nobsdim
+    this->_setDependsOnPDF(); // adjust depend flag
+    return obs;
 }
 
 void ObservableContainer::clear()
 {
     _cont.clear();
     _nobsdim = 0;
+    _flag_dependsOnPDF = false;
 }
 }  // namespace mci

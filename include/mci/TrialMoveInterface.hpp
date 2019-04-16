@@ -20,9 +20,9 @@ protected:
     std::mt19937_64 * _rgen; // ptr to MCI's rgen
     std::mt19937_64 * getRGen() const { return _rgen; }
 
-public:
     TrialMoveInterface(int ndim, int nproto): ProtoFunctionInterface(ndim, nproto), _rgen(nullptr) {}
 
+public:
     // store ptr to MCI's rgen
     void bindRGen(std::mt19937_64 &rgen)
     {
@@ -71,13 +71,13 @@ public:
 
 
 // --- Useful stuff for derived classes
-// NOTE: Below we consider std::mt19937_64 as the only possible random generator.
 
 
 // Template to turn non-symmetric distributions generating x>0 into
 // distributions which are symmetric around 0. This is done by first
 // generating a x>0 from the given distribution, and then decide on
 // the sign by a draw from bernoulli-distribution.
+// NOTE: Below we consider std::mt19937_64 as the only possible random generator.
 template <class PRRD> /* should be positive-real-valued stdlib random dist <double>*/
 struct SymmetrizedPRRD
 {
@@ -98,83 +98,90 @@ public:
 };
 
 
-// Default initialization template for supported symmetric distributions
-// A helper template used to default-initialize real random distributions from the standard library,
-// to be symmetric around 0 and, if possible, standard deviation 1 (except: interval dists are [-1,1]).
-// The template is made to compile only for the standard-library distributions that allow to have
-// these properties, or other distributions made symmetric by using the SymmetrizedPRRD class.
-// If symmetric distributions are used for MC moves, the detailed balance condition
-// is fullfilled automatically.
-template <class SRRD>
-/* should be applicable stdlib random dist <double> */
-inline auto createSymNormalRRD() = delete; // cannot be used without specialization
+// A helper template used to default-initialize applicable real-valued
+// random distributions, e.g. (symmetric/uniform) distributions from the
+// standard library or others when wrapped with SymmetrizedPRRD().
+// At the moment the helper is only really needed to make an exception
+// for the uniform distribution, which is not symmetric around 0 by default.
+// Remember that distributions used for simple MC moves should fulfill this
+// condition in order to maintain detailed balance (automatically).
+//
+// NOTE: All applicable standard distributions have explicit specializations here!
+//       You may still use custom distribution types if you make sure their default
+//       constructed version is symmetric around 0.
+//
+template <class SRRD /* applicable random dist */>
+inline auto createSymRRD() // default specialization
+{
+    return SRRD(); // return default-constructed version
+}
 
 // Specialization for uniform
 template <>
-inline auto createSymNormalRRD<std::uniform_real_distribution<double> >()
+inline auto createSymRRD<std::uniform_real_distribution<double> >()
 {
-    return std::uniform_real_distribution<double>(-1., 1.); // the odd case with sigma!=1
+    return std::uniform_real_distribution<double>(-1., 1.); // the odd case with
 }
 
 // Specialization for gaussian
 template <>
-inline auto createSymNormalRRD<std::normal_distribution<double> >()
+inline auto createSymRRD<std::normal_distribution<double> >()
 {
     return std::normal_distribution<double>(); // defaults to mean 0 std 1
 }
 
 // Specialization for student-t
 template <>
-inline auto createSymNormalRRD<std::student_t_distribution<double> >()
+inline auto createSymRRD<std::student_t_distribution<double> >()
 {
     return std::student_t_distribution<double>(); // default is symmetric around 0, but stddev undefined
 }
 
 // Specialization for cauchy
 template <>
-inline auto createSymNormalRRD<std::cauchy_distribution<double> >()
+inline auto createSymRRD<std::cauchy_distribution<double> >()
 {
     return std::cauchy_distribution<double>(); // default is symmetric around 0, but mean&stddev undefined
 }
 
 // Specialization for symmetrized exponential distribution
 template <>
-inline auto createSymNormalRRD<SymmetrizedPRRD<std::exponential_distribution<double> > >()
+inline auto createSymRRD<SymmetrizedPRRD<std::exponential_distribution<double> > >()
 {
     return SymmetrizedPRRD<std::exponential_distribution<double> >(); // use default (lambda=1.)
 }
 
 // Specialization for symmetrized gamma distribution
 template <>
-inline auto createSymNormalRRD<SymmetrizedPRRD<std::gamma_distribution<double> > >()
+inline auto createSymRRD<SymmetrizedPRRD<std::gamma_distribution<double> > >()
 {
     return SymmetrizedPRRD<std::gamma_distribution<double> >(); // use default (alpha=1., beta=1.)
 }
 
 // Specialization for symmetrized weibull distribution
 template <>
-inline auto createSymNormalRRD<SymmetrizedPRRD<std::weibull_distribution<double> > >()
+inline auto createSymRRD<SymmetrizedPRRD<std::weibull_distribution<double> > >()
 {
     return SymmetrizedPRRD<std::weibull_distribution<double> >(); // use default (alpha=1., beta=1.)
 }
 
 // Specialization for symmetrized lognormal distribution
 template <>
-inline auto createSymNormalRRD<SymmetrizedPRRD<std::lognormal_distribution<double> > >()
+inline auto createSymRRD<SymmetrizedPRRD<std::lognormal_distribution<double> > >()
 {
     return SymmetrizedPRRD<std::lognormal_distribution<double> >(); // use default (mu=0., s=1.)
 }
 
 // Specialization for symmetrized chi squared distribution
 template <>
-inline auto createSymNormalRRD<SymmetrizedPRRD<std::chi_squared_distribution<double> > >()
+inline auto createSymRRD<SymmetrizedPRRD<std::chi_squared_distribution<double> > >()
 {
     return SymmetrizedPRRD<std::chi_squared_distribution<double> >(); // use default n=1
 }
 
 // Specialization for symmetrized fisher-f distribution
 template <>
-inline auto createSymNormalRRD<SymmetrizedPRRD<std::fisher_f_distribution<double> > >()
+inline auto createSymRRD<SymmetrizedPRRD<std::fisher_f_distribution<double> > >()
 {
     return SymmetrizedPRRD<std::fisher_f_distribution<double> >(); // use default m=1, n=1
 }

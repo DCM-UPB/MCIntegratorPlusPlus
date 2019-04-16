@@ -24,15 +24,16 @@ static constexpr double infiniteVol = 0.; // convention is infinite box -> vol =
 // from that new interface. You can still pass these to MCI.
 struct DomainInterface: public Clonable<DomainInterface>
 {
-public:
-    const int ndim; // total dimension to integrate over (usually spacedim*nparticles)
-
+protected:
     explicit DomainInterface(int n_dim): ndim(n_dim)
     {
         if (ndim < 1) {
             throw std::invalid_argument("[DomainInterface] Number of dimensions must be at least 1.");
         }
     }
+
+public:
+    const int ndim; // total dimension to integrate over (usually spacedim*nparticles)
 
     // check if the domain can be used without sampling function
     bool isFinite() const { return (this->getVolume() != domain_conv::infiniteVol); } // see above namespace with conventions

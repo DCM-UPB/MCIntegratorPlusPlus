@@ -2,7 +2,7 @@
 
 #include "mci/MCIntegrator.hpp"
 
-#include "../common/ExampleFunctions.hpp"
+#include "../common/ExampleFunctions.hpp" // look here for the used example functions
 
 int main()
 {
@@ -27,7 +27,7 @@ int main()
 
 
     // set the integration range to [-1:3]
-    mci.setIRange(-1, 3);
+    mci.setIRange(-1., 3.);
 
     cout << "irange = [ " << -1 << " ; " << 3 << " ]" << endl;
 
@@ -35,7 +35,7 @@ int main()
     // initial walker position
     double initpos[ndim];
     initpos[0] = -0.5;
-    mci.setX(initpos);
+    mci.setX(initpos); // alternatively use mci.setX(0, -0.5);
 
     cout << "initial walker position = " << mci.getX(0) << endl;
 
@@ -60,8 +60,9 @@ int main()
 
 
     // observable
-    Parabola obs;
-    mci.addObservable(obs);
+    Parabola obs; // we create obs on the stack
+    mci.addObservable(obs); // obs will be cloned by MCI
+    // instead you may pass unique pointers, as shown later
 
     cout << "Number of observables set = " << mci.getNObs() << endl;
     cout << "Dimension of observables set = " << mci.getNObsDim() << endl;
@@ -80,7 +81,6 @@ int main()
     cout << "--------------------------------------------------------" << endl << endl;
 
 
-
     // second way of integrating
     cout << "Now we compute the integral using a sampling function." << endl;
     cout << "    f(x) = 5*sign(x)*(4-x) " << endl;
@@ -88,17 +88,17 @@ int main()
 
 
     // observable
-    NormalizedParabola obs2;
     mci.clearObservables();  // we first remove the old observable
-    mci.addObservable(obs2);
+    mci.addObservable(std::make_unique<NormalizedParabola>()); // you may also directly transfer a unique pointer into MCI
 
     cout << "Number of observables set = " << mci.getNObs() << endl;
     cout << "Dimension of observables set = " << mci.getNObsDim() << endl;
 
 
     // sampling function
-    NormalizedLine sf;
-    mci.addSamplingFunction(sf);
+    std::unique_ptr<SamplingFunctionInterface> pdf = std::make_unique<NormalizedLine>(); // if you create the unique pointer beforehand
+    mci.addSamplingFunction(std::move(pdf)); // you have to explicitly move it in
+    // But remember that the local pdf ptr is now invalid and may not be used!
 
     cout << "Number of sampling function set = " << mci.getNPDF() << endl;
 
@@ -110,12 +110,21 @@ int main()
     cout << "--------------------------------------------------------" << endl << endl;
 
 
-
     // final comments
     cout << "Using a sampling function in this case gives worse performance. In fact, the error bar is larger." << endl;
     cout << "This implies that the variance of the re-factored f(x) written for introducing a sampling function, is larger than the original f(x)." << endl;
 
+    // if we wanted to safe the created sampling function from construction we could do:
+    cout << endl << endl << "Before MCI get's deleted, let's retrieve some objects that we added..." << endl;
+    pdf = mci.popSamplingFunction(); // pdf is now valid again and contains the original
+    auto obs2 = mci.popObservable(); // we may also obtain the observable that we never owned directly
+    // NOTE: explicitly, obs2 is of type std::unique_ptr<ObservableFunctionInterface>
 
-    // end
+    cout << "OK. Now MCI is empty:" << endl << endl;
+    cout << "Number of observables set = " << mci.getNObs() << endl;
+    cout << "Dimension of observables set = " << mci.getNObsDim() << endl;
+    cout << "Number of sampling function set = " << mci.getNPDF() << endl;
+
+    // end (we didn't use unguarded "new" allocation, so we don't need to delete anything)
     return 0;
 }

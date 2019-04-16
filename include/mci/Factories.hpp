@@ -26,21 +26,20 @@ namespace mci
 
 // --- Create Accumulators
 
-inline std::unique_ptr<AccumulatorInterface> createAccumulator(std::unique_ptr<ObservableFunctionInterface> obs,
-                                                               int blocksize = 1, int nskip = 1)
+inline std::unique_ptr<AccumulatorInterface> createAccumulator(ObservableFunctionInterface &obs, int blocksize = 1, int nskip = 1)
 {
     // sanity
     blocksize = std::max(0, blocksize);
     nskip = std::max(1, nskip);
 
     if (blocksize == 0) {
-        return std::unique_ptr<AccumulatorInterface>(new SimpleAccumulator(std::move(obs), nskip));
+        return std::unique_ptr<AccumulatorInterface>(new SimpleAccumulator(obs, nskip));
     }
     if (blocksize == 1) {
-        return std::unique_ptr<AccumulatorInterface>(new FullAccumulator(std::move(obs), nskip));
+        return std::unique_ptr<AccumulatorInterface>(new FullAccumulator(obs, nskip));
     }
 
-    return std::unique_ptr<AccumulatorInterface>(new BlockAccumulator(std::move(obs), nskip, blocksize));
+    return std::unique_ptr<AccumulatorInterface>(new BlockAccumulator(obs, nskip, blocksize));
 }
 
 
@@ -119,12 +118,12 @@ static constexpr std::initializer_list<MoveType> list_all_MoveType = {MoveType::
 // Enumeration of usable symmetric real valued random distribution
 enum class SRRDType
 {
-    /* inherently symmetric distributions */
+    // inherently symmetric distributions
             Uniform,
     Gaussian,
     Student,
     Cauchy,
-    /* symmetrized distributions */
+    // symmetrized distributions
             Exponential,
     Gamma,
     Weibull,

@@ -297,12 +297,12 @@ int main()
     // --- check accumulators ---
     if (verbose) { cout << endl << "Now using accumulator classes to store data:" << endl << endl; }
     XND obsfun(nd); // n-dimensional position observable
-    SimpleAccumulator simpleAccu(obsfun.clone(), 1);
-    SimpleAccumulator simpleAccuSkip2(obsfun.clone(), 2);
-    BlockAccumulator blockAccu(obsfun.clone(), 1, 16);
-    BlockAccumulator blockAccuSkip2(obsfun.clone(), 2, 8);
-    FullAccumulator fullAccu(obsfun.clone(), 1);
-    FullAccumulator fullAccuSkip2(obsfun.clone(), 2);
+    SimpleAccumulator simpleAccu(obsfun, 1);
+    SimpleAccumulator simpleAccuSkip2(obsfun, 2);
+    BlockAccumulator blockAccu(obsfun, 1, 16);
+    BlockAccumulator blockAccuSkip2(obsfun, 2, 8);
+    FullAccumulator fullAccu(obsfun, 1);
+    FullAccumulator fullAccuSkip2(obsfun, 2);
 
     vector<pair<AccumulatorInterface *, string> > accuList;
     accuList.emplace_back(&simpleAccu, "simpleAccu");

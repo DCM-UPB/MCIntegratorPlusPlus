@@ -20,8 +20,8 @@ protected:
     void _deallocate() final;
 
 public:
-    SimpleAccumulator(std::unique_ptr<ObservableFunctionInterface> obs, int nskip):
-            AccumulatorInterface(std::move(obs), nskip), _flag_alloc(false) {}
+    SimpleAccumulator(ObservableFunctionInterface &obs, int nskip):
+            AccumulatorInterface(obs, nskip), _flag_alloc(false) {}
 
     ~SimpleAccumulator() final { this->_deallocate(); }
 

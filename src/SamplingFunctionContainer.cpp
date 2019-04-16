@@ -47,6 +47,13 @@ double SamplingFunctionContainer::computeAcceptance(const WalkerState &wlk)
     return acceptance;
 }
 
+void SamplingFunctionContainer::prepareObservation(const WalkerState &wlk)
+{
+    for (auto &sf : _pdfs) {
+        sf->prepareObservation(wlk);
+    }
+}
+
 std::unique_ptr<SamplingFunctionInterface> SamplingFunctionContainer::pop_back()
 {
     auto pdf = std::move(_pdfs.back()); // move last pdf out of vector

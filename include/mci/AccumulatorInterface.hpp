@@ -2,7 +2,6 @@
 #define MCI_ACCUMULATORINTERFACE_HPP
 
 #include "mci/ObservableFunctionInterface.hpp"
-#include "mci/UpdateableObservableInterface.hpp"
 #include "mci/WalkerState.hpp"
 
 #include <cstdint>
@@ -10,21 +9,20 @@
 
 namespace mci
 {
-// Interface class to handle accumulation of observable data
+// Internal interface class to handle accumulation of observable data
 //
-// Accumulators completely wrap around an exclusively owned Observable-
-// FunctionInterface (or optionally UpdateableObservableInterface) and
-// are the "communication partner" for MCI during sampling. The derived
-// classes of this interface implement different storage/accumulation
-// techniques. Accumulators are typically contained within an Observable-
-// Container (see ObservaleContainer.hpp), where they are strictly paired
-// with corresponding average/error estimation functions.
+// A designated accumulator should be created when an observable is moved
+// into MCI and destroyed when the obs gets destroyed or moved out.
+// It serves as "communication partner" for MCI during sampling and handles
+// the accumulation and finalization of data. The derived classes of this
+// interface implement different storage/accumulation techniques.
+// In MCI, Accumulators are contained within an ObservableContainer,
+// where they are strictly paired with corresponding estimator functions.
 class AccumulatorInterface
 {
 protected:
-    std::unique_ptr<ObservableFunctionInterface> _obs; // "unique" pointer to the passed observable function (we own it)
-    UpdateableObservableInterface * const _updobs; // if _obs is an UpdateObs, we store a casted raw pointer for internal use (else nullptr)
-    const bool _flag_updobs; // is the passed observable derived from UpdateableObservableInterface? (i.e. is _updobs!=nullptr ?)
+    ObservableFunctionInterface &_obs; // reference to corresponding obs
+    const bool _flag_updobs; // is the passed observable supporting selective updating?
 
     const int _nobs; // number of values returned by the observable function
     const int _xndim; // dimension of walker positions/flags that get passed on accumulate
@@ -43,8 +41,11 @@ protected:
     int _skipidx{}; // to determine when to skip accumulation
     bool _flag_final{}; // was finalized called (without throwing error) ?
 
-
+    // base methods
     void _init(); // used in construct/reset
+    void _processOld(const WalkerState &wlk); // used in accumulate() when observables need no computation
+    void _processFull(const WalkerState &wlk); // used else when obs not updateable
+    void _processSelective(const WalkerState &wlk); // and this is used otherwise
 
     // TO BE IMPLEMENTED BY CHILD
     virtual void _allocate() = 0; // allocate _data for a MC run of nsteps length ( expect deallocated state )
@@ -53,12 +54,14 @@ protected:
     virtual void _reset() = 0; // reset data / child's members ( must work in deallocated state )
     virtual void _deallocate() = 0; // delete _data allocation ( reset will be called already )
 
-public:
-    AccumulatorInterface(std::unique_ptr<ObservableFunctionInterface> obs, int nskip);
-    virtual ~AccumulatorInterface();
-    std::unique_ptr<ObservableFunctionInterface> removeObs(); // remove and return the contained obs. NOTE: After calling this, the accumulator should be immediately deleted.
+    // Constructor
+    AccumulatorInterface(ObservableFunctionInterface &obs, int nskip);
 
-    ObservableFunctionInterface &getObservableFunction() const { return *_obs; } // acquire raw read-only ref
+public:
+    virtual ~AccumulatorInterface();
+
+    // you may want to know something about the bound obs
+    ObservableFunctionInterface &getObservableFunction() const { return _obs; }
 
     // Getters
     int getNObs() const { return _nobs; } // dimension of observable
@@ -68,10 +71,8 @@ public:
     int64_t getNSteps() const { return _nsteps; }
     int64_t getNAccu() const
     {
-        return (_nsteps > 0)
-               ? 1 + (_nsteps - 1)/_nskip
-               : 0;
-    } // actual number of steps to accumulate
+        return (_nsteps > 0) ? 1 + (_nsteps - 1)/_nskip : 0; // actual number of steps to accumulate
+    }
     int64_t getNData() const { return this->getNStore()*_nobs; } // total length of allocated data
 
     int64_t getStepIndex() const { return _stepidx; }

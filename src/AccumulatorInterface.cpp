@@ -3,10 +3,9 @@
 namespace mci
 {
 
-AccumulatorInterface::AccumulatorInterface(std::unique_ptr<ObservableFunctionInterface> obs, const int nskip):
-        _obs(std::move(obs)), _updobs(dynamic_cast<UpdateableObservableInterface *>(_obs.get())), _flag_updobs(_updobs != nullptr),
-        _nobs(_obs->getNObs()), _xndim(_obs->getNDim()), _nskip(nskip),
-        _obs_values(new double[_nobs]), _flags_xchanged(_flag_updobs ? new bool[_xndim] : nullptr),
+AccumulatorInterface::AccumulatorInterface(ObservableFunctionInterface &obs, const int nskip):
+        _obs(obs), _flag_updobs(_obs.isUpdateable()), _nobs(_obs.getNObs()), _xndim(_obs.getNDim()),
+        _nskip(nskip), _obs_values(new double[_nobs]), _flags_xchanged(_flag_updobs ? new bool[_xndim] : nullptr),
         _nsteps(0), _data(nullptr)
 {
     if (nskip < 1) { throw std::invalid_argument("[AccumulatorInterface] Provided number of steps per evaluation was < 1 ."); }
@@ -19,11 +18,6 @@ AccumulatorInterface::~AccumulatorInterface()
     delete[] _obs_values;
 }
 
-std::unique_ptr<ObservableFunctionInterface> AccumulatorInterface::removeObs()
-{
-    return std::move(_obs); // move away the obs (NOW THE OBJECT IS INVALID; DELETE IT)
-}
-
 void AccumulatorInterface::_init() // reset base variables (except nsteps/_data)
 {
     _stepidx = 0;
@@ -32,6 +26,62 @@ void AccumulatorInterface::_init() // reset base variables (except nsteps/_data)
 
     _nchanged = _xndim; // on the first step we always need to evaluate fully
     if (_flag_updobs) { std::fill(_flags_xchanged, _flags_xchanged + _xndim, true); }
+}
+
+void AccumulatorInterface::_processOld(const WalkerState &wlk)
+{
+    // this is used when both !wlk.accepted and _nchanged==0
+    if (++_skipidx == _nskip) { // accumulate observables
+        _skipidx = 0;
+        this->_accumulate(); // call child storage implementation
+    }
+}
+
+void AccumulatorInterface::_processFull(const WalkerState &wlk)
+{
+    // this is used when something changed (wlk.accepted || _nchanged>0) and obs is not updateable
+    _nchanged = _xndim; // remember change even when we skip
+    if (++_skipidx == _nskip) { // accumulate observables
+        _skipidx = 0;
+
+        // call full obs compute
+        _obs.observableFunction(wlk.xnew, _obs_values);
+        _nchanged = 0;
+
+        this->_accumulate(); // call child storage implementation
+    }
+}
+
+void AccumulatorInterface::_processSelective(const WalkerState &wlk)
+{   // this is used when something changed (wlk.accepted || _nchanged>0) and obs is updateable
+    if (_nchanged < _xndim && wlk.accepted) { // we need to record changes
+        if (wlk.nchanged < _xndim) { // track changes by index
+            for (int i = 0; i < wlk.nchanged; ++i) {
+                if (!_flags_xchanged[wlk.changedIdx[i]]) {
+                    _flags_xchanged[wlk.changedIdx[i]] = true;
+                    ++_nchanged; // increase internal change counter
+                }
+            }
+        }
+        else { // all-particle move case
+            _nchanged = _xndim; // note: if _nchanged>=_xndim, the flags get ignored, so no need to set them
+        }
+    }
+
+    if (++_skipidx == _nskip) { // accumulate observables
+        _skipidx = 0;
+
+        if (_nchanged < _xndim) { // call optimized recompute
+            _obs.updatedObservable(wlk.xnew, _nchanged, _flags_xchanged, _obs_values);
+        }
+        else { // call full obs compute
+            _obs.observableFunction(wlk.xnew, _obs_values);
+        }
+        std::fill(_flags_xchanged, _flags_xchanged + _xndim, false);
+        _nchanged = 0;
+
+        this->_accumulate(); // call child storage implementation
+    }
 }
 
 
@@ -48,45 +98,25 @@ void AccumulatorInterface::allocate(const int64_t nsteps)
 
 void AccumulatorInterface::accumulate(const WalkerState &wlk)
 {
-    if (_stepidx >= _nsteps) { throw std::runtime_error("[AccumulatorInterface::accumulate] Number of calls to accumulate exceed the allocation."); }
-
-    if (_nchanged < _xndim && wlk.accepted) { // we need to record changes
-        if (_flag_updobs && wlk.nchanged < _xndim) { // track changes by index
-            for (int i = 0; i < wlk.nchanged; ++i) { // if nchange>0 (accepted step), we need to evaluate obs on next skipidx==0)
-                if (!_flags_xchanged[wlk.changedIdx[i]]) {
-                    _flags_xchanged[wlk.changedIdx[i]] = true;
-                    ++_nchanged; // increase internal change counter
-                }
-            }
+    if (wlk.accepted || _nchanged > 0) {
+        if (_flag_updobs) {
+            this->_processSelective(wlk);
         }
-        else { // all-particle move case or no tracking
-            _nchanged = _xndim; // note: if _nchanged>=_xndim, the flags get ignored, so no need to set them
+        else {
+            this->_processFull(wlk);
         }
     }
-
-    if (++_skipidx == _nskip) { // accumulate observables
-        _skipidx = 0;
-
-        if (_nchanged > 0) { // we need to compute new obs
-            if (_flag_updobs && _nchanged < _xndim) { // call optimized recompute
-                _updobs->updatedObservable(wlk.xnew, _nchanged, _flags_xchanged, _obs_values);
-            }
-            else { // call full obs compute
-                _obs->observableFunction(wlk.xnew, _obs_values);
-            }
-            if (_flag_updobs) { std::fill(_flags_xchanged, _flags_xchanged + _xndim, false); }
-            _nchanged = 0;
-        }
-
-        this->_accumulate(); // call child storage implementation
+    else {
+        this->_processOld(wlk);
     }
+
     ++_stepidx;
 }
 
 
 void AccumulatorInterface::finalize()
 {
-    if (_stepidx != _nsteps) { throw std::runtime_error("[AccumulatorInterface::finalize] Finalize was called before all steps were accumulated."); }
+    if (_stepidx != _nsteps) { throw std::runtime_error("[AccumulatorInterface::finalize] Finalize was called, but number of accumulated steps do not match the planned amount."); }
     if (!_flag_final) { this->_finalize(); } // call child finalize
     _flag_final = true;
 }

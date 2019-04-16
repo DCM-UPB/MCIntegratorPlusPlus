@@ -28,8 +28,8 @@ protected:
     void _deallocate() final;
 
 public:
-    BlockAccumulator(std::unique_ptr<ObservableFunctionInterface> obs, int nskip, int blocksize):
-            AccumulatorInterface(std::move(obs), nskip), _blocksize(blocksize), _nblocks(0), _bidx(0), _storeidx(0)
+    BlockAccumulator(ObservableFunctionInterface &obs, int nskip, int blocksize):
+            AccumulatorInterface(obs, nskip), _blocksize(blocksize), _nblocks(0), _bidx(0), _storeidx(0)
     {
         if (_blocksize < 1) { throw std::invalid_argument("[BlockAccumulator] Requested blocksize was < 1 ."); }
     }

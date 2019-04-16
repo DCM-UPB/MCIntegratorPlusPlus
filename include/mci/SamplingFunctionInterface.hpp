@@ -35,9 +35,10 @@ namespace mci
 // integral with the normalized version anyway.
 class SamplingFunctionInterface: public ProtoFunctionInterface, public Clonable<SamplingFunctionInterface>
 {
-public:
+protected:
     SamplingFunctionInterface(int ndim, int nproto): ProtoFunctionInterface(ndim, nproto) {}
 
+public:
     // --- Main operational methods
 
     // return value of old sampling function
@@ -53,6 +54,11 @@ public:
         // all elements have changed
         this->protoFunction(wlk.xnew, _protonew);
         return this->acceptanceFunction(_protoold, _protonew);
+    }
+
+    void prepareObservation(const WalkerState &wlk)
+    {
+        this->observationCallback(wlk, _protoold, _protonew);
     }
 
 
@@ -72,7 +78,7 @@ public:
     virtual double acceptanceFunction(const double protoold[], const double protonew[]) const = 0; // e.g. exp(-sum(protonew)+sum(protoold))
 
 
-    // --- OPTIONALLY ALSO OVERWRITE THIS (to optimize for single/few particle moves)
+    // --- OPTIONALLY ALSO OVERRIDE THIS (to optimize for single/few particle moves)
     // Return step acceptance AND update(!) protonew elements, given the WalkerSate, which
     // contains previous and current walker positions (xold/xnew), and additionally the array
     // changedIdx containing the indices of the nchanged elements that differ between xold and xnew.
@@ -83,13 +89,19 @@ public:
     // Remember that in this method you should only update the protov[] elements that need to change due
     // to the nchanged input indices in changedIdx.
     // If full recalculation is more efficient in your case, you may also choose not to overwrite this method.
-    virtual double updatedAcceptance(const WalkerState &wlk,
-                                     const double protoold[], double protonew[] /* update this! */)
+    virtual double updatedAcceptance(const WalkerState &wlk, const double protoold[], double protonew[] /* update this! */)
     {
         // default to "calculate all"
         this->protoFunction(wlk.xnew, protonew);
         return this->acceptanceFunction(protoold, protonew);
     }
+
+    // --- ALSO OPTIONALLY OVERRIDE THIS
+    // Prepare the sampling function to be observed by dependent observables.
+    // This will be called by MCI before such observation takes place.
+    // WalkerState and protovalues will be passed like you left them
+    // on the previous sampling/acceptance calculation.
+    virtual void observationCallback(const WalkerState &wlk, const double protoold[], const double protonew[]) {}
 };
 }  // namespace mci
 

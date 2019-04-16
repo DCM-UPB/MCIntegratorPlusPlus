@@ -26,8 +26,8 @@ protected:
     void _deallocate() final;
 
 public:
-    FullAccumulator(std::unique_ptr<ObservableFunctionInterface> obs, int nskip):
-            AccumulatorInterface(std::move(obs), nskip), _nstore(0), _storeidx(0) {}
+    FullAccumulator(ObservableFunctionInterface &obs, int nskip):
+            AccumulatorInterface(obs, nskip), _nstore(0), _storeidx(0) {}
 
     ~FullAccumulator() final { this->_deallocate(); }
 
