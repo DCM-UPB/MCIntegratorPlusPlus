@@ -16,11 +16,7 @@ private:
     std::vector<std::unique_ptr<SamplingFunctionInterface> > _pdfs;
 
 public:
-    explicit SamplingFunctionContainer() = default;
-    ~SamplingFunctionContainer() = default;
-
     // simple getters
-
     int size() const { return static_cast<int>(_pdfs.size()); }
     int getNPDF() const { return this->size(); }
 

@@ -210,7 +210,7 @@ void MCI::sample(const int64_t npoints) // sample without taking observables or 
     const bool flagpdf = _pdfcont.hasPDF();
     for (_ridx = 0; _ridx < npoints; ++_ridx) {
         if (flagpdf) { // use sampling function
-            this->doStepMRT2();
+            this->doStepMRT2(false);
         }
         else { // sample randomly
             this->doStepRandom();
@@ -222,13 +222,14 @@ void MCI::sample(const int64_t npoints, ObservableContainer &container, const bo
 {
     // Initialize
     this->initializeSampling(&container);
+    const bool callbackPDF = container.dependsOnPDF();
 
     //run the main loop for sampling
     const bool flagpdf = _pdfcont.hasPDF();
     for (_ridx = 0; _ridx < npoints; ++_ridx) {
         // do MC step
         if (flagpdf) { // use sampling function
-            this->doStepMRT2();
+            this->doStepMRT2(callbackPDF);
         }
         else { // sample randomly
             this->doStepRandom();
@@ -249,7 +250,7 @@ void MCI::sample(const int64_t npoints, ObservableContainer &container, const bo
 
 // --- Walking
 
-void MCI::doStepMRT2() // do MC step, sampling from _pdfcont
+void MCI::doStepMRT2(const bool callbackPDF) // do MC step, sampling from _pdfcont
 {
     // propose a new position x and get move acceptance
     const double moveAcc = _trialMove->computeTrialMove(_wlkstate);
@@ -274,7 +275,7 @@ void MCI::doStepMRT2() // do MC step, sampling from _pdfcont
 
     // set state according to result
     if (_wlkstate.accepted) {
-        _pdfcont.prepareObservation(_wlkstate);
+        if (callbackPDF) _pdfcont.prepareObservation(_wlkstate);
         _pdfcont.newToOld();
         _trialMove->newToOld();
         _wlkstate.newToOld();
@@ -298,7 +299,6 @@ void MCI::doStepRandom() // do MC step, sampling randomly (used when _pdfcont is
     ++_acc;
 
     // rest
-    _pdfcont.prepareObservation(_wlkstate);
     if (_cback) { _cback(*this); } // call callback
     _wlkstate.newToOld(); // to mimic doStepMRT2()
 }

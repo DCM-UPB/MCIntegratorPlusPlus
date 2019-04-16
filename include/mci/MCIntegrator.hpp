@@ -75,7 +75,7 @@ private:
     void initializeSampling(ObservableContainer * obsCont /*optional*/);
 
     // if there is a pdf, performs move and decides acc/rej
-    void doStepMRT2();
+    void doStepMRT2(bool callbackPDF);
     // else we use this to sample randomly (mostly for testing/examples)
     void doStepRandom();
 

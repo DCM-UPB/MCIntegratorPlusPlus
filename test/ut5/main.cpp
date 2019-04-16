@@ -20,7 +20,6 @@ int main()
     MCI mci(3);
     mci.setSeed(5649871);
     mci.addSamplingFunction(pdf);
-    mci.setTargetAcceptanceRate(0.7); // easier for findMRT2Step()
 
     // we will later clear&add these again with different settings
     mci.addObservable(obs1d);

@@ -3,16 +3,30 @@
 namespace mci
 {
 
+void ObservableContainer::_setDependsOnPDF()
+{
+    for (auto &el : _cont) {
+        if (el.depobs != nullptr) {
+            if (el.depobs->dependsOnPDF()) {
+                _flag_dependsOnPDF = true;
+                return;
+            }
+        }
+    }
+    _flag_dependsOnPDF = false;
+}
+
 void ObservableContainer::addObservable(std::unique_ptr<ObservableFunctionInterface> obs,
                                         const int blocksize, const int nskip, const bool needsEquil, const EstimatorType estimType)
 {
     ObservableContainerElement newElement;
+    // obs+accu
     newElement.obs = std::move(obs); // ownership by element
-    newElement.depobs = dynamic_cast<DependentObservableInterface *>(newElement.obs.get()); // might be nullptr
     _nobsdim += newElement.obs->getNObs();
+    newElement.depobs = dynamic_cast<DependentObservableInterface *>(newElement.obs.get()); // might be nullptr
     newElement.accu = createAccumulator(*newElement.obs, blocksize, nskip); // use create from Factories.hpp
 
-    // lambda functional (again use create from Factories.hpp)
+    // estimator lambda functional (again use create from Factories.hpp)
     newElement.estim = [accu = newElement.accu.get() /*OK*/, estimator = createEstimator(estimType)](double average[], double error[])
     {
         if (!accu->isFinalized()) {
@@ -23,6 +37,7 @@ void ObservableContainer::addObservable(std::unique_ptr<ObservableFunctionInterf
 
     newElement.flag_equil = needsEquil;
     _cont.push_back(std::move(newElement)); // and then into container
+    this->_setDependsOnPDF(); // keep it simple and call this to update the depend flag
 }
 
 
@@ -99,8 +114,9 @@ void ObservableContainer::deallocate()
 std::unique_ptr<ObservableFunctionInterface> ObservableContainer::pop_back()
 {
     auto obs = std::move(_cont.back().obs); // move last obs out
-    _nobsdim -= obs->getNObs(); // adjust nobsdim
     _cont.pop_back(); // resize vector
+    _nobsdim -= obs->getNObs(); // adjust nobsdim
+    this->_setDependsOnPDF(); // adjust depend flag
     return obs;
 }
 
@@ -108,5 +124,6 @@ void ObservableContainer::clear()
 {
     _cont.clear();
     _nobsdim = 0;
+    _flag_dependsOnPDF = false;
 }
 }  // namespace mci

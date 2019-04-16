@@ -41,11 +41,11 @@ private:
     // vector with container elements
     std::vector<ObservableContainerElement> _cont;
     int _nobsdim{0}; // stores total dimension of contained observables
+    bool _flag_dependsOnPDF = false; // stores whether any of the dependent observables depends on PDF
+
+    void _setDependsOnPDF(); // set flag to "any contained depobs depends on PDF"
 
 public:
-    explicit ObservableContainer() = default;
-    ~ObservableContainer() = default;
-
     // simple getters
     int size() const { return static_cast<int>(_cont.size()); }
     int getNObs() const { return this->size(); }
@@ -53,6 +53,7 @@ public:
 
     bool empty() const { return _cont.empty(); }
     bool hasObs() const { return !this->empty(); }
+    bool dependsOnPDF() const { return _flag_dependsOnPDF; }
 
     ObservableFunctionInterface &getObservableFunction(int i) const { return *(_cont[i].obs); }
     const AccumulatorInterface &getAccumulator(int i) const { return *(_cont[i].accu); }
