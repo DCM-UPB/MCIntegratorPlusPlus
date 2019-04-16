@@ -10,11 +10,11 @@ In the folder `common/` you will find a file named `ExampleFunctions.hpp` that c
 function and observable implementations that are shared between the examples.
 
 
-## Example 1
+## Basic Example
 
-`ex1/`: integration of a 1-dimensional quadratic function, without and with a sampling function.
+`ex_basic/`: integration of a 1-dimensional quadratic function, without and with a sampling function.
 
 
-## Example 2
+## MPI Example
 
-`ex2/`: like ex2, but using the MPI wrapper for parallel integration. Pass the wanted number of threads to run.sh (e.g. `run.sh 4` to use 4 cpus).
+`ex_mpi/`: like ex_basic, but using the MPI wrapper for parallel integration. Pass the wanted number of threads to run.sh (e.g. `run.sh 4` to use 4 cpus).

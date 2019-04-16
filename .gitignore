@@ -101,5 +101,3 @@ doc/*.ind
 doc/auto
 
 doc/doxygen/*/*
-
-src/*.o
