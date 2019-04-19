@@ -1,7 +1,6 @@
 [![Build Status](https://travis-ci.com/DCM-UPB/MCIntegratorPlusPlus.svg?branch=master)](https://travis-ci.com/DCM-UPB/MCIntegratorPlusPlus)
 [![Coverage Status](https://coveralls.io/repos/github/DCM-UPB/MCIntegratorPlusPlus/badge.svg?branch=master)](https://coveralls.io/github/DCM-UPB/MCIntegratorPlusPlus?branch=master)
-[![Codacy Badge](https://api.codacy.com/project/badge/Grade/4fb9f98862c7474b86c8ef88b501b454)](https://www.codacy.com/app/NNVMC/MCIntegratorPlusPlus?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=DCM-UPB/MCIntegratorPlusPlus&amp;utm_campaign=Badge_Grade)
-[![CodeFactor](https://www.codefactor.io/repository/github/dcm-upb/mcintegratorplusplus/badge)](https://www.codefactor.io/repository/github/dcm-upb/mcintegratorplusplus)
+
 
 # MCIntegrator++
 
