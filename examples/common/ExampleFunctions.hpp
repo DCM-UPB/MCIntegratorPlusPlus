@@ -71,6 +71,10 @@ public:
 
     double acceptanceFunction(const double protoold[], const double protonew[]) const final
     { // don't forget the const!
+        if (protoold[0] == 0.) {
+            if (protonew[0] != 0.) { return 1.; }
+            else { return 0.; }
+        }
         return protonew[0]/protoold[0];
     }
 };

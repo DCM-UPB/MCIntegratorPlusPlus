@@ -115,7 +115,7 @@ int main()
     cout << "This implies that the variance of the re-factored f(x) written for introducing a sampling function, is larger than the original f(x)." << endl;
 
     // if we wanted to safe the created sampling function from construction we could do:
-    cout << endl << endl << "Before MCI get's deleted, let's retrieve some objects that we added..." << endl;
+    cout << endl << endl << "Before MCI gets deleted, let's retrieve some objects that we added..." << endl;
     pdf = mci.popSamplingFunction(); // pdf is now valid again and contains the original
     auto obs2 = mci.popObservable(); // we may also obtain the observable that we never owned directly
     // NOTE: explicitly, obs2 is of type std::unique_ptr<ObservableFunctionInterface>

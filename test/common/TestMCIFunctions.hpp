@@ -20,10 +20,7 @@ protected:
     bool _isStepAccepted(const double oldWFVal, double newWFVal) const
     {   // standard VMC acceptance criterion
         if (oldWFVal == 0) {
-            return true;
-        }
-        if (newWFVal == 0) {
-            return false;
+            return newWFVal != 0;
         }
         const double threshold = (newWFVal*newWFVal)/(oldWFVal*oldWFVal);
         if (threshold >= 1.) {
