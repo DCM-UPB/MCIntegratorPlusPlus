@@ -4,6 +4,36 @@
 #include "mci/UnboundDomain.hpp"
 
 #include <iostream>
+#include <algorithm>
+
+#if USE_MPI == 1
+#include <mpi.h>
+
+bool isMPIUsable()
+{
+    // make sure that MPI is in the correct state
+    int isinit, isfinal;
+    MPI_Initialized(&isinit);
+    MPI_Finalized(&isfinal);
+    return (isinit == 1) && (isfinal == 0);
+}
+
+void MPIReduceAvgErr(const int nobsdim, double avg[]/*inout*/, double err[]/*inout*/) {
+    double myavg[nobsdim], myerr[nobsdim]; // stack allocation (nobsdim is usually small)
+    std::copy(avg, avg+nobsdim, myavg);
+    MPI_Allreduce(myavg, avg, nobsdim, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+    for (int i = 0; i < nobsdim; ++i) { myerr[i] = err[i]*err[i]; } // we will sum the error squares
+    MPI_Allreduce(myerr, err, nobsdim, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+
+    int nranks;
+    MPI_Comm_size(MPI_COMM_WORLD, &nranks);
+    for (int i = 0; i < nobsdim; ++i) {
+        avg[i] /= nranks;
+        err[i] = sqrt(err[i])/nranks;
+    }
+}
+
+#endif
 
 namespace mci
 {
@@ -88,7 +118,19 @@ void MCI::findMRT2Step()
         this->sample(MIN_STAT);
 
         //increase or decrease mrt2step depending on the acceptance rate
-        const double rate = this->getAcceptanceRate();
+        double rate = this->getAcceptanceRate();
+
+#if USE_MPI == 1
+        // compute average rate over threads
+        if (isMPIUsable()) {
+            int nranks;
+            MPI_Comm_size(MPI_COMM_WORLD, &nranks);
+            double avgrate;
+            MPI_Allreduce(&rate, &avgrate, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+            rate = avgrate/nranks;
+        }
+#endif
+
         if (fabs(rate - _targetaccrate) < TOLERANCE) {
             ++cons_count; // acceptance was within tolerance
         }
@@ -143,6 +185,12 @@ void MCI::initialDecorrelation()
         double oldestimate[nobsdim];
         double olderrestim[nobsdim];
         obs_equil.estimate(oldestimate, olderrestim);
+#if USE_MPI == 1
+        // reduce averages/errors
+        if (isMPIUsable()) {
+            MPIReduceAvgErr(nobsdim, oldestimate, olderrestim);
+        }
+#endif
 
         //start a loop which will stop when the observables are stabilized
         bool flag_loop = true;
@@ -160,6 +208,13 @@ void MCI::initialDecorrelation()
             }
 
             obs_equil.estimate(newestimate, newerrestim);
+#if USE_MPI == 1
+            // reduce averages/errors
+            if (isMPIUsable()) {
+                MPIReduceAvgErr(nobsdim, newestimate, newerrestim);
+            }
+#endif
+
             for (int i = 0; i < nobsdim; ++i) {
                 if (fabs(oldestimate[i] - newestimate[i]) > 2*sqrt(olderrestim[i]*olderrestim[i] + newerrestim[i]*newerrestim[i])) {
                     flag_loop = true; // if any difference is too large, continue the loop
@@ -275,7 +330,7 @@ void MCI::doStepMRT2(const bool callbackPDF) // do MC step, sampling from _pdfco
 
     // set state according to result
     if (_wlkstate.accepted) {
-        if (callbackPDF) _pdfcont.prepareObservation(_wlkstate);
+        if (callbackPDF) { _pdfcont.prepareObservation(_wlkstate); }
         _pdfcont.newToOld();
         _trialMove->newToOld();
         _wlkstate.newToOld();

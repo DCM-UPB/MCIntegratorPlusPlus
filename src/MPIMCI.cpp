@@ -82,12 +82,11 @@ void integrate(MCI &mci, const int64_t Nmc, double average[], double error[], co
 
     mci.integrate(Nmc, myAverage, myError, doFindMRT2Step, doDecorrelation);
 
+    MPI_Allreduce(myAverage, average, mci.getNObsDim(), MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+    for (double &e : myError) { e = e*e; } // we will sum the error squares
+    MPI_Allreduce(myError, error, mci.getNObsDim(), MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+
     for (int i = 0; i < mci.getNObsDim(); ++i) {
-        MPI_Allreduce(&myAverage[i], &average[i], 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-
-        myError[i] *= myError[i];
-        MPI_Allreduce(&myError[i], &error[i], 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-
         average[i] /= nranks;
         error[i] = sqrt(error[i])/nranks;
     }
