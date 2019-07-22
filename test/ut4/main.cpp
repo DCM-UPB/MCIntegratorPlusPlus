@@ -16,7 +16,7 @@ int main()
     XSquared obs;
 
     MCI mci(3);
-    mci.setSeed(5649871);
+    mci.setSeed(1337);
     mci.addSamplingFunction(pdf);
     mci.addObservable(obs);
 

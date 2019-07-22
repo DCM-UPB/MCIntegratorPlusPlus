@@ -18,8 +18,8 @@ bool isMPIUsable()
     return (isinit == 1) && (isfinal == 0);
 }
 
-void MPIReduceAvgErr(const int nobsdim, double avg[]/*inout*/, double err[]/*inout*/) {
-    double myavg[nobsdim], myerr[nobsdim]; // stack allocation (nobsdim is usually small)
+void MPIReduceAvgErr(const int nobsdim, double avg[]/*inout*/, double err[]/*inout*/,
+                    double myavg[], double myerr[]/*temporary arrays, allocated outside*/) {
     std::copy(avg, avg+nobsdim, myavg);
     MPI_Allreduce(myavg, avg, nobsdim, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
     for (int i = 0; i < nobsdim; ++i) { myerr[i] = err[i]*err[i]; } // we will sum the error squares
@@ -93,10 +93,18 @@ void MCI::findMRT2Step()
 
     if (!_trialMove->hasStepSizes()) { return; } // in the odd case that our mover has no adjustable step sizes
 
+    // MPI check
+    int nranks = 1; // we will set a different value when MPI enabled
+#if USE_MPI == 1
+    const bool flag_mpi = isMPIUsable();
+    if (flag_mpi) {
+        MPI_Comm_size(MPI_COMM_WORLD, &nranks);
+    }
+#endif
+
     //constants
     const int nStepSizes = _trialMove->getNStepSizes();
-    //const double changeRate = _trialMove->getChangeRate();
-    const int64_t MIN_STAT = 200LL; // minimum statistic: number of M(RT)^2 steps done to decide on step size change
+    const auto MIN_STAT = static_cast<int64_t>( std::max(100., sqrt(40000.*_ndim)/nranks) ); // minimum statistic: number of M(RT)^2 steps done to decide on step size change
     const int MIN_CONS = 5;   //minimum consecutive: minimum number of consecutive loops without need of changing mrt2step
     const double TOLERANCE = 0.05;  //tolerance: tolerance for the acceptance rate
     const double SMALLEST_ACCEPTABLE_DOUBLE = std::numeric_limits<float>::min(); // use smallest float value as limit for double
@@ -122,9 +130,7 @@ void MCI::findMRT2Step()
 
 #if USE_MPI == 1
         // compute average rate over threads
-        if (isMPIUsable()) {
-            int nranks;
-            MPI_Comm_size(MPI_COMM_WORLD, &nranks);
+        if (flag_mpi) {
             double avgrate;
             MPI_Allreduce(&rate, &avgrate, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
             rate = avgrate/nranks;
@@ -156,7 +162,6 @@ void MCI::findMRT2Step()
 
         ++counter;
         if (_NfindMRT2Iterations < 0 && counter >= std::abs(_NfindMRT2Iterations)) {
-            std::cout << "Warning [MCI::findMRT2Step]: Max number of attempts reached without convergence." << std::endl;
             break;
         }
     }
@@ -175,27 +180,36 @@ void MCI::initialDecorrelation()
                 obs_equil.addObservable(_obscont.getObservableFunction(i).clone(), 1, 1, true, EstimatorType::Correlated);
             }
         }
-        const auto MIN_NMC = static_cast<int64_t>( sqrt(10000.*_ndim) ); // a guess on how many steps we need
         const int nobsdim = obs_equil.getNObsDim();
+
+        // MPI check
+        int nranks = 1; // we will set a different value when MPI enabled
+#if USE_MPI == 1
+        const bool flag_mpi = isMPIUsable();
+        if (flag_mpi) {
+            MPI_Comm_size(MPI_COMM_WORLD, &nranks);
+        }
+#endif
+        const auto MIN_NMC = static_cast<int64_t>( std::max(100., sqrt(40000.*_ndim)/nranks) ); // a guess on how many steps we need
+
         // allocate memory for observables
         obs_equil.allocate(MIN_NMC, _pdfcont);
 
         //do a first estimate of the observables
         this->sample(MIN_NMC, obs_equil, false);
-        double oldestimate[nobsdim];
-        double olderrestim[nobsdim];
-        obs_equil.estimate(oldestimate, olderrestim);
+        std::vector<double> oldestimate(nobsdim), olderrestim(nobsdim);
+        std::vector<double> tempest(nobsdim), temperr(nobsdim); // vectors to be used temporarily during reduce
+        obs_equil.estimate(oldestimate.data(), olderrestim.data());
 #if USE_MPI == 1
         // reduce averages/errors
-        if (isMPIUsable()) {
-            MPIReduceAvgErr(nobsdim, oldestimate, olderrestim);
+        if (flag_mpi) {
+            MPIReduceAvgErr(nobsdim, oldestimate.data(), olderrestim.data(), tempest.data(), temperr.data());
         }
 #endif
 
         //start a loop which will stop when the observables are stabilized
         bool flag_loop = true;
-        double newestimate[nobsdim];
-        double newerrestim[nobsdim];
+        std::vector<double> newestimate(nobsdim), newerrestim(nobsdim);
         int64_t countNMC = 0;
         while (flag_loop) {
             flag_loop = false;
@@ -207,11 +221,11 @@ void MCI::initialDecorrelation()
                 break;
             }
 
-            obs_equil.estimate(newestimate, newerrestim);
+            obs_equil.estimate(newestimate.data(), newerrestim.data());
 #if USE_MPI == 1
             // reduce averages/errors
-            if (isMPIUsable()) {
-                MPIReduceAvgErr(nobsdim, newestimate, newerrestim);
+            if (flag_mpi) {
+                MPIReduceAvgErr(nobsdim, newestimate.data(), newerrestim.data(), tempest.data(), temperr.data());
             }
 #endif
 
@@ -222,8 +236,8 @@ void MCI::initialDecorrelation()
                 }
             }
             // copy new to old
-            std::copy(newestimate, newestimate + nobsdim, oldestimate);
-            std::copy(newerrestim, newerrestim + nobsdim, olderrestim);
+            std::copy(newestimate.begin(), newestimate.end(), oldestimate.begin());
+            std::copy(newerrestim.begin(), newerrestim.end(), olderrestim.begin());
         }
         //memory deallocated automatically
     }

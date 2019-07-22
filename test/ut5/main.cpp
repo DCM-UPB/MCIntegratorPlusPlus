@@ -18,7 +18,7 @@ int main()
     X2 obs3d(3); // effectively an updateable XYZSquared
 
     MCI mci(3);
-    mci.setSeed(5649871);
+    mci.setSeed(1337);
     mci.addSamplingFunction(pdf);
 
     // we will later clear&add these again with different settings
