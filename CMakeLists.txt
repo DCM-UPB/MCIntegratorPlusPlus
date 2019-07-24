@@ -14,12 +14,14 @@ endif ()
 
 # find packages
 
-find_package(MPI)
-if (MPI_FOUND)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSE_MPI=1")
-    include_directories(SYSTEM ${MPI_INCLUDE_PATH})
-    message(STATUS "MPI_INCLUDE_PATH: ${MPI_INCLUDE_PATH}")
-    message(STATUS "MPI_CXX_LIBRARIES: ${MPI_CXX_LIBRARIES}")
+if (USE_MPI)
+    find_package(MPI)
+    if (MPI_FOUND)
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSE_MPI=1")
+        include_directories(SYSTEM ${MPI_INCLUDE_PATH})
+        message(STATUS "MPI_INCLUDE_PATH: ${MPI_INCLUDE_PATH}")
+        message(STATUS "MPI_CXX_LIBRARIES: ${MPI_CXX_LIBRARIES}")
+    endif ()
 endif ()
 
 message(STATUS "Configured CMAKE_CXX_COMPILER: ${CMAKE_CXX_COMPILER}")
