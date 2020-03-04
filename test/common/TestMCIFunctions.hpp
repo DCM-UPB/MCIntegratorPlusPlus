@@ -10,10 +10,14 @@
 #include <numeric>
 #include <random>
 
+enum class WalkPDF{SLATER, GAUSS};
 
-class TestWalk1s
+template <WalkPDF PDF>
+class TestWalk
 { // helps to generate random walk corresponding
-    // to N particles in one-dimensional 1s orbital
+    // to N particles in one-dimensional
+    // a) 1s orbital
+    // b) gauss orbital
 protected:
     int _acc, _rej; // counters to calculate acceptance ratio
 
@@ -29,11 +33,22 @@ protected:
         return (rand()*(1.0/RAND_MAX) <= threshold);
     }
 
-    double _calcWFVal(const double position[]) const
+    template<WalkPDF P = PDF>
+    typename std::enable_if<P == WalkPDF::SLATER, double>::type _calcWFVal(const double position[]) const
     {   // product of 1s orbitals in 1D
         double wfval = 0.;
         for (int i = 0; i < _ndim; ++i) {
             wfval += fabs(position[i]);
+        }
+        return exp(-wfval);
+    }
+
+    template<WalkPDF P = PDF>
+    typename std::enable_if<P == WalkPDF::GAUSS, double>::type _calcWFVal(const double position[]) const
+    {   // product of gauss orbitals in 1D
+        double wfval = 0.;
+        for (int i = 0; i < _ndim; ++i) {
+            wfval += position[i]*position[i];
         }
         return exp(-wfval);
     }
@@ -68,7 +83,7 @@ public:
     double _stepSize;
     double _changeProb; // 0..1, probability for single index to change on move
 
-    TestWalk1s(int NMC, int ndim, double stepSize = 0.1, double changeProb = 1.):
+    TestWalk(int NMC, int ndim, double stepSize = 0.1, double changeProb = 1.):
             _acc(0), _rej(0), _NMC(NMC), _ndim(ndim), _stepSize(stepSize), _changeProb(changeProb) {}
 
     void generateWalk(double datax[] /*NMC*ndim length*/,

@@ -40,6 +40,19 @@ void arrayAvgND(int N1, int N2, const double in[] /*N1*N2*/, double out[] /*N2*/
     for (int i = 0; i < N2; ++i) { out[i] /= N1; }
 }
 
+void arrayErrND(int N1, int N2, const double in[] /*N1*N2*/, double out[] /*N2*/)
+{   // estimate standard deviations of length N2, assuming uncorrelated samples according to normal distribution
+    double avgs[N2];
+    arrayAvgND(N1, N2, in, avgs); // compute averages first
+    std::fill(out, out + N2, 0.);
+    for (int i = 0; i < N1; ++i) {
+        for (int j = 0; j < N2; ++j) {
+            out[j] += pow(avgs[j]-in[i*N2 + j], 2);
+        }
+    }
+    for (int i = 0; i < N2; ++i) { out[i] = sqrt(out[i] / (N1 - 1.5)); } // 1.5 is a decent bias correction value for normal distribution
+}
+
 void assertArraysEqual(int ndim, const double arr1[], const double arr2[], double tol = 0.)
 {
     if (tol > 0.) {
@@ -213,17 +226,24 @@ int main()
     int nchanged[Nmc]; // tells us how many indices changed
     int changedIdx[ndata]; // tells us which indices changed
     srand(1337); // seed standard random engine
-    TestWalk1s testWalk(Nmc, nd, 1.0, 0.5); // 2-particle walk in 1-dim 1s orbital
+    TestWalk<WalkPDF::GAUSS> testWalk(Nmc, nd, 2., 0.5); // 2-particle walk in 1-dim 1s orbital
     testWalk.generateWalk(xND, accepted, nchanged, changedIdx);
     if (verbose) { cout << testWalk.getAcceptanceRate() << endl; }
 
-    // calculate reference averages
-    double refAvg[nd];
+    // calculate reference averages and uncorrelated SD estimation
+    double refAvg[nd], refErr[nd];
     arrayAvgND(Nmc, nd, xND, refAvg);
+    arrayErrND(Nmc, nd, xND, refErr);
 
     if (verbose) {
-        cout << "Reference Average: " << endl << "avgND =";
+        cout << "Reference Average: " << endl << "avg =";
         for (double avg : refAvg) { cout << " " << avg; }
+        cout << endl << endl;
+        cout << "Uncorrelated Mean Error: " << endl << "err =";
+        for (double err : refErr) { cout << " " << err/sqrt(Nmc); }
+        cout << endl << endl;
+        cout << "Uncorrelated Sample Error: " << endl << "SD =";
+        for (double err : refErr) { cout << " " << err; }
         cout << endl << endl;
     }
 

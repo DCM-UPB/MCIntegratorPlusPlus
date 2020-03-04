@@ -47,7 +47,7 @@ int main()
     for (int i = 0; i < 3; ++i) { // go through ndims/stepSizes
         const int trueNMC = NMC/ndims[i];
         auto * datax = new double[trueNMC*ndims[i]];
-        TestWalk1s testWalk(trueNMC, ndims[i], stepSizes[i], 1. /*all-particle steps*/);
+        TestWalk<WalkPDF::SLATER> testWalk(trueNMC, ndims[i], stepSizes[i], 1. /*all-particle steps*/);
         testWalk.generateWalk(datax);
 
         if (verbose) { // verbose stuff (better decrease NMC to 1000)
