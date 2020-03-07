@@ -226,7 +226,7 @@ int main()
     int nchanged[Nmc]; // tells us how many indices changed
     int changedIdx[ndata]; // tells us which indices changed
     srand(1337); // seed standard random engine
-    TestWalk<WalkPDF::GAUSS> testWalk(Nmc, nd, 2., 0.5); // 2-particle walk in 1-dim 1s orbital
+    TestWalk<WalkPDF::GAUSS> testWalk(Nmc, nd, 2., 0.5); // 2-particle walk in 1-dim gauss orbital
     testWalk.generateWalk(xND, accepted, nchanged, changedIdx);
     if (verbose) { cout << testWalk.getAcceptanceRate() << endl; }
 

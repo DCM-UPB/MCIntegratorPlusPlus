@@ -8,19 +8,15 @@ addons:
     packages:
       - valgrind
 
-  homebrew:
-    packages:
-      - valgrind
-
 matrix:
   include:
-    - os: linux // travis ubuntu xenial
+    - os: linux # travis ubuntu xenial
       env:
         - MYCXX="g++"
         - USE_DOCKER="FALSE"
         - USE_GCOV="TRUE"
 
-    - os: linux // arch linux docker
+    - os: linux # arch linux docker
       env:
         - MYCXX="g++"
         - USE_DOCKER="TRUE"
