@@ -56,9 +56,9 @@ public:
         return this->acceptanceFunction(_protoold, _protonew);
     }
 
-    void prepareObservation(const WalkerState &wlk)
+    void prepareObservation(const double x[])
     {
-        this->observationCallback(wlk, _protoold, _protonew);
+        this->observationCallback(x, _protoold);
     }
 
 
@@ -99,9 +99,9 @@ public:
     // --- ALSO OPTIONALLY OVERRIDE THIS
     // Prepare the sampling function to be observed by dependent observables.
     // This will be called by MCI before such observation takes place.
-    // WalkerState and protovalues will be passed like you left them
-    // on the previous sampling/acceptance calculation.
-    virtual void observationCallback(const WalkerState &wlk, const double protoold[], const double protonew[]) {}
+    // Passed walker position and protovalues are from the last accepted state.
+    // Notice that, by design, it is not possible to make this callback "updateable".
+    virtual void observationCallback(const double x[], const double protovalues[]) {}
 };
 }  // namespace mci
 

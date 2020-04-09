@@ -279,7 +279,7 @@ void MCI::sample(const int64_t npoints) // sample without taking observables or 
     const bool flagpdf = _pdfcont.hasPDF();
     for (_ridx = 0; _ridx < npoints; ++_ridx) {
         if (flagpdf) { // use sampling function
-            this->doStepMRT2(false);
+            this->doStepMRT2();
         }
         else { // sample randomly
             this->doStepRandom();
@@ -291,14 +291,18 @@ void MCI::sample(const int64_t npoints, ObservableContainer &container, const bo
 {
     // Initialize
     this->initializeSampling(&container);
-    const bool callbackPDF = container.dependsOnPDF();
-
-    //run the main loop for sampling
+    bool flag_callbackPDF = container.dependsOnPDF(); // initialize flag to keep track of when a PDF callback is necessary
     const bool flagpdf = _pdfcont.hasPDF();
+
+    // run the main loop for sampling
     for (_ridx = 0; _ridx < npoints; ++_ridx) {
         // do MC step
         if (flagpdf) { // use sampling function
-            this->doStepMRT2(callbackPDF);
+            this->doStepMRT2();
+            const bool flag_PDFObs = container.getNSkipPDF() != 0 ? _ridx%container.getNSkipPDF() == 0 : false; // will PDF be observed?
+            const bool flag_callbackPDFNow = (flag_callbackPDF || _wlkstate.accepted) && flag_PDFObs; // PDF callback required in this move?
+            if (flag_callbackPDFNow) { _pdfcont.prepareObservation(_wlkstate.xnew); flag_callbackPDF = false; } // PDF callback is called
+            else if (_wlkstate.accepted) { flag_callbackPDF = true; } // PDF callback was not called, but successful step -> PDF changed
         }
         else { // sample randomly
             this->doStepRandom();
@@ -319,7 +323,7 @@ void MCI::sample(const int64_t npoints, ObservableContainer &container, const bo
 
 // --- Walking
 
-void MCI::doStepMRT2(const bool callbackPDF) // do MC step, sampling from _pdfcont
+void MCI::doStepMRT2() // do MC step, sampling from _pdfcont
 {
     // propose a new position x and get move acceptance
     const double moveAcc = _trialMove->computeTrialMove(_wlkstate);
@@ -344,7 +348,6 @@ void MCI::doStepMRT2(const bool callbackPDF) // do MC step, sampling from _pdfco
 
     // set state according to result
     if (_wlkstate.accepted) {
-        if (callbackPDF) { _pdfcont.prepareObservation(_wlkstate); }
         _pdfcont.newToOld();
         _trialMove->newToOld();
         _wlkstate.newToOld();

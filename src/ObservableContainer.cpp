@@ -3,17 +3,35 @@
 namespace mci
 {
 
+int gcd_helper(int a, int b) { // simple recursive greatest common divisor computation
+    if (a > b) {
+        return gcd_helper(a - b, b);
+    }
+    if (b > a) {
+        return gcd_helper(a, b - a);
+    }
+    return a; // a == b
+}
+
 void ObservableContainer::_setDependsOnPDF()
 {
+    int gcd = 0;
     for (auto &el : _cont) {
         if (el.depobs != nullptr) {
             if (el.depobs->dependsOnPDF()) {
-                _flag_dependsOnPDF = true;
-                return;
+                if (gcd == 0) {
+                    gcd = el.accu->getNSkip();
+                }
+                else if (gcd == 1) {
+                    break; // no need to continue
+                }
+                else {
+                    gcd = gcd_helper(gcd, el.accu->getNSkip());
+                }
             }
         }
     }
-    _flag_dependsOnPDF = false;
+    _nskip_PDF = gcd;
 }
 
 void ObservableContainer::addObservable(std::unique_ptr<ObservableFunctionInterface> obs,
@@ -124,6 +142,6 @@ void ObservableContainer::clear()
 {
     _cont.clear();
     _nobsdim = 0;
-    _flag_dependsOnPDF = false;
+    _nskip_PDF = 0;
 }
 }  // namespace mci

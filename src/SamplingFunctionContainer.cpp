@@ -47,10 +47,10 @@ double SamplingFunctionContainer::computeAcceptance(const WalkerState &wlk)
     return acceptance;
 }
 
-void SamplingFunctionContainer::prepareObservation(const WalkerState &wlk)
+void SamplingFunctionContainer::prepareObservation(const double x[])
 {
     for (auto &sf : _pdfs) {
-        sf->prepareObservation(wlk);
+        sf->prepareObservation(x);
     }
 }
 

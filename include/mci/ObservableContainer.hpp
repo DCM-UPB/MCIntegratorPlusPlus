@@ -41,7 +41,7 @@ private:
     // vector with container elements
     std::vector<ObservableContainerElement> _cont;
     int _nobsdim{0}; // stores total dimension of contained observables
-    bool _flag_dependsOnPDF = false; // stores whether any of the dependent observables depends on PDF
+    int _nskip_PDF{0}; // stores the number of MC steps per update of the PDF dependency (i.e. call to pdf->prepareObservation(..))
 
     void _setDependsOnPDF(); // set flag to "any contained depobs depends on PDF"
 
@@ -53,7 +53,8 @@ public:
 
     bool empty() const { return _cont.empty(); }
     bool hasObs() const { return !this->empty(); }
-    bool dependsOnPDF() const { return _flag_dependsOnPDF; }
+    bool dependsOnPDF() const { return _nskip_PDF != 0; }
+    int getNSkipPDF() const { return _nskip_PDF; }
 
     ObservableFunctionInterface &getObservableFunction(int i) const { return *(_cont[i].obs); }
     const AccumulatorInterface &getAccumulator(int i) const { return *(_cont[i].accu); }
