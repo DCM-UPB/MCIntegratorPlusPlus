@@ -5,6 +5,7 @@
 #include "mci/WalkerState.hpp"
 
 #include <stdexcept>
+#include <limits>
 
 namespace mci
 {
