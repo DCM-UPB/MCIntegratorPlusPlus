@@ -1,4 +1,5 @@
 #include "mci/AccumulatorInterface.hpp"
+#include <stdexcept>
 
 namespace mci
 {
